@@ -71,7 +71,7 @@ function incompletePayload(providerReference:string,responseTimestamp:string) {
 
 export function executeMockProvider(input:MockProviderInput):MockProviderResult {
   const fixtureKey=input.fixtureKey??"STANDARD";
-  const providerReference=\`MP001-\${input.requestFingerprint.slice(0,16).toUpperCase()}\`;
+  const providerReference=`MP001-${input.requestFingerprint.slice(0,16).toUpperCase()}`;
   const responseTimestamp="2026-09-18T12:00:00.000Z";
   const payload=fixtureKey==="INCOMPLETE"
     ? incompletePayload(providerReference,responseTimestamp)
