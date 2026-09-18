@@ -80,7 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf bootstrap
-          rm -f .github/workflows/sp1-bootstrap.yml
+          rm -f .github/workflows/ci.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
