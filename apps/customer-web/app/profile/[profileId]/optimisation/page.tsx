@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../lib";
+import {API_URL} from "../../../lib";
 
 type LockedVersion={versionId:string;versionNo:number;status:string};
 

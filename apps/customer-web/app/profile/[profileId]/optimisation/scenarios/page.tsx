@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../lib";
+import {API_URL} from "../../../../lib";
 
 export default function ScenarioPreview({params}:{params:Promise<{profileId:string}>}){
   const {profileId}=use(params);

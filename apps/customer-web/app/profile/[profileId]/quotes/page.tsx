@@ -1,7 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {useSearchParams} from "next/navigation";
-import {API_URL} from "../../lib";
+import {API_URL} from "../../../lib";
 
 function money(value:number|null|undefined){
   return value===null||value===undefined?"Not available":new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(value/100);
@@ -9,17 +8,21 @@ function money(value:number|null|undefined){
 
 export default function QuoteComparison({params}:{params:Promise<{profileId:string}>}){
   const {profileId}=use(params);
-  const search=useSearchParams();
-  const rawId=search.get("rawProviderResponseId")??"";
+  const [rawId,setRawId]=useState("");
   const [quote,setQuote]=useState<any>(null);
   const [error,setError]=useState("");
 
-  useEffect(()=>{if(!rawId){setError("Missing raw provider response reference.");return;}(async()=>{
-    const response=await fetch(API_URL+"/raw-provider-responses/"+encodeURIComponent(rawId)+"/normalised-quotes");
+  useEffect(()=>{
+    const value=new URLSearchParams(window.location.search).get("rawProviderResponseId")??"";
+    setRawId(value);
+    if(!value){setError("Missing raw provider response reference.");return;}
+    (async()=>{
+    const response=await fetch(API_URL+"/raw-provider-responses/"+encodeURIComponent(value)+"/normalised-quotes");
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to load normalised quote");return;}
     setQuote((body.items??[]).at(-1)??null);
-  })().catch(error=>setError(String(error)))},[rawId]);
+    })().catch(error=>setError(String(error)));
+  },[]);
 
   return <main style={{maxWidth:860,margin:"48px auto",padding:24,fontFamily:"system-ui"}}>
     <p>Customer · C-11 · {profileId}</p>
