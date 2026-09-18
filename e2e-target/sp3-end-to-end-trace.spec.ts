@@ -87,6 +87,7 @@ test("SP3-END-TO-END-TRACE-001 C-01 through C-15 plus A-07 and A-08",async({page
 
   await page.getByRole("button",{name:"Open audit history"}).click();
   await expect(page.getByRole("heading",{name:"Audit history"})).toBeVisible();
+  await expect(page.locator("#audit-history")).toContainText("profile_created");
 
   const auditText=await page.locator("#audit-history").innerText();
   const ordered=[
