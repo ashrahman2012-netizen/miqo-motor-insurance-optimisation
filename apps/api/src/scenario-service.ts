@@ -8,7 +8,7 @@ import { loadRiskProfileVersion } from "./profile-service.ts";
 
 export const SCENARIO_GENERATOR_VERSION = "sp2-gen-v1";
 
-const uuid=(prefix:string)=>\`\${prefix}-\${randomUUID()}\`;
+const uuid=(prefix:string)=>`${prefix}-${randomUUID()}`;
 
 function canonicalise(value:unknown):unknown {
   if(Array.isArray(value)) {
@@ -69,7 +69,7 @@ export async function generateScenarios(db:MiqoDatabase,args:{
 
   return db.transaction(async tx=>{
     const txDb=tx as MiqoDatabase;
-    await tx.execute(sql\`SELECT pg_advisory_xact_lock(hashtext(\${\`scenario:\${args.versionId}:\${generationVersion}\`}))\`);
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`scenario:${args.versionId}:${generationVersion}`}))`);
 
     const preferences=await tx.select().from(optimisationPreference)
       .where(eq(optimisationPreference.riskProfileVersionId,args.versionId))

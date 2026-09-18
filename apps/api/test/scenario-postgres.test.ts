@@ -17,9 +17,9 @@ async function reset(){
 async function seedLocked(app:any){
   const created=JSON.parse((await app.inject({method:"POST",url:"/profiles"})).body);
   for(const [fieldId,value] of [["main_driver_id","DRV-SYN-001"],["annual_mileage",8000],["licence_held_since","2018-04-16"]] as const) {
-    assert.equal((await app.inject({method:"PUT",url:\`/profile-versions/\${created.versionId}/facts/\${fieldId}\`,payload:{value}})).statusCode,200);
+    assert.equal((await app.inject({method:"PUT",url:`/profile-versions/${created.versionId}/facts/${fieldId}`,payload:{value}})).statusCode,200);
   }
-  assert.equal((await app.inject({method:"POST",url:\`/profiles/\${created.profileId}/lock\`})).statusCode,200);
+  assert.equal((await app.inject({method:"POST",url:`/profiles/${created.profileId}/lock`})).statusCode,200);
   return created;
 }
 
@@ -27,9 +27,9 @@ test("SP2 scenario generation is deterministic, idempotent, provenance-complete 
   await reset();
   const app=await buildApp();
   const p=await seedLocked(app);
-  assert.equal((await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/optimisation-preferences\`,payload:{payment_structure:"ANNUAL",voluntary_excess:500}})).statusCode,200);
+  assert.equal((await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/optimisation-preferences`,payload:{payment_structure:"ANNUAL",voluntary_excess:500}})).statusCode,200);
 
-  const first=await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/scenarios/generate\`});
+  const first=await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/scenarios/generate`});
   assert.equal(first.statusCode,201);
   const one=JSON.parse(first.body);
   assert.equal(one.created,true);
@@ -44,16 +44,16 @@ test("SP2 scenario generation is deterministic, idempotent, provenance-complete 
     {fieldId:"voluntary_excess",controlClass:"O",value:500},
   ]);
 
-  const second=await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/scenarios/generate\`});
+  const second=await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/scenarios/generate`});
   assert.equal(second.statusCode,200);
   const two=JSON.parse(second.body);
   assert.equal(two.created,false);
   assert.equal(two.items[0].scenarioId,one.items[0].scenarioId);
   assert.equal(two.generationFingerprint,one.generationFingerprint);
 
-  const preferences=JSON.parse((await app.inject({method:"GET",url:\`/profile-versions/\${p.versionId}/optimisation-preferences\`})).body);
+  const preferences=JSON.parse((await app.inject({method:"GET",url:`/profile-versions/${p.versionId}/optimisation-preferences`})).body);
   assert.ok(preferences.items.every((item:any)=>item.frozenAt));
-  const changed=await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/optimisation-preferences\`,payload:{voluntary_excess:750}});
+  const changed=await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/optimisation-preferences`,payload:{voluntary_excess:750}});
   assert.equal(changed.statusCode,409);
   assert.equal(JSON.parse(changed.body).error,"PREFERENCE_SET_FROZEN_BY_SCENARIO");
   await app.close();
@@ -63,8 +63,8 @@ test("SP2 generated scenarios and deltas are immutable and disguised factual O w
   await reset();
   const app=await buildApp();
   const p=await seedLocked(app);
-  await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/optimisation-preferences\`,payload:{payment_structure:"ANNUAL"}});
-  const generated=JSON.parse((await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/scenarios/generate\`})).body);
+  await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/optimisation-preferences`,payload:{payment_structure:"ANNUAL"}});
+  const generated=JSON.parse((await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/scenarios/generate`})).body);
   const scenarioId=generated.items[0].scenarioId;
 
   const c=new Client({connectionString:process.env.DATABASE_URL});
@@ -85,7 +85,7 @@ test("SP2 generation transaction rolls back scenario, deltas and preference free
   await reset();
   const app=await buildApp();
   const p=await seedLocked(app);
-  await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/optimisation-preferences\`,payload:{voluntary_excess:250}});
+  await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/optimisation-preferences`,payload:{voluntary_excess:250}});
   await app.close();
 
   const pool=createPool();
@@ -104,14 +104,14 @@ test("SP2 generator rejects DRAFT and SUPERSEDED profile versions",async()=>{
   await reset();
   const app=await buildApp();
   const draft=JSON.parse((await app.inject({method:"POST",url:"/profiles"})).body);
-  assert.equal((await app.inject({method:"POST",url:\`/profile-versions/\${draft.versionId}/scenarios/generate\`})).statusCode,409);
+  assert.equal((await app.inject({method:"POST",url:`/profile-versions/${draft.versionId}/scenarios/generate`})).statusCode,409);
 
   const p=await seedLocked(app);
-  await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/optimisation-preferences\`,payload:{voluntary_excess:250}});
-  assert.equal((await app.inject({method:"POST",url:\`/profiles/\${p.profileId}/corrections\`,payload:{fieldId:"annual_mileage",value:6000}})).statusCode,201);
-  await app.inject({method:"POST",url:\`/profiles/\${p.profileId}/validate\`});
-  await app.inject({method:"POST",url:\`/profiles/\${p.profileId}/lock\`});
-  assert.equal((await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/scenarios/generate\`})).statusCode,409);
+  await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/optimisation-preferences`,payload:{voluntary_excess:250}});
+  assert.equal((await app.inject({method:"POST",url:`/profiles/${p.profileId}/corrections`,payload:{fieldId:"annual_mileage",value:6000}})).statusCode,201);
+  await app.inject({method:"POST",url:`/profiles/${p.profileId}/validate`});
+  await app.inject({method:"POST",url:`/profiles/${p.profileId}/lock`});
+  assert.equal((await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/scenarios/generate`})).statusCode,409);
   await app.close();
 });
 
@@ -119,7 +119,7 @@ test("legacy scenario API rejects an approved-class label on a factual field",as
   await reset();
   const app=await buildApp();
   const p=await seedLocked(app);
-  const response=await app.inject({method:"POST",url:\`/profile-versions/\${p.versionId}/scenarios\`,payload:{deltas:[{fieldId:"annual_mileage",controlClass:"O",value:6000}]}});
+  const response=await app.inject({method:"POST",url:`/profile-versions/${p.versionId}/scenarios`,payload:{deltas:[{fieldId:"annual_mileage",controlClass:"O",value:6000}]}});
   assert.equal(response.statusCode,422);
   assert.equal(JSON.parse(response.body).error,"INVALID_SCENARIO_DELTA");
   await app.close();
