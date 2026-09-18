@@ -11,7 +11,7 @@ if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw
 
 export async function buildApp() {
   const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true});
-  await app.register(cors,{origin:[process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000",process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001"]});
+  await app.register(cors,{origin:[process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000",process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001"],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
   app.addHook("onClose",async()=>pool.end());
 
   app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));
