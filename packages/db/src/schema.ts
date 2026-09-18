@@ -84,6 +84,41 @@ export const scenarioDelta = pgTable("scenario_delta", {
   check("scenario_delta_approved_o_field", sql`${t.fieldId} IN ('voluntary_excess','payment_structure','policy_start_date','telematics_preference','genuine_named_driver_inclusion')`),
 ]);
 
+export const quoteRun = pgTable("quote_run", {
+  quoteRunId: text("quote_run_id").primaryKey(),
+  riskProfileVersionId: text("risk_profile_version_id").notNull().references(() => riskProfileVersion.riskProfileVersionId),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+});
+
+export const quoteRequest = pgTable("quote_request", {
+  quoteRequestId: text("quote_request_id").primaryKey(),
+  quoteRunId: text("quote_run_id").notNull().references(() => quoteRun.quoteRunId),
+  scenarioId: text("scenario_id").notNull().references(() => scenario.scenarioId),
+  providerKey: text("provider_key").notNull(),
+  channelKey: text("channel_key").notNull(),
+  adapterVersion: text("adapter_version").notNull(),
+  mappingVersion: text("mapping_version").notNull(),
+  requestFingerprint: text("request_fingerprint").notNull(),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_quote_request_fingerprint").on(t.requestFingerprint),
+  check("quote_request_synthetic_provider", sql`${t.providerKey} LIKE 'MOCK-%'`),
+  check("quote_request_synthetic_channel", sql`${t.channelKey} = 'DIRECT_SYNTHETIC'`),
+]);
+
+export const integritySignal = pgTable("integrity_signal", {
+  integritySignalId: text("integrity_signal_id").primaryKey(),
+  stage: text("stage").notNull(),
+  ruleId: text("rule_id").notNull(),
+  riskProfileVersionId: text("risk_profile_version_id").references(() => riskProfileVersion.riskProfileVersionId),
+  scenarioId: text("scenario_id").references(() => scenario.scenarioId),
+  normalisedQuoteId: text("normalised_quote_id"),
+  state: text("state").notNull(),
+  blocking: boolean("blocking").notNull().default(false),
+  evidenceJson: jsonb("evidence_json").notNull().default({}),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+});
+
 export const auditEvent = pgTable("audit_event", {
   auditEventId: text("audit_event_id").primaryKey(),
   eventType: text("event_type").notNull(),

@@ -2,10 +2,11 @@ import Fastify from "fastify";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
-import { ConflictError, ValidationError } from "./errors.ts";
+import { ConflictError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
 import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
 import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
+import { getPreparedQuoteRequest, listPreQuoteIntegritySignals, prepareQuoteRequest } from "./quote-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -46,15 +47,30 @@ export async function buildApp() {
     return reply.code(result.created?201:200).send(result);
   });
   app.get("/profile-versions/:versionId/scenarios/generated",async(req:any)=>listGeneratedScenarios(db,req.params.versionId));
+  app.post("/scenarios/:scenarioId/quote-requests",{
+    schema:{body:{type:"object",additionalProperties:false,required:["providerKey","channel"],properties:{
+      providerKey:{type:"string",enum:["MOCK-PROVIDER-001"]},
+      channel:{type:"string",enum:["DIRECT_SYNTHETIC"]},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await prepareQuoteRequest(db,{scenarioId:req.params.scenarioId,providerKey:req.body.providerKey,channel:req.body.channel});
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/quote-requests/:quoteRequestId",async(req:any)=>getPreparedQuoteRequest(db,req.params.quoteRequestId));
+  app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
   app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
 
-  app.setErrorHandler((error:any,_req,reply)=>{
+  app.setErrorHandler((error:any,req:any,reply)=>{
+    if(error instanceof PreQuoteIntegrityError)return reply.code(409).send({error:error.message,signals:error.signals});
     if(error instanceof ConflictError)return reply.code(409).send({error:error.message});
     if(error instanceof ValidationError)return reply.code(422).send({error:error.message,issues:error.issues});
-    if(error?.validation)return reply.code(422).send({error:"INVALID_OPTIMISATION_PREFERENCE",issues:error.validation.map((item:any)=>item.message)});
+    if(error?.validation){
+      const code=String(req?.url??"").includes("/quote-requests")?"INVALID_QUOTE_REQUEST":"INVALID_OPTIMISATION_PREFERENCE";
+      return reply.code(422).send({error:code,issues:error.validation.map((item:any)=>item.message)});
+    }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
     if(String(error?.message??error).includes("LOCKED_PROFILE_IMMUTABLE"))return reply.code(409).send({error:"LOCKED_PROFILE_IMMUTABLE"});
     app.log.error(error); return reply.code(500).send({error:"internal_error",message:String(error?.message??error)});

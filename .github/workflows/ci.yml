@@ -41,9 +41,11 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0001_walking_skeleton.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0002_optimisation_preferences.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0003_scenario_generation.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0004_prequote_integrity.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-foundation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-scenario-contract.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-prequote-contract.sql
 
   target-stack-sprint1:
     runs-on: ubuntu-latest
