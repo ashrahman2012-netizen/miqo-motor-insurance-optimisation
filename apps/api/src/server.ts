@@ -8,6 +8,7 @@ import { listOptimisationPreferences, saveOptimisationPreferences } from "./pref
 import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
 import { getPreparedQuoteRequest, listPreQuoteIntegritySignals, prepareQuoteRequest } from "./quote-service.ts";
 import { executePreparedQuoteRequest, getRawProviderResponse } from "./provider-service.ts";
+import { listNormalisedQuotes, normaliseRawProviderResponse } from "./normalisation-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -63,6 +64,11 @@ export async function buildApp() {
     return reply.code(result.created?201:200).send(result);
   });
   app.get("/quote-requests/:quoteRequestId/raw-response",async(req:any)=>getRawProviderResponse(db,req.params.quoteRequestId));
+  app.post("/raw-provider-responses/:rawProviderResponseId/normalise",async(req:any,reply)=>{
+    const result=await normaliseRawProviderResponse(db,req.params.rawProviderResponseId);
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/raw-provider-responses/:rawProviderResponseId/normalised-quotes",async(req:any)=>listNormalisedQuotes(db,req.params.rawProviderResponseId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));

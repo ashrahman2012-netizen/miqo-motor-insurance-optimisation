@@ -3,7 +3,7 @@ import { boolean, check, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqu
 
 export const controlClass = pgEnum("control_class", ["F", "V", "D", "O", "I"]);
 export const profileVersionStatus = pgEnum("profile_version_status", ["DRAFT", "LOCKED", "SUPERSEDED"]);
-export const comparisonState = pgEnum("comparison_state", ["COMPARABLE", "ADJUSTED", "NON_COMPARABLE"]);
+export const comparisonState = pgEnum("comparison_state", ["DIRECTLY_COMPARABLE", "ADJUSTED_COMPARABLE", "NOT_COMPARABLE"]);
 
 export const customer = pgTable("customer", {
   customerId: text("customer_id").primaryKey(),
@@ -141,6 +141,23 @@ export const auditEvent = pgTable("audit_event", {
 });
 `),
   check("raw_provider_payload_text_nonempty", sql`${t.payloadText} IS NULL OR length(${t.payloadText}) > 0`),
+]);
+
+export const normalisedQuote = pgTable("normalised_quote", {
+  normalisedQuoteId: text("normalised_quote_id").primaryKey(),
+  rawProviderResponseId: text("raw_provider_response_id").notNull().references(() => rawProviderResponse.rawProviderResponseId),
+  normalisationVersion: text("normalisation_version").notNull(),
+  annualCashPremiumPence: integer("annual_cash_premium_pence"),
+  financeCostPence: integer("finance_cost_pence"),
+  compulsoryExcessPence: integer("compulsory_excess_pence"),
+  voluntaryExcessPence: integer("voluntary_excess_pence"),
+  comparisonState: comparisonState("comparison_state").notNull(),
+  comparisonReason: text("comparison_reason"),
+  normalisationFingerprint: text("normalisation_fingerprint"),
+  normalisedAt: timestamp("normalised_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_normalised_quote_raw_version").on(t.rawProviderResponseId,t.normalisationVersion),
+  uniqueIndex("uq_normalised_quote_fingerprint").on(t.normalisationFingerprint),
 ]);
 
 export const integritySignal = pgTable("integrity_signal", {

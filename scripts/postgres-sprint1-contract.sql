@@ -212,9 +212,21 @@ SELECT EXISTS (
 -- Prove raw and normalised quote stores are structurally separate and linked one-way.
 INSERT INTO raw_provider_response (raw_provider_response_id,quote_request_id,payload_json)
 VALUES ('RAW-PG-001','QREQ-PG-001','{"grossPremiumPence":74218}'::jsonb);
-INSERT INTO normalised_quote
-(normalised_quote_id,raw_provider_response_id,normalisation_version,annual_cash_premium_pence,finance_cost_pence,compulsory_excess_pence,voluntary_excess_pence,comparison_state)
-VALUES ('NOR-PG-001','RAW-PG-001','1',74218,0,25000,35000,'COMPARABLE');
+SELECT EXISTS (
+  SELECT 1 FROM pg_enum e
+  JOIN pg_type t ON t.oid=e.enumtypid
+  WHERE t.typname='comparison_state' AND e.enumlabel='DIRECTLY_COMPARABLE'
+) AS sp2_comparison_labels \gset
+
+\if :sp2_comparison_labels
+  INSERT INTO normalised_quote
+  (normalised_quote_id,raw_provider_response_id,normalisation_version,annual_cash_premium_pence,finance_cost_pence,compulsory_excess_pence,voluntary_excess_pence,comparison_state)
+  VALUES ('NOR-PG-001','RAW-PG-001','1',74218,0,25000,35000,'DIRECTLY_COMPARABLE');
+\else
+  INSERT INTO normalised_quote
+  (normalised_quote_id,raw_provider_response_id,normalisation_version,annual_cash_premium_pence,finance_cost_pence,compulsory_excess_pence,voluntary_excess_pence,comparison_state)
+  VALUES ('NOR-PG-001','RAW-PG-001','1',74218,0,25000,35000,'COMPARABLE');
+\endif
 
 DO $$
 DECLARE raw_count integer; norm_count integer;
