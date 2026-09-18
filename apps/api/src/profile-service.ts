@@ -108,7 +108,31 @@ export async function profileSnapshot(db:MiqoDatabase,profileId:string) {
 }
 
 export async function auditEvents(db:MiqoDatabase,profileId:string) {
-  return db.select().from(auditEvent).where(eq(auditEvent.traceId,profileId)).orderBy(asc(auditEvent.occurredAt));
+  const lifecycleOrder=sql<number>`CASE ${auditEvent.eventType}
+    WHEN 'profile_created' THEN 10
+    WHEN 'fact_saved' THEN 20
+    WHEN 'profile_correction_started' THEN 25
+    WHEN 'profile_validated' THEN 30
+    WHEN 'profile_locked' THEN 40
+    WHEN 'optimisation_preferences_saved' THEN 50
+    WHEN 'scenario_generated' THEN 60
+    WHEN 'pre_quote_integrity_blocked' THEN 70
+    WHEN 'pre_quote_integrity_passed' THEN 70
+    WHEN 'quote_request_prepared' THEN 80
+    WHEN 'raw_provider_response_captured' THEN 90
+    WHEN 'provider_response_normalised' THEN 100
+    WHEN 'comparison_generated' THEN 110
+    WHEN 'shortlist_created' THEN 120
+    WHEN 'quote_selection_attempted' THEN 130
+    WHEN 'quote_selected' THEN 130
+    WHEN 'final_integrity_blocked' THEN 140
+    WHEN 'final_integrity_passed' THEN 140
+    WHEN 'prototype_completed' THEN 150
+    ELSE 999
+  END`;
+  return db.select().from(auditEvent)
+    .where(eq(auditEvent.traceId,profileId))
+    .orderBy(asc(auditEvent.occurredAt),lifecycleOrder,asc(auditEvent.auditEventId));
 }
 
 export async function listDiscrepancies(db:MiqoDatabase,profileId:string) {
