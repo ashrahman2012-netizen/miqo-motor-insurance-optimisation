@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const controlClass = pgEnum("control_class", ["F", "V", "D", "O", "I"]);
 export const profileVersionStatus = pgEnum("profile_version_status", ["DRAFT", "LOCKED", "SUPERSEDED"]);
@@ -48,9 +48,23 @@ export const discrepancy = pgTable("discrepancy", {
   createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
 });
 
+export const optimisationPreference = pgTable("optimisation_preference", {
+  optimisationPreferenceId: text("optimisation_preference_id").primaryKey(),
+  riskProfileVersionId: text("risk_profile_version_id").notNull().references(() => riskProfileVersion.riskProfileVersionId),
+  preferenceKey: text("preference_key").notNull(),
+  valueJson: jsonb("value_json").notNull(),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  unique("uq_optimisation_preference_version_key").on(t.riskProfileVersionId,t.preferenceKey),
+  check("optimisation_preference_key_allowed", sql`${t.preferenceKey} IN ('voluntary_excess','payment_structure','policy_start_date','telematics_preference','genuine_named_driver_inclusion')`),
+]);
+
 export const scenario = pgTable("scenario", {
   scenarioId: text("scenario_id").primaryKey(),
   riskProfileVersionId: text("risk_profile_version_id").notNull().references(() => riskProfileVersion.riskProfileVersionId),
+  optimisationPreferenceId: text("optimisation_preference_id").references(() => optimisationPreference.optimisationPreferenceId),
+  generationVersion: text("generation_version"),
+  generatedAt: timestamp("generated_at", {withTimezone:true}),
   status: text("status").notNull(),
   createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
 });
