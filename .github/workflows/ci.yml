@@ -1,0 +1,72 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  locked-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - run: test "$(node --version)" = "v22.16.0"
+      - run: test "$(npm --version)" = "10.9.2"
+      - run: test -f package-lock.json
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+        env: {MIQO_DATA_CLASSIFICATION: SYNTHETIC, MIQO_LIVE_PROVIDERS_ENABLED: "false"}
+      - run: npm run test:invariants
+      - run: npm run test:sprint1
+      - run: npm run test:sprint1:persisted
+      - run: npm run smoke:domain
+      - run: npm run build
+
+  postgres-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_DB: miqo, POSTGRES_USER: miqo, POSTGRES_PASSWORD: miqo}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U miqo -d miqo"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env: {PGPASSWORD: miqo}
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0001_walking_skeleton.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
+
+  target-stack-sprint1:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_DB: miqo, POSTGRES_USER: miqo, POSTGRES_PASSWORD: miqo}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U miqo -d miqo"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://miqo:miqo@127.0.0.1:5432/miqo
+      PGPASSWORD: miqo
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22.16.0, cache: npm}
+      - run: test -f package-lock.json && npm ci
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: npm run verify:boundary
+      - run: npm run db:migrate
+      - run: npm run db:seed:syn001
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
+      - run: npm run test:api:postgres
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test -c playwright.target.config.ts
+      - run: npm run build
