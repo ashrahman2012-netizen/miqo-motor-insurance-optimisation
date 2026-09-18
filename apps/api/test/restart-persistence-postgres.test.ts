@@ -50,6 +50,10 @@ async function createFullSprint2Chain(app:any){
   assert.equal(generatedResponse.statusCode,201);
   const generated=JSON.parse(generatedResponse.body);
   const scenario=generated.items[0];
+  const frozenPreferences=JSON.parse((await app.inject({
+    method:"GET",
+    url:"/profile-versions/"+profile.versionId+"/optimisation-preferences",
+  })).body);
 
   const preparedResponse=await app.inject({
     method:"POST",
@@ -73,7 +77,7 @@ async function createFullSprint2Chain(app:any){
   assert.equal(normalisedResponse.statusCode,201);
   const normalised=JSON.parse(normalisedResponse.body);
 
-  return {profile,preferences,generated,scenario,prepared,executed,normalised};
+  return {profile,preferences:frozenPreferences,generated,scenario,prepared,executed,normalised};
 }
 
 test("SP2 full persisted chain survives API restart with identical lineage, hashes and values",async()=>{
