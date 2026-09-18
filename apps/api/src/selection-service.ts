@@ -221,6 +221,10 @@ export async function getSelection(db:MiqoDatabase,selectionId:string){
     .where(eq(finalIntegrityResult.selectionId,selectionId)).limit(1))[0];
   const completion=(await db.select().from(prototypeCompletion)
     .where(eq(prototypeCompletion.selectionId,selectionId)).limit(1))[0];
+  const quote=(await db.select().from(normalisedQuote)
+    .where(eq(normalisedQuote.normalisedQuoteId,row.normalisedQuoteId)).limit(1))[0];
+  const request=(await db.select().from(quoteRequest)
+    .where(eq(quoteRequest.quoteRequestId,row.quoteRequestId)).limit(1))[0];
   return {
     selectionId:row.selectionId,
     shortlistId:row.shortlistId,
@@ -230,6 +234,16 @@ export async function getSelection(db:MiqoDatabase,selectionId:string){
     riskProfileVersionId:row.riskProfileVersionId,
     status:row.status,
     selectedAt:row.selectedAt,
+    selectedQuote:{
+      providerKey:request.providerKey,
+      annualCashPremiumPence:quote.annualCashPremiumPence,
+      financeCostPence:quote.financeCostPence,
+      compulsoryExcessPence:quote.compulsoryExcessPence,
+      voluntaryExcessPence:quote.voluntaryExcessPence,
+      comparisonState:quote.comparisonState,
+      comparisonReason:quote.comparisonReason,
+      normalisationVersion:quote.normalisationVersion,
+    },
     finalIntegrity:integrity?{
       finalIntegrityResultId:integrity.finalIntegrityResultId,
       ruleVersion:integrity.integrityRuleVersion,
