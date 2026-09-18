@@ -7,26 +7,7 @@ VALUES
   ('OPT-PG-001','RPV-PG-001-V2','voluntary_excess','{"min":250,"max":500}'::jsonb),
   ('OPT-PG-002','RPV-PG-001-V2','payment_structure','"ANNUAL"'::jsonb);
 
-UPDATE optimisation_preference
-SET frozen_at=now()
-WHERE risk_profile_version_id='RPV-PG-001-V2';
-
-INSERT INTO scenario
-  (scenario_id,risk_profile_version_id,optimisation_preference_id,generation_version,generated_at,preference_snapshot_json,generation_fingerprint,generation_ordinal,status)
-VALUES
-  ('SCN-SP2-PG-001','RPV-PG-001-V2','OPT-PG-001','sp2-gen-v1',now(),
-   '{"payment_structure":"ANNUAL","voluntary_excess":{"min":250,"max":500}}'::jsonb,
-   'foundation-contract-fingerprint',1,'GENERATING');
-
-INSERT INTO scenario_delta
-  (scenario_delta_id,scenario_id,field_id,control_class,value_json)
-VALUES
-  ('SCD-SP2-PG-001','SCN-SP2-PG-001','voluntary_excess','O','500'::jsonb);
-
-UPDATE scenario
-SET status='GENERATED'
-WHERE scenario_id='SCN-SP2-PG-001';
-
+-- Foundation rejection proofs run before the set is frozen by scenario generation.
 DO $$
 BEGIN
   BEGIN
@@ -50,6 +31,26 @@ BEGIN
     IF position('OPTIMISATION_REQUIRES_LOCKED_PROFILE' in SQLERRM) = 0 THEN RAISE; END IF;
   END;
 END $$;
+
+UPDATE optimisation_preference
+SET frozen_at=now()
+WHERE risk_profile_version_id='RPV-PG-001-V2';
+
+INSERT INTO scenario
+  (scenario_id,risk_profile_version_id,optimisation_preference_id,generation_version,generated_at,preference_snapshot_json,generation_fingerprint,generation_ordinal,status)
+VALUES
+  ('SCN-SP2-PG-001','RPV-PG-001-V2','OPT-PG-001','sp2-gen-v1',now(),
+   '{"payment_structure":"ANNUAL","voluntary_excess":{"min":250,"max":500}}'::jsonb,
+   'foundation-contract-fingerprint',1,'GENERATING');
+
+INSERT INTO scenario_delta
+  (scenario_delta_id,scenario_id,field_id,control_class,value_json)
+VALUES
+  ('SCD-SP2-PG-001','SCN-SP2-PG-001','voluntary_excess','O','500'::jsonb);
+
+UPDATE scenario
+SET status='GENERATED'
+WHERE scenario_id='SCN-SP2-PG-001';
 
 DO $$
 BEGIN
