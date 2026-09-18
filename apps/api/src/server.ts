@@ -7,6 +7,7 @@ import { auditEvents, createCorrectionDraft, createPersistedScenario, createProf
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
 import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
 import { getPreparedQuoteRequest, listPreQuoteIntegritySignals, prepareQuoteRequest } from "./quote-service.ts";
+import { executePreparedQuoteRequest, getRawProviderResponse } from "./provider-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -57,6 +58,11 @@ export async function buildApp() {
     return reply.code(result.created?201:200).send(result);
   });
   app.get("/quote-requests/:quoteRequestId",async(req:any)=>getPreparedQuoteRequest(db,req.params.quoteRequestId));
+  app.post("/quote-requests/:quoteRequestId/execute",async(req:any,reply)=>{
+    const result=await executePreparedQuoteRequest(db,req.params.quoteRequestId);
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/quote-requests/:quoteRequestId/raw-response",async(req:any)=>getRawProviderResponse(db,req.params.quoteRequestId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));

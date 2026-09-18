@@ -106,6 +106,43 @@ export const quoteRequest = pgTable("quote_request", {
   check("quote_request_synthetic_channel", sql`${t.channelKey} = 'DIRECT_SYNTHETIC'`),
 ]);
 
+export const rawProviderResponse = pgTable("raw_provider_response", {
+  rawProviderResponseId: text("raw_provider_response_id").primaryKey(),
+  quoteRequestId: text("quote_request_id").notNull().references(() => quoteRequest.quoteRequestId),
+  payloadJson: jsonb("payload_json").notNull(),
+  payloadText: text("payload_text"),
+  payloadSha256: text("payload_sha256"),
+  providerReference: text("provider_reference"),
+  providerResponseAt: timestamp("provider_response_at", {withTimezone:true}),
+  receivedAt: timestamp("received_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_raw_provider_response_quote_request").on(t.quoteRequestId),
+  check("raw_provider_payload_sha256_format", sql`${t.payloadSha256} IS NULL OR ${t.payloadSha256} ~ '^[0-9a-f]{64}
+  integritySignalId: text("integrity_signal_id").primaryKey(),
+  stage: text("stage").notNull(),
+  ruleId: text("rule_id").notNull(),
+  riskProfileVersionId: text("risk_profile_version_id").references(() => riskProfileVersion.riskProfileVersionId),
+  scenarioId: text("scenario_id").references(() => scenario.scenarioId),
+  normalisedQuoteId: text("normalised_quote_id"),
+  state: text("state").notNull(),
+  blocking: boolean("blocking").notNull().default(false),
+  evidenceJson: jsonb("evidence_json").notNull().default({}),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+});
+
+export const auditEvent = pgTable("audit_event", {
+  auditEventId: text("audit_event_id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  traceId: text("trace_id"),
+  metadataJson: jsonb("metadata_json").notNull().default({}),
+  occurredAt: timestamp("occurred_at", {withTimezone:true}).notNull().defaultNow(),
+});
+`),
+  check("raw_provider_payload_text_nonempty", sql`${t.payloadText} IS NULL OR length(${t.payloadText}) > 0`),
+]);
+
 export const integritySignal = pgTable("integrity_signal", {
   integritySignalId: text("integrity_signal_id").primaryKey(),
   stage: text("stage").notNull(),
