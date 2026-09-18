@@ -36,7 +36,7 @@ export async function getSelectionTrace(db:MiqoDatabase,selectionId:string){
     .where(eq(finalIntegrityResult.selectionId,selectionId)).limit(1))[0];
   const completion=(await db.select().from(prototypeCompletion)
     .where(eq(prototypeCompletion.selectionId,selectionId)).limit(1))[0];
-  const audit=await db.select().from(auditEvent).where(eq(auditEvent.traceId,version.profileId)).orderBy(asc(auditEvent.occurredAt));
+  const audit=await db.select().from(auditEvent).where(eq(auditEvent.traceId,version.profileId)).orderBy(asc(auditEvent.occurredAt),asc(auditEvent.auditEventId));
 
   return {
     profile:{profileId:version.profileId},
@@ -78,6 +78,7 @@ export async function getSelectionTrace(db:MiqoDatabase,selectionId:string){
       voluntaryExcessPence:quote.voluntaryExcessPence,
       comparisonState:quote.comparisonState,
       comparisonReason:quote.comparisonReason,
+      normalisationFingerprint:quote.normalisationFingerprint,
     },
     shortlist:{
       shortlistId:shortlistRow.shortlistId,
