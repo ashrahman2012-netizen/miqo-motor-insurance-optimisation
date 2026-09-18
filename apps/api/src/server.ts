@@ -4,6 +4,7 @@ import cors from "@fastify/cors";
 import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
 import { ConflictError, ValidationError } from "./errors.ts";
 import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
+import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -29,6 +30,16 @@ export async function buildApp() {
     return putFact(db,{profileId:v.profileId,fieldId:req.params.fieldId,value:(req.body as any).value,controlClass:"F"});
   });
   app.post("/profile-versions/:versionId/scenarios",async(req:any,reply)=>reply.code(201).send(await createPersistedScenario(db,{versionId:req.params.versionId,deltas:(req.body as any).deltas??[]})));
+  app.post("/profile-versions/:versionId/optimisation-preferences",{
+    schema:{body:{type:"object",additionalProperties:false,minProperties:1,properties:{
+      voluntary_excess:{type:"integer",minimum:0},
+      payment_structure:{type:"string",enum:["ANNUAL","MONTHLY"]},
+      policy_start_date:{type:"string",format:"date"},
+      telematics_preference:{type:"boolean"},
+      genuine_named_driver_inclusion:{type:"array",uniqueItems:true,items:{type:"string",minLength:1}},
+    }}},
+  },async(req:any,reply)=>reply.code(200).send(await saveOptimisationPreferences(db,{versionId:req.params.versionId,preferences:req.body})));
+  app.get("/profile-versions/:versionId/optimisation-preferences",async(req:any)=>listOptimisationPreferences(db,req.params.versionId));
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
@@ -37,6 +48,7 @@ export async function buildApp() {
   app.setErrorHandler((error:any,_req,reply)=>{
     if(error instanceof ConflictError)return reply.code(409).send({error:error.message});
     if(error instanceof ValidationError)return reply.code(422).send({error:error.message,issues:error.issues});
+    if(error?.validation)return reply.code(422).send({error:"INVALID_OPTIMISATION_PREFERENCE",issues:error.validation.map((item:any)=>item.message)});
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
     if(String(error?.message??error).includes("LOCKED_PROFILE_IMMUTABLE"))return reply.code(409).send({error:"LOCKED_PROFILE_IMMUTABLE"});
     app.log.error(error); return reply.code(500).send({error:"internal_error",message:String(error?.message??error)});
