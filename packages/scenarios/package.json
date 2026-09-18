@@ -2,5 +2,8 @@
   "name": "@miqo/scenarios",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts"
+  },
   "version": "0.1.0"
 }

@@ -1,0 +1,75 @@
+\set ON_ERROR_STOP on
+
+-- Runs after Sprint 1 and Sprint 2 foundation contracts.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='optimisation_preference' AND column_name='frozen_at'
+  ) THEN RAISE EXCEPTION 'TEST_FAILURE_FROZEN_AT_MISSING'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='scenario' AND column_name='generation_fingerprint'
+  ) THEN RAISE EXCEPTION 'TEST_FAILURE_GENERATION_FINGERPRINT_MISSING'; END IF;
+END $$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO scenario(scenario_id,risk_profile_version_id,status)
+    VALUES('SCN-SP2-UNKNOWN-O','RPV-PG-001-V2','READY');
+    INSERT INTO scenario_delta(scenario_delta_id,scenario_id,field_id,control_class,value_json)
+    VALUES('SCD-SP2-UNKNOWN-O','SCN-SP2-UNKNOWN-O','annual_mileage','O','6000'::jsonb);
+    RAISE EXCEPTION 'TEST_FAILURE_DISGUISED_FACTUAL_DELTA_ALLOWED';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+END $$;
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE scenario SET generation_version='tampered' WHERE scenario_id='SCN-SP2-PG-001';
+    RAISE EXCEPTION 'TEST_FAILURE_GENERATED_SCENARIO_UPDATE_ALLOWED';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='TEST_FAILURE_GENERATED_SCENARIO_UPDATE_ALLOWED' THEN RAISE; END IF;
+    IF position('GENERATED_SCENARIO_IMMUTABLE' in SQLERRM)=0 THEN RAISE; END IF;
+  END;
+END $$;
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE scenario_delta SET value_json='999'::jsonb WHERE scenario_id='SCN-SP2-PG-001';
+    RAISE EXCEPTION 'TEST_FAILURE_GENERATED_DELTA_UPDATE_ALLOWED';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='TEST_FAILURE_GENERATED_DELTA_UPDATE_ALLOWED' THEN RAISE; END IF;
+    IF position('GENERATED_SCENARIO_IMMUTABLE' in SQLERRM)=0 THEN RAISE; END IF;
+  END;
+END $$;
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE optimisation_preference SET value_json='750'::jsonb WHERE optimisation_preference_id='OPT-PG-001';
+    RAISE EXCEPTION 'TEST_FAILURE_FROZEN_PREFERENCE_UPDATE_ALLOWED';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='TEST_FAILURE_FROZEN_PREFERENCE_UPDATE_ALLOWED' THEN RAISE; END IF;
+    IF position('PREFERENCE_SET_FROZEN_BY_SCENARIO' in SQLERRM)=0 THEN RAISE; END IF;
+  END;
+END $$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO optimisation_preference
+      (optimisation_preference_id,risk_profile_version_id,preference_key,value_json)
+    VALUES ('OPT-PG-AFTER-FREEZE','RPV-PG-001-V2','telematics_preference','true'::jsonb);
+    RAISE EXCEPTION 'TEST_FAILURE_PREFERENCE_INSERT_AFTER_FREEZE_ALLOWED';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM='TEST_FAILURE_PREFERENCE_INSERT_AFTER_FREEZE_ALLOWED' THEN RAISE; END IF;
+    IF position('PREFERENCE_SET_FROZEN_BY_SCENARIO' in SQLERRM)=0 THEN RAISE; END IF;
+  END;
+END $$;
+
+SELECT 'POSTGRES_SPRINT2_SCENARIO_CONTRACT_PASS' AS result;

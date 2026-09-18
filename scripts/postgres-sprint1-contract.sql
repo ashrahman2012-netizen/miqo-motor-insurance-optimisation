@@ -144,23 +144,89 @@ BEGIN
   IF tx_status <> 'DRAFT' THEN RAISE EXCEPTION 'TEST_FAILURE_LOCK_AUDIT_NOT_ATOMIC'; END IF;
 END $$;
 
--- A new current quote run must reference a scenario based on the current locked version.
-INSERT INTO scenario (scenario_id,risk_profile_version_id,status)
-VALUES ('SCN-PG-002','RPV-PG-001-V2','READY');
-INSERT INTO scenario_delta
-(scenario_delta_id,scenario_id,field_id,control_class,value_json)
-VALUES ('SCD-PG-V2','SCN-PG-002','voluntary_excess','O','500'::jsonb);
+-- A new current quote run must reference a scenario based on a locked version.
+-- The Sprint 1-only schema uses the original READY fixture. When later Sprint 2
+-- pre-quote guards are present, use an isolated forward-compatible synthetic
+-- profile so Sprint 1's raw/normalised separation proof does not freeze or alter
+-- the RPV-PG-001-V2 state used by Sprint 2 contracts.
+SELECT EXISTS (
+  SELECT 1 FROM information_schema.columns
+  WHERE table_name='quote_request' AND column_name='channel_key'
+) AS sp2_prequote_schema \gset
+
+\if :sp2_prequote_schema
+  INSERT INTO profile (profile_id,customer_id)
+  VALUES ('PRO-PG-QUOTE','CUS-PG-001');
+  INSERT INTO risk_profile_version (risk_profile_version_id,profile_id,version_no,status)
+  VALUES ('RPV-PG-QUOTE-V1','PRO-PG-QUOTE',1,'DRAFT');
+
+  INSERT INTO canonical_field_value
+    (canonical_field_value_id,risk_profile_version_id,field_id,control_class,value_json,source_type)
+  VALUES
+    ('CFV-PG-QUOTE-A','RPV-PG-QUOTE-V1','main_driver_id','F','"DRV-PG-QUOTE"'::jsonb,'contract_fixture'),
+    ('CFV-PG-QUOTE-B','RPV-PG-QUOTE-V1','annual_mileage','F','8000'::jsonb,'contract_fixture'),
+    ('CFV-PG-QUOTE-C','RPV-PG-QUOTE-V1','licence_held_since','F','"2018-04-16"'::jsonb,'contract_fixture');
+
+  UPDATE risk_profile_version
+  SET status='LOCKED',locked_at=now()
+  WHERE risk_profile_version_id='RPV-PG-QUOTE-V1';
+
+  INSERT INTO optimisation_preference
+    (optimisation_preference_id,risk_profile_version_id,preference_key,value_json,frozen_at)
+  VALUES
+    ('OPT-PG-SP1-QUOTE','RPV-PG-QUOTE-V1','voluntary_excess','500'::jsonb,now());
+
+  INSERT INTO scenario
+    (scenario_id,risk_profile_version_id,optimisation_preference_id,generation_version,generated_at,
+     preference_snapshot_json,generation_fingerprint,generation_ordinal,status)
+  VALUES
+    ('SCN-PG-002','RPV-PG-QUOTE-V1','OPT-PG-SP1-QUOTE','sp1-contract-forward-compat',now(),
+     '{"voluntary_excess":500}'::jsonb,'sp1-contract-forward-compat',1,'GENERATING');
+
+  INSERT INTO scenario_delta
+    (scenario_delta_id,scenario_id,field_id,control_class,value_json)
+  VALUES ('SCD-PG-V2','SCN-PG-002','voluntary_excess','O','500'::jsonb);
+
+  UPDATE scenario SET status='GENERATED' WHERE scenario_id='SCN-PG-002';
+
+  INSERT INTO quote_run (quote_run_id,risk_profile_version_id)
+  VALUES ('QR-PG-001','RPV-PG-QUOTE-V1');
+  INSERT INTO quote_request
+    (quote_request_id,quote_run_id,scenario_id,provider_key,channel_key,adapter_version,mapping_version,request_fingerprint)
+  VALUES
+    ('QREQ-PG-001','QR-PG-001','SCN-PG-002','MOCK-A','DIRECT_SYNTHETIC','1','1','sp1-contract-forward-compat');
+\else
+  INSERT INTO scenario (scenario_id,risk_profile_version_id,status)
+  VALUES ('SCN-PG-002','RPV-PG-001-V2','READY');
+  INSERT INTO scenario_delta
+    (scenario_delta_id,scenario_id,field_id,control_class,value_json)
+  VALUES ('SCD-PG-V2','SCN-PG-002','voluntary_excess','O','500'::jsonb);
+
+  INSERT INTO quote_run (quote_run_id,risk_profile_version_id)
+  VALUES ('QR-PG-001','RPV-PG-001-V2');
+  INSERT INTO quote_request
+    (quote_request_id,quote_run_id,scenario_id,provider_key,adapter_version,mapping_version)
+  VALUES ('QREQ-PG-001','QR-PG-001','SCN-PG-002','MOCK-A','1','1');
+\endif
 
 -- Prove raw and normalised quote stores are structurally separate and linked one-way.
-INSERT INTO quote_run (quote_run_id,risk_profile_version_id) VALUES ('QR-PG-001','RPV-PG-001-V2');
-INSERT INTO quote_request
-(quote_request_id,quote_run_id,scenario_id,provider_key,adapter_version,mapping_version)
-VALUES ('QREQ-PG-001','QR-PG-001','SCN-PG-002','MOCK-A','1','1');
 INSERT INTO raw_provider_response (raw_provider_response_id,quote_request_id,payload_json)
 VALUES ('RAW-PG-001','QREQ-PG-001','{"grossPremiumPence":74218}'::jsonb);
-INSERT INTO normalised_quote
-(normalised_quote_id,raw_provider_response_id,normalisation_version,annual_cash_premium_pence,finance_cost_pence,compulsory_excess_pence,voluntary_excess_pence,comparison_state)
-VALUES ('NOR-PG-001','RAW-PG-001','1',74218,0,25000,35000,'COMPARABLE');
+SELECT EXISTS (
+  SELECT 1 FROM pg_enum e
+  JOIN pg_type t ON t.oid=e.enumtypid
+  WHERE t.typname='comparison_state' AND e.enumlabel='DIRECTLY_COMPARABLE'
+) AS sp2_comparison_labels \gset
+
+\if :sp2_comparison_labels
+  INSERT INTO normalised_quote
+  (normalised_quote_id,raw_provider_response_id,normalisation_version,annual_cash_premium_pence,finance_cost_pence,compulsory_excess_pence,voluntary_excess_pence,comparison_state)
+  VALUES ('NOR-PG-001','RAW-PG-001','1',74218,0,25000,35000,'DIRECTLY_COMPARABLE');
+\else
+  INSERT INTO normalised_quote
+  (normalised_quote_id,raw_provider_response_id,normalisation_version,annual_cash_premium_pence,finance_cost_pence,compulsory_excess_pence,voluntary_excess_pence,comparison_state)
+  VALUES ('NOR-PG-001','RAW-PG-001','1',74218,0,25000,35000,'COMPARABLE');
+\endif
 
 DO $$
 DECLARE raw_count integer; norm_count integer;

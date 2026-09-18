@@ -3,6 +3,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { MiqoDatabase } from "../../../packages/db/src/client.ts";
 import { auditEvent, canonicalFieldValue, discrepancy, profile, riskProfileVersion, scenario, scenarioDelta, customer } from "../../../packages/db/src/schema.ts";
 import { createScenario, type ControlClass, type RiskProfileVersion } from "../../../packages/domain/src/model.ts";
+import { OPTIMISATION_PREFERENCE_KEYS } from "../../../packages/scenarios/src/model.ts";
 import { ConflictError, ValidationError } from "./errors.ts";
 
 const REQUIRED_FACTS = ["main_driver_id", "annual_mileage", "licence_held_since"] as const;
@@ -74,6 +75,9 @@ export async function loadRiskProfileVersion(db:MiqoDatabase,versionId:string):P
 }
 
 export async function createPersistedScenario(db:MiqoDatabase,args:{versionId:string;deltas:Array<{fieldId:string;controlClass:ControlClass;value:unknown}>}) {
+  const approved=new Set<string>(OPTIMISATION_PREFERENCE_KEYS);
+  const invalid=args.deltas.filter(delta=>delta.controlClass==="O" && !approved.has(delta.fieldId));
+  if(invalid.length) throw new ValidationError("INVALID_SCENARIO_DELTA",invalid.map(delta=>`${delta.fieldId} is not an approved O-class optimisation control`));
   const p=await loadRiskProfileVersion(db,args.versionId); const d=createScenario({id:uuid("SCN"),profileVersion:p,deltas:args.deltas});
   return db.transaction(async tx=>{
     await tx.insert(scenario).values({scenarioId:d.id,riskProfileVersionId:args.versionId,status:"READY"});
