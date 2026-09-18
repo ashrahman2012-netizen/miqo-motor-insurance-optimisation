@@ -65,11 +65,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          grep -qxF "install-strategy=nested" .npmrc || printf "\ninstall-strategy=nested\n" >> .npmrc
           rm -f package-lock.json
           npm install --ignore-scripts
           test -s package-lock.json
+          cp package-lock.json /tmp/package-lock.generated.json
           rm -rf node_modules apps/*/node_modules packages/*/node_modules
           npm ci --ignore-scripts
+          cmp package-lock.json /tmp/package-lock.generated.json
           git diff --exit-code package.json
 
       - name: Finalise execution branch
