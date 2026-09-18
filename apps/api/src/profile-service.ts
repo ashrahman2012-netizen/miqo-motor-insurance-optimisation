@@ -108,7 +108,7 @@ export async function profileSnapshot(db:MiqoDatabase,profileId:string) {
 }
 
 export async function auditEvents(db:MiqoDatabase,profileId:string) {
-  return db.select().from(auditEvent).where(eq(auditEvent.traceId,profileId)).orderBy(asc(auditEvent.occurredAt),asc(auditEvent.auditEventId));
+  return db.select().from(auditEvent).where(eq(auditEvent.traceId,profileId)).orderBy(asc(auditEvent.occurredAt));
 }
 
 export async function listDiscrepancies(db:MiqoDatabase,profileId:string) {
