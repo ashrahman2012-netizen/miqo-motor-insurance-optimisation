@@ -5,6 +5,7 @@ import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
 import { ConflictError, ValidationError } from "./errors.ts";
 import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
+import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -40,6 +41,11 @@ export async function buildApp() {
     }}},
   },async(req:any,reply)=>reply.code(200).send(await saveOptimisationPreferences(db,{versionId:req.params.versionId,preferences:req.body})));
   app.get("/profile-versions/:versionId/optimisation-preferences",async(req:any)=>listOptimisationPreferences(db,req.params.versionId));
+  app.post("/profile-versions/:versionId/scenarios/generate",async(req:any,reply)=>{
+    const result=await generateScenarios(db,{versionId:req.params.versionId});
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/profile-versions/:versionId/scenarios/generated",async(req:any)=>listGeneratedScenarios(db,req.params.versionId));
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));

@@ -71,6 +71,6 @@ export async function listOptimisationPreferences(db:MiqoDatabase,versionId:stri
   await loadRiskProfileVersion(db,versionId);
   const items=await db.select().from(optimisationPreference).where(eq(optimisationPreference.riskProfileVersionId,versionId)).orderBy(asc(optimisationPreference.preferenceKey));
   return {riskProfileVersionId:versionId,items:items.map(item=>({
-    preferenceId:item.optimisationPreferenceId,key:item.preferenceKey,value:item.valueJson,createdAt:item.createdAt,
+    preferenceId:item.optimisationPreferenceId,key:item.preferenceKey,value:item.valueJson,frozenAt:item.frozenAt,createdAt:item.createdAt,
   }))};
 }

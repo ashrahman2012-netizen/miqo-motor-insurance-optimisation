@@ -53,6 +53,7 @@ export const optimisationPreference = pgTable("optimisation_preference", {
   riskProfileVersionId: text("risk_profile_version_id").notNull().references(() => riskProfileVersion.riskProfileVersionId),
   preferenceKey: text("preference_key").notNull(),
   valueJson: jsonb("value_json").notNull(),
+  frozenAt: timestamp("frozen_at", {withTimezone:true}),
   createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
 }, t => [
   unique("uq_optimisation_preference_version_key").on(t.riskProfileVersionId,t.preferenceKey),
@@ -65,6 +66,9 @@ export const scenario = pgTable("scenario", {
   optimisationPreferenceId: text("optimisation_preference_id").references(() => optimisationPreference.optimisationPreferenceId),
   generationVersion: text("generation_version"),
   generatedAt: timestamp("generated_at", {withTimezone:true}),
+  preferenceSnapshotJson: jsonb("preference_snapshot_json"),
+  generationFingerprint: text("generation_fingerprint"),
+  generationOrdinal: integer("generation_ordinal"),
   status: text("status").notNull(),
   createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
 });
@@ -75,7 +79,10 @@ export const scenarioDelta = pgTable("scenario_delta", {
   fieldId: text("field_id").notNull(),
   controlClass: controlClass("control_class").notNull(),
   valueJson: jsonb("value_json").notNull(),
-}, t => [check("scenario_delta_o_only", sql`${t.controlClass} = 'O'`)]);
+}, t => [
+  check("scenario_delta_o_only", sql`${t.controlClass} = 'O'`),
+  check("scenario_delta_approved_o_field", sql`${t.fieldId} IN ('voluntary_excess','payment_structure','policy_start_date','telematics_preference','genuine_named_driver_inclusion')`),
+]);
 
 export const auditEvent = pgTable("audit_event", {
   auditEventId: text("audit_event_id").primaryKey(),

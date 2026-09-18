@@ -7,10 +7,16 @@ VALUES
   ('OPT-PG-001','RPV-PG-001-V2','voluntary_excess','{"min":250,"max":500}'::jsonb),
   ('OPT-PG-002','RPV-PG-001-V2','payment_structure','"ANNUAL"'::jsonb);
 
+UPDATE optimisation_preference
+SET frozen_at=now()
+WHERE risk_profile_version_id='RPV-PG-001-V2';
+
 INSERT INTO scenario
-  (scenario_id,risk_profile_version_id,optimisation_preference_id,generation_version,generated_at,status)
+  (scenario_id,risk_profile_version_id,optimisation_preference_id,generation_version,generated_at,preference_snapshot_json,generation_fingerprint,generation_ordinal,status)
 VALUES
-  ('SCN-SP2-PG-001','RPV-PG-001-V2','OPT-PG-001','sp2-gen-v1',now(),'GENERATED');
+  ('SCN-SP2-PG-001','RPV-PG-001-V2','OPT-PG-001','sp2-gen-v1',now(),
+   '{"payment_structure":"ANNUAL","voluntary_excess":{"min":250,"max":500}}'::jsonb,
+   'foundation-contract-fingerprint',1,'GENERATED');
 
 INSERT INTO scenario_delta
   (scenario_delta_id,scenario_id,field_id,control_class,value_json)
