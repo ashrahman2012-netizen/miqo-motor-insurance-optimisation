@@ -1,0 +1,45 @@
+{
+  "name": "miqo",
+  "private": true,
+  "version": "0.2.1",
+  "engines": {
+    "node": "22.16.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "verify:boundary": "node scripts/verify-prototype-boundary.mjs",
+    "test:invariants": "node --experimental-strip-types --test packages/domain/test/*.test.ts",
+    "smoke:domain": "node --experimental-strip-types scripts/walking-skeleton-smoke.ts",
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test:invariants && npm run test:sprint1 && npm run test --workspaces --if-present",
+    "test:sprint1": "node --experimental-strip-types --test packages/risk-profile/test/*.test.ts",
+    "test:sprint1:persisted": "node --experimental-strip-types --test apps/integration-harness/test/*.test.ts",
+    "test:sprint1:browser": "python scripts/browser-sprint1-acceptance.py",
+    "dev:harness": "node --experimental-strip-types apps/integration-harness/src/server.ts",
+    "test:e2e": "playwright test",
+    "seed:syn001": "node --experimental-strip-types scripts/seed-syn-001.ts",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "verify:pins": "node scripts/verify-dependency-pins.mjs",
+    "db:migrate": "node --experimental-strip-types scripts/migrate-postgres.ts",
+    "db:seed:syn001": "node --experimental-strip-types scripts/seed-postgres-syn-001.ts",
+    "dev:api": "npm run dev -w @miqo/api",
+    "dev:customer": "npm run dev -w @miqo/customer-web",
+    "dev:admin": "npm run dev -w @miqo/admin-web",
+    "test:api:postgres": "node --experimental-strip-types --test apps/api/test/*.test.ts",
+    "test:sp1:immutability": "node --experimental-strip-types --test apps/api/test/immutability-postgres.test.ts",
+    "test:e2e:target": "playwright test -c playwright.target.config.ts"
+  },
+  "type": "module",
+  "packageManager": "npm@10.9.2",
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "typescript": "5.9.2",
+    "vitest": "5.0.1"
+  }
+}
