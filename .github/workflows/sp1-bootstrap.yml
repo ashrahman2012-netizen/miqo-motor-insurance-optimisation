@@ -66,8 +66,9 @@ jobs:
         run: |
           set -euo pipefail
           rm -f package-lock.json
-          npm install --package-lock-only --ignore-scripts
+          npm install --ignore-scripts
           test -s package-lock.json
+          rm -rf node_modules apps/*/node_modules packages/*/node_modules
           npm ci --ignore-scripts
           git diff --exit-code package.json
 
