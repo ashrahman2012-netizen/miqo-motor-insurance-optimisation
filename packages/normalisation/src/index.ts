@@ -77,7 +77,7 @@ function notComparable(args:{payloadText:string;payloadSha256:string},comparison
     financeCostPence:null,
     compulsoryExcessPence:null,
     voluntaryExcessPence:null,
-  };
+  } as const;
   const normalisationFingerprint=createHash("sha256").update(JSON.stringify({
     rawPayloadSha256:args.payloadSha256,
     ...output,
