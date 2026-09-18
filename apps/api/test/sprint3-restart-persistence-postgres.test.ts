@@ -117,9 +117,9 @@ function stableAudit(items:any[]){
   }));
 }
 
-function assertRequiredAuditEvents(items:any[]){
+function assertOrderedLifecycle(items:any[]){
   const types=items.map(item=>item.eventType);
-  for(const eventType of [
+  const expected=[
     "profile_created",
     "fact_saved",
     "profile_validated",
@@ -135,7 +135,13 @@ function assertRequiredAuditEvents(items:any[]){
     "quote_selected",
     "final_integrity_passed",
     "prototype_completed",
-  ]) assert.ok(types.includes(eventType),eventType+" missing from audit");
+  ];
+  let cursor=-1;
+  for(const eventType of expected){
+    const next=types.indexOf(eventType,cursor+1);
+    assert.ok(next>cursor,eventType+" missing or out of order");
+    cursor=next;
+  }
 }
 
 test("SP3 completed journey survives API restart with exact selection integrity completion trace and audit",async()=>{
@@ -149,7 +155,7 @@ test("SP3 completed journey survives API restart with exact selection integrity 
   assert.equal(before.selection.completion.status,"PROTOTYPE_JOURNEY_COMPLETE");
   assert.equal(before.selection.completion.dataClassification,"SYNTHETIC");
   assert.equal(before.selection.completion.liveProviderActivity,"DISABLED");
-  assertRequiredAuditEvents(before.audit.items);
+  assertOrderedLifecycle(before.audit.items);
 
   await app.close();
   app=await buildApp();
@@ -220,7 +226,7 @@ test("SP3 completed journey survives API restart with exact selection integrity 
   assert.deepEqual(afterTrace.optimisationPreferences,before.trace.optimisationPreferences);
   assert.deepEqual(stableAudit(afterTrace.audit),stableAudit(before.trace.audit));
   assert.deepEqual(stableAudit(afterAudit.items),stableAudit(before.audit.items));
-  assertRequiredAuditEvents(afterAudit.items);
+  assertOrderedLifecycle(afterAudit.items);
 
   const replayShortlist=JSON.parse((await app.inject({
     method:"POST",

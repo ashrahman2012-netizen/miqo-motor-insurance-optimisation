@@ -1,7 +1,6 @@
 import {asc,eq} from "drizzle-orm";
 import type {MiqoDatabase} from "../../../packages/db/src/client.ts";
 import {
-  auditEvent,
   finalIntegrityResult,
   normalisedQuote,
   optimisationPreference,
@@ -16,6 +15,7 @@ import {
   shortlist,
 } from "../../../packages/db/src/schema.ts";
 import {ValidationError} from "./errors.ts";
+import {auditEvents} from "./profile-service.ts";
 
 export async function getSelectionTrace(db:MiqoDatabase,selectionId:string){
   const selected=(await db.select().from(selection).where(eq(selection.selectionId,selectionId)).limit(1))[0];
@@ -36,7 +36,7 @@ export async function getSelectionTrace(db:MiqoDatabase,selectionId:string){
     .where(eq(finalIntegrityResult.selectionId,selectionId)).limit(1))[0];
   const completion=(await db.select().from(prototypeCompletion)
     .where(eq(prototypeCompletion.selectionId,selectionId)).limit(1))[0];
-  const audit=await db.select().from(auditEvent).where(eq(auditEvent.traceId,version.profileId)).orderBy(asc(auditEvent.occurredAt));
+  const audit=await auditEvents(db,version.profileId);
 
   return {
     profile:{profileId:version.profileId},
