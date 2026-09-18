@@ -1,0 +1,40 @@
+{
+  "classification": "SYNTHETIC",
+  "fixtures": [
+    {
+      "id": "SYN-001",
+      "purpose": "Clean standard profile",
+      "expected": "END_TO_END_PASS"
+    },
+    {
+      "id": "SYN-002",
+      "purpose": "Licence F/V discrepancy",
+      "expected": "PRE_LOCK_REVIEW"
+    },
+    {
+      "id": "SYN-003",
+      "purpose": "Claims discrepancy",
+      "expected": "PRE_LOCK_BLOCK_OR_REVIEW"
+    },
+    {
+      "id": "SYN-004",
+      "purpose": "Named-driver optimisation",
+      "expected": "VALID_O_SCENARIOS"
+    },
+    {
+      "id": "SYN-005",
+      "purpose": "Provider timeout",
+      "expected": "PARTIAL_SUCCESS"
+    },
+    {
+      "id": "SYN-006",
+      "purpose": "Non-comparable quote",
+      "expected": "NON_COMPARABLE"
+    },
+    {
+      "id": "SYN-007",
+      "purpose": "Final integrity failure",
+      "expected": "FINAL_INTEGRITY_BLOCK"
+    }
+  ]
+}

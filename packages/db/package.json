@@ -1,0 +1,14 @@
+{
+  "name": "@miqo/db",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.10",
+    "@types/pg": "8.15.6"
+  },
+  "version": "0.1.0"
+}

@@ -1,0 +1,89 @@
+name: sp1-bootstrap
+
+on:
+  push:
+    branches:
+      - miqo/sp1-close-002
+    paths:
+      - "bootstrap/**"
+      - ".github/workflows/sp1-bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  reconstruct-and-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout execution branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct authoritative v0.2.1 archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > /tmp/miqo.b64
+          for i in 000 001 002 003 004 005 006; do cat "bootstrap/chunks4/${i}.b64" >> /tmp/miqo.b64; done
+          for i in 0 1 2 3; do cat "bootstrap/fixes/007-${i}.b64" >> /tmp/miqo.b64; done
+          for i in 0 1 2 3; do cat "bootstrap/fixes/008-${i}.b64" >> /tmp/miqo.b64; done
+          for i in 009 010 011; do cat "bootstrap/chunks4/${i}.b64" >> /tmp/miqo.b64; done
+          for i in 0 1 2 3; do cat "bootstrap/fixes/012-${i}.b64" >> /tmp/miqo.b64; done
+          for i in 013 014 015 016; do cat "bootstrap/chunks4/${i}.b64" >> /tmp/miqo.b64; done
+
+          test "$(wc -c < /tmp/miqo.b64)" -eq 64140
+          base64 -d /tmp/miqo.b64 > /tmp/miqo-src.tar.gz
+          echo "d2bffebe9a29c452dad4938e2197ab9028256a136dceb0f8f4e095a19e73b466  /tmp/miqo-src.tar.gz" | sha256sum -c -
+
+          rm -rf /tmp/miqo-src
+          mkdir -p /tmp/miqo-src
+          tar -xzf /tmp/miqo-src.tar.gz -C /tmp/miqo-src
+          test -f /tmp/miqo-src/miqo/package.json
+          test -f /tmp/miqo-src/miqo/.github/workflows/ci.yml
+          test -f /tmp/miqo-src/miqo/packages/db/migrations/0001_walking_skeleton.sql
+
+      - name: Synchronise authoritative source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --delete             --exclude=".git/"             --exclude=".github/workflows/sp1-bootstrap.yml"             --exclude="bootstrap/"             /tmp/miqo-src/miqo/ ./
+
+      - name: Pin Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+
+      - name: Verify Node and npm
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = "v22.16.0"
+          test "$(npm --version)" = "10.9.2"
+
+      - name: Generate authentic root lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qxF "install-strategy=nested" .npmrc || printf "\ninstall-strategy=nested\n" >> .npmrc
+          rm -f package-lock.json
+          npm install --ignore-scripts
+          test -s package-lock.json
+          cp package-lock.json /tmp/package-lock.generated.json
+          rm -rf node_modules apps/*/node_modules packages/*/node_modules
+          npm ci --ignore-scripts
+          cmp package-lock.json /tmp/package-lock.generated.json
+          git diff --exit-code package.json
+
+      - name: Finalise execution branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf bootstrap
+          rm -f .github/workflows/ci.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status --short
+          git commit -m "SP1 CLOSE 002: synchronise v0.2.1 and lock dependencies"
+          git push origin HEAD:miqo/sp1-close-002
