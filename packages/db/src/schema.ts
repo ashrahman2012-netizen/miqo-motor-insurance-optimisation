@@ -160,6 +160,69 @@ export const normalisedQuote = pgTable("normalised_quote", {
   uniqueIndex("uq_normalised_quote_fingerprint").on(t.normalisationFingerprint),
 ]);
 
+export const shortlist = pgTable("shortlist", {
+  shortlistId: text("shortlist_id").primaryKey(),
+  riskProfileVersionId: text("risk_profile_version_id").notNull().references(() => riskProfileVersion.riskProfileVersionId),
+  comparisonRuleVersion: text("comparison_rule_version").notNull(),
+  comparisonFingerprint: text("comparison_fingerprint").notNull(),
+  generatedAt: timestamp("generated_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_shortlist_version_fingerprint").on(t.riskProfileVersionId,t.comparisonFingerprint),
+]);
+
+export const shortlistEntry = pgTable("shortlist_entry", {
+  shortlistEntryId: text("shortlist_entry_id").primaryKey(),
+  shortlistId: text("shortlist_id").notNull().references(() => shortlist.shortlistId),
+  normalisedQuoteId: text("normalised_quote_id").notNull().references(() => normalisedQuote.normalisedQuoteId),
+  ordinal: integer("ordinal").notNull(),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  unique("uq_shortlist_entry_quote").on(t.shortlistId,t.normalisedQuoteId),
+  unique("uq_shortlist_entry_ordinal").on(t.shortlistId,t.ordinal),
+  check("shortlist_entry_ordinal_positive", sql`${t.ordinal} > 0`),
+]);
+
+export const selection = pgTable("selection", {
+  selectionId: text("selection_id").primaryKey(),
+  shortlistId: text("shortlist_id").notNull().references(() => shortlist.shortlistId),
+  normalisedQuoteId: text("normalised_quote_id").notNull().references(() => normalisedQuote.normalisedQuoteId),
+  scenarioId: text("scenario_id").notNull().references(() => scenario.scenarioId),
+  quoteRequestId: text("quote_request_id").notNull().references(() => quoteRequest.quoteRequestId),
+  riskProfileVersionId: text("risk_profile_version_id").notNull().references(() => riskProfileVersion.riskProfileVersionId),
+  status: text("status").notNull(),
+  selectedAt: timestamp("selected_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_selection_shortlist").on(t.shortlistId),
+  check("selection_status_allowed", sql`${t.status} IN ('ACCEPTED','BLOCKED')`),
+]);
+
+export const finalIntegrityResult = pgTable("final_integrity_result", {
+  finalIntegrityResultId: text("final_integrity_result_id").primaryKey(),
+  selectionId: text("selection_id").notNull().references(() => selection.selectionId),
+  integrityRuleVersion: text("integrity_rule_version").notNull(),
+  outcome: text("outcome").notNull(),
+  evidenceJson: jsonb("evidence_json").notNull().default({}),
+  evaluatedAt: timestamp("evaluated_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_final_integrity_selection").on(t.selectionId),
+  check("final_integrity_outcome_allowed", sql`${t.outcome} IN ('PASS','BLOCKED')`),
+]);
+
+export const prototypeCompletion = pgTable("prototype_completion", {
+  prototypeCompletionId: text("prototype_completion_id").primaryKey(),
+  selectionId: text("selection_id").notNull().references(() => selection.selectionId),
+  profileId: text("profile_id").notNull().references(() => profile.profileId),
+  status: text("status").notNull(),
+  dataClassification: text("data_classification").notNull(),
+  liveProviderActivity: text("live_provider_activity").notNull(),
+  completedAt: timestamp("completed_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_prototype_completion_selection").on(t.selectionId),
+  check("prototype_completion_status", sql`${t.status} = 'PROTOTYPE_JOURNEY_COMPLETE'`),
+  check("prototype_completion_synthetic", sql`${t.dataClassification} = 'SYNTHETIC'`),
+  check("prototype_completion_live_disabled", sql`${t.liveProviderActivity} = 'DISABLED'`),
+]);
+
 export const integritySignal = pgTable("integrity_signal", {
   integritySignalId: text("integrity_signal_id").primaryKey(),
   stage: text("stage").notNull(),

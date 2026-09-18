@@ -11,3 +11,13 @@ export class PreQuoteIntegrityError extends ConflictError {
     this.signals=signals;
   }
 }
+
+export class FinalIntegrityError extends ConflictError {
+  readonly selectionId:string;
+  readonly signals:ReadonlyArray<Readonly<{ruleId:string;evidence:Readonly<Record<string,unknown>>}>>;
+  constructor(selectionId:string,signals:ReadonlyArray<Readonly<{ruleId:string;evidence:Readonly<Record<string,unknown>>}>>) {
+    super("FINAL_INTEGRITY_BLOCKED");
+    this.selectionId=selectionId;
+    this.signals=signals;
+  }
+}

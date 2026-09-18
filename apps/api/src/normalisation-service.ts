@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { asc, eq, sql } from "drizzle-orm";
 import type { MiqoDatabase } from "../../../packages/db/src/client.ts";
-import { auditEvent, normalisedQuote, rawProviderResponse } from "../../../packages/db/src/schema.ts";
+import { auditEvent, normalisedQuote, quoteRequest, quoteRun, rawProviderResponse, riskProfileVersion } from "../../../packages/db/src/schema.ts";
 import { NORMALISATION_VERSION, normaliseMockProviderPayload } from "../../../packages/normalisation/src/index.ts";
 import { ValidationError } from "./errors.ts";
 
@@ -50,11 +50,15 @@ export async function normaliseRawProviderResponse(db:MiqoDatabase,rawProviderRe
       comparisonReason:derived.comparisonReason,
       normalisationFingerprint:derived.normalisationFingerprint,
     });
+    const request=(await tx.select().from(quoteRequest).where(eq(quoteRequest.quoteRequestId,raw.quoteRequestId)).limit(1))[0];
+    const run=(await tx.select().from(quoteRun).where(eq(quoteRun.quoteRunId,request.quoteRunId)).limit(1))[0];
+    const version=(await tx.select().from(riskProfileVersion).where(eq(riskProfileVersion.riskProfileVersionId,run.riskProfileVersionId)).limit(1))[0];
     await tx.insert(auditEvent).values({
       auditEventId:uuid("AUD"),
       eventType:"provider_response_normalised",
       entityType:"normalised_quote",
       entityId:normalisedQuoteId,
+      traceId:version.profileId,
       metadataJson:{
         rawProviderResponseId,
         normalisationVersion:derived.normalisationVersion,

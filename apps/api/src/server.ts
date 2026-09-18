@@ -2,13 +2,16 @@ import Fastify from "fastify";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
-import { ConflictError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
+import { ConflictError, FinalIntegrityError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
 import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
 import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
 import { getPreparedQuoteRequest, listPreQuoteIntegritySignals, prepareQuoteRequest } from "./quote-service.ts";
 import { executePreparedQuoteRequest, getRawProviderResponse } from "./provider-service.ts";
 import { listNormalisedQuotes, normaliseRawProviderResponse } from "./normalisation-service.ts";
+import { createShortlist, getShortlist } from "./comparison-service.ts";
+import { getSelection, selectShortlistedQuote } from "./selection-service.ts";
+import { getSelectionTrace } from "./trace-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -69,13 +72,29 @@ export async function buildApp() {
     return reply.code(result.created?201:200).send(result);
   });
   app.get("/raw-provider-responses/:rawProviderResponseId/normalised-quotes",async(req:any)=>listNormalisedQuotes(db,req.params.rawProviderResponseId));
+  app.post("/profile-versions/:versionId/shortlists",async(req:any,reply)=>{
+    const result=await createShortlist(db,req.params.versionId);
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/shortlists/:shortlistId",async(req:any)=>getShortlist(db,req.params.shortlistId));
+  app.post("/shortlists/:shortlistId/selections",{
+    schema:{body:{type:"object",additionalProperties:false,required:["normalisedQuoteId"],properties:{
+      normalisedQuoteId:{type:"string",minLength:1},
+    }}},
+  },async(req:any,reply)=>reply.code(201).send(await selectShortlistedQuote(db,{
+    shortlistId:req.params.shortlistId,
+    normalisedQuoteId:req.body.normalisedQuoteId,
+  })));
+  app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
   app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
+  app.get("/admin/selections/:selectionId/trace",async(req:any)=>getSelectionTrace(db,req.params.selectionId));
 
   app.setErrorHandler((error:any,req:any,reply)=>{
+    if(error instanceof FinalIntegrityError)return reply.code(409).send({error:error.message,selectionId:error.selectionId,signals:error.signals});
     if(error instanceof PreQuoteIntegrityError)return reply.code(409).send({error:error.message,signals:error.signals});
     if(error instanceof ConflictError)return reply.code(409).send({error:error.message});
     if(error instanceof ValidationError)return reply.code(422).send({error:error.message,issues:error.issues});

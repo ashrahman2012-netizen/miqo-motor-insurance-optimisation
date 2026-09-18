@@ -23,6 +23,8 @@ jobs:
       - run: npm run test:sprint1:persisted
       - run: npm run test -w @miqo/mock-providers
       - run: npm run test -w @miqo/normalisation
+      - run: npm run test -w @miqo/comparison
+      - run: npm run test -w @miqo/integrity
       - run: npm run smoke:domain
       - run: npm run build
 
@@ -46,12 +48,14 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0004_prequote_integrity.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0005_mock_provider_raw_capture.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0006_quote_normalisation.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0007_selection_final_integrity.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-foundation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-scenario-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-prequote-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-raw-provider-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-normalisation-contract.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint3-selection-contract.sql
 
   target-stack-sprint1:
     runs-on: ubuntu-latest
