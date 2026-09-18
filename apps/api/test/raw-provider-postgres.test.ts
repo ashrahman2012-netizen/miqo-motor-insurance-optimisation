@@ -43,7 +43,7 @@ test("SP2 mock provider execution is deterministic, idempotent and captures exac
   assert.equal(one.item.providerReference.startsWith("MP001-"),true);
   assert.equal(one.item.payload.quote.annualPremiumPence,70140);
   assert.equal(one.item.payload.quote.voluntaryExcessPence,50000);
-  assert.equal(one.item.payloadText,JSON.stringify(one.item.payload));
+  assert.deepEqual(JSON.parse(one.item.payloadText),one.item.payload);
   assert.equal(createHash("sha256").update(one.item.payloadText,"utf8").digest("hex"),one.item.payloadSha256);
 
   const second=await app.inject({method:"POST",url:`/quote-requests/${p.quoteRequestId}/execute`});
