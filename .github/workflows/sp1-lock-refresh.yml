@@ -1,0 +1,50 @@
+name: sp1-lock-refresh
+
+on:
+  push:
+    branches:
+      - miqo/sp1-close-002
+    paths:
+      - "package.json"
+      - "packages/*/package.json"
+      - "apps/*/package.json"
+      - ".npmrc"
+      - ".github/workflows/sp1-lock-refresh.yml"
+      - "SP1-LOCK-REFRESH-TRIGGER.md"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-and-prove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Generate deterministic lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f package-lock.json
+          npm install --ignore-scripts
+          test -s package-lock.json
+          cp package-lock.json /tmp/package-lock.generated.json
+          git diff --exit-code package.json .npmrc
+          for f in apps/*/package.json packages/*/package.json; do git diff --exit-code "$f"; done
+          rm -rf node_modules apps/*/node_modules packages/*/node_modules
+          npm ci --ignore-scripts
+          cmp package-lock.json /tmp/package-lock.generated.json
+      - name: Commit refreshed lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git diff --cached --quiet && exit 0
+          git commit -m "SP1 CLOSE 002: refresh deterministic dependency lock"
+          git push origin HEAD:miqo/sp1-close-002
