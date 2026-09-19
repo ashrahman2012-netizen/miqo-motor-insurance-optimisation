@@ -230,3 +230,159 @@ export function analyseSprint4Recommendations(args:Readonly<{
     excluded:Object.freeze(excluded.map(item=>Object.freeze(item))),
   });
 }
+
+export const SP4_EXPLAINABILITY_RULE_VERSION="sp4-explainability-v1";
+
+export type OptimisationExplanationClassification=
+  | "FIXED"
+  | "CONTROLLABLE"
+  | "TIME_DEPENDENT"
+  | "PROVIDER_SPECIFIC";
+
+export type OptimisationExplanationInput=Readonly<{
+  fieldOrControl:string;
+  classification:OptimisationExplanationClassification;
+  source:string;
+  customerCanChange:boolean;
+  baselineValue:unknown;
+  scenarioValue:unknown;
+  quotedEffectIfObservable:unknown;
+  legitimacyReason:string;
+  providerChannelApplicability:Readonly<{
+    marketRouteId:string;
+    routeKey:string;
+    providerKey:string;
+    channelKey:string;
+    adapterVersion:string;
+    mappingVersion:string;
+  }>;
+}>;
+
+function stableExplainabilityValue(value:unknown):unknown{
+  if(Array.isArray(value))return value.map(stableExplainabilityValue);
+  if(value && typeof value==="object"){
+    return Object.fromEntries(
+      Object.entries(value as Record<string,unknown>)
+        .sort(([a],[b])=>a.localeCompare(b))
+        .map(([key,item])=>[key,stableExplainabilityValue(item)])
+    );
+  }
+  return value;
+}
+
+export function buildSprint4RecommendationExplanation(args:Readonly<{
+  recommendationSetId:string;
+  objectiveId:Sprint4ObjectiveId;
+  objectiveVersion:string;
+  catalogueVersion:string;
+  policyFingerprint:string;
+  recommendationRuleVersion:string;
+  recommendationFingerprint:string;
+  surfacedNormalisedQuoteId:string;
+  surfacedScenarioId:string;
+  surfacedMarketRouteId:string;
+  controls:ReadonlyArray<OptimisationExplanationInput>;
+  eligibleEvidence:ReadonlyArray<Readonly<{
+    normalisedQuoteId:string;
+    scenarioId:string;
+    marketRouteId:string;
+    ordinal:number;
+    objectiveMetric:string;
+    objectiveMetricValuePence:number;
+    evidenceFingerprint:string;
+  }>>;
+  excludedEvidence:ReadonlyArray<Readonly<{
+    normalisedQuoteId:string;
+    scenarioId:string;
+    marketRouteId:string;
+    exclusionReason:string;
+    evidenceFingerprint:string;
+  }>>;
+}>){
+  const controls=[...args.controls]
+    .map(item=>Object.freeze({
+      fieldOrControl:item.fieldOrControl,
+      classification:item.classification,
+      source:item.source,
+      customerCanChange:item.customerCanChange,
+      baselineValue:stableExplainabilityValue(item.baselineValue),
+      scenarioValue:stableExplainabilityValue(item.scenarioValue),
+      quotedEffectIfObservable:stableExplainabilityValue(item.quotedEffectIfObservable),
+      legitimacyReason:item.legitimacyReason,
+      providerChannelApplicability:stableExplainabilityValue(item.providerChannelApplicability),
+      ruleVersion:SP4_EXPLAINABILITY_RULE_VERSION,
+    }))
+    .sort((a,b)=>a.fieldOrControl.localeCompare(b.fieldOrControl));
+
+  const eligibleEvidence=[...args.eligibleEvidence]
+    .map(item=>({
+      normalisedQuoteId:item.normalisedQuoteId,
+      scenarioId:item.scenarioId,
+      marketRouteId:item.marketRouteId,
+      ordinal:item.ordinal,
+      objectiveMetric:item.objectiveMetric,
+      objectiveMetricValuePence:item.objectiveMetricValuePence,
+      evidenceFingerprint:item.evidenceFingerprint,
+    }))
+    .sort((a,b)=>a.ordinal-b.ordinal||a.normalisedQuoteId.localeCompare(b.normalisedQuoteId));
+
+  const excludedEvidence=[...args.excludedEvidence]
+    .map(item=>({
+      normalisedQuoteId:item.normalisedQuoteId,
+      scenarioId:item.scenarioId,
+      marketRouteId:item.marketRouteId,
+      exclusionReason:item.exclusionReason,
+      evidenceFingerprint:item.evidenceFingerprint,
+    }))
+    .sort((a,b)=>
+      a.exclusionReason.localeCompare(b.exclusionReason)
+      || a.normalisedQuoteId.localeCompare(b.normalisedQuoteId)
+    );
+
+  const surfaced=eligibleEvidence.find(item=>item.normalisedQuoteId===args.surfacedNormalisedQuoteId);
+  if(!surfaced)throw new Error("SP4_EXPLANATION_SURFACED_QUOTE_NOT_ELIGIBLE");
+
+  const materialReasons=Object.freeze([
+    Object.freeze({
+      code:"CUSTOMER_OBJECTIVE_APPLIED",
+      detail:`Recommendation ordering uses ${args.objectiveId} under ${args.recommendationRuleVersion}.`,
+    }),
+    Object.freeze({
+      code:"SURFACED_QUOTE_RANKED_FIRST",
+      detail:`Surfaced quote is ordinal ${surfaced.ordinal} using ${surfaced.objectiveMetric}=${surfaced.objectiveMetricValuePence} pence.`,
+    }),
+    Object.freeze({
+      code:"ELIGIBILITY_EVIDENCE_PRESERVED",
+      detail:`${eligibleEvidence.length} eligible and ${excludedEvidence.length} excluded quote evidence records are retained.`,
+    }),
+    Object.freeze({
+      code:"COMMERCIAL_INPUTS_EXCLUDED",
+      detail:"Provider commission, introducer remuneration, referral revenue and MIQO margin are not inputs to scenario generation, comparison eligibility, objective metrics or recommendation ordering.",
+    }),
+  ]);
+
+  const payload={
+    explanationRuleVersion:SP4_EXPLAINABILITY_RULE_VERSION,
+    recommendationSetId:args.recommendationSetId,
+    objectiveId:args.objectiveId,
+    objectiveVersion:args.objectiveVersion,
+    catalogueVersion:args.catalogueVersion,
+    policyFingerprint:args.policyFingerprint,
+    recommendationRuleVersion:args.recommendationRuleVersion,
+    recommendationFingerprint:args.recommendationFingerprint,
+    surfacedNormalisedQuoteId:args.surfacedNormalisedQuoteId,
+    surfacedScenarioId:args.surfacedScenarioId,
+    surfacedMarketRouteId:args.surfacedMarketRouteId,
+    controls,
+    eligibleEvidence,
+    excludedEvidence,
+    materialReasons,
+  };
+  const explanationFingerprint=recommendationHash(stableExplainabilityValue(payload));
+
+  return Object.freeze({
+    ...payload,
+    explanationFingerprint,
+  });
+}
+
