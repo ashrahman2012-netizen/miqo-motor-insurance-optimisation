@@ -16,6 +16,7 @@ import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCusto
 import { generateSprint4Scenarios, listSprint4ScenarioExplorations } from "./sprint4-scenario-service.ts";
 import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4MarketRouteQuotes } from "./sprint4-market-route-service.ts";
 import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
+import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -105,6 +106,18 @@ export async function buildApp() {
   });
   app.get("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/market-route-quotes",async(req:any)=>
     listSprint4MarketRouteQuotes(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    }));
+  app.post("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/recommendations",async(req:any,reply)=>{
+    const result=await createSprint4RecommendationSet(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/recommendations",async(req:any)=>
+    getSprint4RecommendationSet(db,{
       customerObjectiveId:req.params.customerObjectiveId,
       explorationFingerprint:req.params.explorationFingerprint,
     }));

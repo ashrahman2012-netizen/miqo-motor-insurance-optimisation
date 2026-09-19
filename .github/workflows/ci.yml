@@ -56,6 +56,7 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0009_sp4_multiscenario_generation.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0010_sp4_market_route_quotation.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0011_sp4_occupation_vehicle_integrity.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0012_sp4_recommendation.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-foundation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-scenario-contract.sql
@@ -67,6 +68,7 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-multiscenario-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-market-route-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-occupation-vehicle-contract.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-recommendation-contract.sql
 
   target-stack-sprint1:
     runs-on: ubuntu-latest

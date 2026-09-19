@@ -1,6 +1,6 @@
 import {sql} from "drizzle-orm";
-import {boolean,check,jsonb,pgTable,text,timestamp,unique} from "drizzle-orm/pg-core";
-import {customerObjective,optimisationCatalogueVersion,quoteRequest,riskProfileVersion,scenario} from "./schema.ts";
+import {boolean,check,integer,jsonb,pgTable,text,timestamp,unique} from "drizzle-orm/pg-core";
+import {customerObjective,normalisedQuote,optimisationCatalogueVersion,quoteRequest,riskProfileVersion,scenario} from "./schema.ts";
 
 export const sp4ScenarioLineage=pgTable("sp4_scenario_lineage",{
   scenarioId:text("scenario_id").primaryKey().references(()=>scenario.scenarioId),
@@ -110,4 +110,52 @@ export const candidateVehicle=pgTable("candidate_vehicle",{
 },t=>[
   check("candidate_vehicle_evidence_fingerprint_format",sql`${t.evidenceFingerprint} ~ '^[0-9a-f]{64}$'`),
   unique("uq_candidate_vehicle_profile").on(t.riskProfileVersionId,t.candidateVehicleId),
+]);
+
+
+export const recommendationSet=pgTable("recommendation_set",{
+  recommendationSetId:text("recommendation_set_id").primaryKey(),
+  customerObjectiveId:text("customer_objective_id").notNull().references(()=>customerObjective.customerObjectiveId),
+  riskProfileVersionId:text("risk_profile_version_id").notNull().references(()=>riskProfileVersion.riskProfileVersionId),
+  explorationFingerprint:text("exploration_fingerprint").notNull(),
+  objectiveId:text("objective_id").notNull(),
+  objectiveVersion:text("objective_version").notNull(),
+  catalogueVersion:text("catalogue_version").notNull().references(()=>optimisationCatalogueVersion.catalogueVersion),
+  policyFingerprint:text("policy_fingerprint").notNull(),
+  recommendationRuleVersion:text("recommendation_rule_version").notNull(),
+  recommendationFingerprint:text("recommendation_fingerprint").notNull().unique(),
+  surfacedNormalisedQuoteId:text("surfaced_normalised_quote_id").references(()=>normalisedQuote.normalisedQuoteId),
+  createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[
+  check("recommendation_set_exploration_fingerprint_format",sql`${t.explorationFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("recommendation_set_policy_fingerprint_format",sql`${t.policyFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("recommendation_set_fingerprint_format",sql`${t.recommendationFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("recommendation_set_rule_version",sql`${t.recommendationRuleVersion}='sp4-recommendation-v1'`),
+  check("recommendation_set_objective_allowed",sql`${t.objectiveId} IN ('LOWEST_ANNUAL_PREMIUM','LOWEST_MONTHLY_COMMITMENT','LOWEST_FINANCE_COST','LOWER_EXCESS_EXPOSURE')`),
+  unique("uq_recommendation_set_exploration").on(t.customerObjectiveId,t.explorationFingerprint,t.recommendationRuleVersion),
+]);
+
+export const recommendationQuoteEvidence=pgTable("recommendation_quote_evidence",{
+  recommendationQuoteEvidenceId:text("recommendation_quote_evidence_id").primaryKey(),
+  recommendationSetId:text("recommendation_set_id").notNull().references(()=>recommendationSet.recommendationSetId),
+  normalisedQuoteId:text("normalised_quote_id").notNull().references(()=>normalisedQuote.normalisedQuoteId),
+  quoteRequestId:text("quote_request_id").notNull().references(()=>quoteRequest.quoteRequestId),
+  scenarioId:text("scenario_id").notNull().references(()=>scenario.scenarioId),
+  marketRouteId:text("market_route_id").notNull().references(()=>marketRoute.marketRouteId),
+  evidenceStatus:text("evidence_status").notNull(),
+  ordinal:integer("ordinal"),
+  objectiveMetric:text("objective_metric"),
+  objectiveMetricValuePence:integer("objective_metric_value_pence"),
+  exclusionReason:text("exclusion_reason"),
+  evidenceJson:jsonb("evidence_json").notNull().default({}),
+  evidenceFingerprint:text("evidence_fingerprint").notNull().unique(),
+  createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[
+  check("recommendation_quote_status",sql`${t.evidenceStatus} IN ('ELIGIBLE','EXCLUDED')`),
+  check("recommendation_quote_metric_allowed",sql`${t.objectiveMetric} IS NULL OR ${t.objectiveMetric} IN ('annual_cash_premium_pence','monthly_commitment_pence','finance_cost_pence','total_excess_exposure_pence')`),
+  check("recommendation_quote_metric_nonnegative",sql`${t.objectiveMetricValuePence} IS NULL OR ${t.objectiveMetricValuePence} >= 0`),
+  check("recommendation_quote_ordinal_positive",sql`${t.ordinal} IS NULL OR ${t.ordinal} > 0`),
+  check("recommendation_quote_evidence_fingerprint_format",sql`${t.evidenceFingerprint} ~ '^[0-9a-f]{64}$'`),
+  unique("uq_recommendation_quote_evidence").on(t.recommendationSetId,t.normalisedQuoteId),
+  unique("uq_recommendation_quote_ordinal").on(t.recommendationSetId,t.ordinal),
 ]);
