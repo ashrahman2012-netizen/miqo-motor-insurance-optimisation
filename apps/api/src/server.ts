@@ -12,6 +12,13 @@ import { listNormalisedQuotes, normaliseRawProviderResponse } from "./normalisat
 import { createShortlist, getShortlist } from "./comparison-service.ts";
 import { getSelection, selectShortlistedQuote } from "./selection-service.ts";
 import { getSelectionTrace } from "./trace-service.ts";
+import { getSprint4AdminSelectionTrace } from "./sprint4-admin-trace-service.ts";
+import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
+import { generateSprint4Scenarios, listSprint4ScenarioExplorations } from "./sprint4-scenario-service.ts";
+import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4MarketRouteQuotes } from "./sprint4-market-route-service.ts";
+import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
+import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
+import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -47,6 +54,77 @@ export async function buildApp() {
     }}},
   },async(req:any,reply)=>reply.code(200).send(await saveOptimisationPreferences(db,{versionId:req.params.versionId,preferences:req.body})));
   app.get("/profile-versions/:versionId/optimisation-preferences",async(req:any)=>listOptimisationPreferences(db,req.params.versionId));
+  app.post("/profile-versions/:versionId/customer-objectives",{
+    schema:{body:{type:"object",additionalProperties:false,required:["objectiveId"],properties:{
+      objectiveId:{type:"string",minLength:1},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await persistCustomerObjective(db,{versionId:req.params.versionId,objectiveId:req.body.objectiveId});
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/profile-versions/:versionId/customer-objectives",async(req:any)=>listCustomerObjectives(db,req.params.versionId));
+  app.get("/optimisation/catalogues/:catalogueVersion",async(req:any)=>getPersistedOptimisationCatalogue(db,req.params.catalogueVersion));
+  app.get("/market-routes/synthetic",async()=>ensureSyntheticMarketRoutes(db));
+  app.post("/profile-versions/:versionId/occupation-mappings",async(req:any,reply)=>{
+    const result=await persistOccupationTaxonomyMappings(db,req.params.versionId);
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/profile-versions/:versionId/occupation-mappings",async(req:any)=>
+    listOccupationTaxonomyMappings(db,req.params.versionId));
+  app.post("/profile-versions/:versionId/candidate-vehicles",{
+    schema:{body:{type:"object",additionalProperties:false,required:["candidateVehicleId","vehicleSnapshot"],properties:{
+      candidateVehicleId:{type:"string",minLength:1},
+      vehicleSnapshot:{type:"object",additionalProperties:true},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await registerCandidateVehicle(db,{
+      versionId:req.params.versionId,
+      candidateVehicleId:req.body.candidateVehicleId,
+      vehicleSnapshot:req.body.vehicleSnapshot,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/profile-versions/:versionId/candidate-vehicles",async(req:any)=>
+    listCandidateVehicles(db,req.params.versionId));
+  app.post("/customer-objectives/:customerObjectiveId/scenario-explorations",{
+    schema:{body:{type:"object",additionalProperties:false,required:["choices"],properties:{
+      choices:{type:"object",minProperties:1,additionalProperties:{type:"array",minItems:1}},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await generateSprint4Scenarios(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      choiceSets:req.body.choices,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/customer-objectives/:customerObjectiveId/scenario-explorations",async(req:any)=>
+    listSprint4ScenarioExplorations(db,req.params.customerObjectiveId));
+  app.post("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/market-route-quotes",async(req:any,reply)=>{
+    const result=await executeSprint4MarketRoutes(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/market-route-quotes",async(req:any)=>
+    listSprint4MarketRouteQuotes(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    }));
+  app.post("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/recommendations",async(req:any,reply)=>{
+    const result=await createSprint4RecommendationSet(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/recommendations",async(req:any)=>
+    getSprint4RecommendationSet(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    }));
+  app.get("/recommendations/:recommendationSetId/explanation",async(req:any)=>
+    getSprint4RecommendationExplanation(db,req.params.recommendationSetId));
   app.post("/profile-versions/:versionId/scenarios/generate",async(req:any,reply)=>{
     const result=await generateScenarios(db,{versionId:req.params.versionId});
     return reply.code(result.created?201:200).send(result);
@@ -80,10 +158,12 @@ export async function buildApp() {
   app.post("/shortlists/:shortlistId/selections",{
     schema:{body:{type:"object",additionalProperties:false,required:["normalisedQuoteId"],properties:{
       normalisedQuoteId:{type:"string",minLength:1},
+      recommendationSetId:{type:"string",minLength:1},
     }}},
   },async(req:any,reply)=>reply.code(201).send(await selectShortlistedQuote(db,{
     shortlistId:req.params.shortlistId,
     normalisedQuoteId:req.body.normalisedQuoteId,
+    recommendationSetId:req.body.recommendationSetId,
   })));
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
@@ -92,6 +172,7 @@ export async function buildApp() {
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
   app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
   app.get("/admin/selections/:selectionId/trace",async(req:any)=>getSelectionTrace(db,req.params.selectionId));
+  app.get("/admin/selections/:selectionId/sp4-trace",async(req:any)=>getSprint4AdminSelectionTrace(db,req.params.selectionId));
 
   app.setErrorHandler((error:any,req:any,reply)=>{
     if(error instanceof FinalIntegrityError)return reply.code(409).send({error:error.message,selectionId:error.selectionId,signals:error.signals});

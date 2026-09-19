@@ -61,6 +61,13 @@ export default function OptimisationPreferences({params}:{params:Promise<{profil
     <p><strong>CHOICES ONLY.</strong> These controls may change quote choices. Your locked factual profile is not editable here.</p>
     <p id="locked-version">Source: {version?"LOCKED RiskProfileVersion "+version.versionNo+" · "+version.versionId:"Loading locked profile…"}</p>
     {error&&<p role="alert">{error}</p>}
+    <section style={{border:"1px solid #bbb",padding:16,margin:"20px 0"}}>
+      <h2>Sprint 4 multi-scenario optimisation</h2>
+      <p>Choose an explicit customer objective, explore multiple O-only scenarios, run synthetic market routes, and review an explainable recommendation.</p>
+      <button disabled={!version} onClick={()=>location.href="/profile/"+profileId+"/recommendations"}>
+        Open Sprint 4 customer objective journey
+      </button>
+    </section>
     <label>Voluntary excess<br/>
       <select aria-label="Voluntary excess" value={voluntaryExcess} onChange={event=>setVoluntaryExcess(event.target.value)}>
         <option value="250">£250</option><option value="500">£500</option><option value="750">£750</option>

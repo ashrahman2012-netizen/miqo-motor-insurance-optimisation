@@ -104,15 +104,20 @@ export async function prepareQuoteRequest(db:MiqoDatabase,args:{
   scenarioId:string;
   providerKey:string;
   channel:string;
+  adapterVersion?:string;
+  mappingVersion?:string;
 }) {
-  if(args.providerKey!==SYNTHETIC_PROVIDER_KEY || args.channel!==SYNTHETIC_CHANNEL) {
+  const adapterVersion=args.adapterVersion??QUOTE_ADAPTER_VERSION;
+  const mappingVersion=args.mappingVersion??QUOTE_MAPPING_VERSION;
+  const allowedChannel=args.channel===SYNTHETIC_CHANNEL || args.channel==="PCW_SYNTHETIC";
+  if(args.providerKey!==SYNTHETIC_PROVIDER_KEY || !allowedChannel) {
     throw new ValidationError("INVALID_QUOTE_REQUEST",[
-      "Only MOCK-PROVIDER-001 via DIRECT_SYNTHETIC is permitted in the Sprint 2 synthetic boundary",
+      "Only approved synthetic MOCK-PROVIDER-001 routes are permitted",
     ]);
   }
 
   const result=await db.transaction(async tx=>{
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`quote:${args.scenarioId}:${args.providerKey}:${args.channel}`}))`);
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`quote:${args.scenarioId}:${args.providerKey}:${args.channel}:${adapterVersion}:${mappingVersion}`}))`);
     const evaluated=await evaluatePreQuoteIntegrity(tx,args.scenarioId);
     const {scenarioRow,profileRow,signals}=evaluated;
 
@@ -143,8 +148,8 @@ export async function prepareQuoteRequest(db:MiqoDatabase,args:{
       scenarioId:scenarioRow.scenarioId,
       providerKey:args.providerKey,
       channel:args.channel,
-      adapterVersion:QUOTE_ADAPTER_VERSION,
-      mappingVersion:QUOTE_MAPPING_VERSION,
+      adapterVersion,
+      mappingVersion,
     });
 
     const existing=(await tx.select().from(quoteRequest)
@@ -177,8 +182,8 @@ export async function prepareQuoteRequest(db:MiqoDatabase,args:{
       scenarioId:scenarioRow.scenarioId,
       providerKey:args.providerKey,
       channelKey:args.channel,
-      adapterVersion:QUOTE_ADAPTER_VERSION,
-      mappingVersion:QUOTE_MAPPING_VERSION,
+      adapterVersion,
+      mappingVersion,
       requestFingerprint:fingerprint,
     });
     await tx.insert(auditEvent).values([
@@ -201,8 +206,8 @@ export async function prepareQuoteRequest(db:MiqoDatabase,args:{
           scenarioId:scenarioRow.scenarioId,
           providerKey:args.providerKey,
           channel:args.channel,
-          adapterVersion:QUOTE_ADAPTER_VERSION,
-          mappingVersion:QUOTE_MAPPING_VERSION,
+          adapterVersion,
+          mappingVersion,
         },
       },
     ]);
@@ -216,8 +221,8 @@ export async function prepareQuoteRequest(db:MiqoDatabase,args:{
       scenarioId:scenarioRow.scenarioId,
       providerKey:args.providerKey,
       channel:args.channel,
-      adapterVersion:QUOTE_ADAPTER_VERSION,
-      mappingVersion:QUOTE_MAPPING_VERSION,
+      adapterVersion,
+      mappingVersion,
       requestFingerprint:fingerprint,
     };
   });

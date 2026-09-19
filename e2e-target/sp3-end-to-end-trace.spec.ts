@@ -16,8 +16,14 @@ test("SP3-END-TO-END-TRACE-001 C-01 through C-15 plus A-07 and A-08",async({page
   await expect(page).toHaveURL("/profile/"+profileId+"/review");
   await expect(page.locator("#validation-pass")).toContainText("PASS");
   await page.getByRole("button",{name:"Continue to confirmation"}).click();
-  await page.getByLabel("I confirm").check();
-  await page.getByRole("button",{name:"Confirm & lock profile"}).click();
+  await expect(page.getByRole("heading",{name:"Confirm and lock profile"})).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  const confirm=page.getByLabel("I confirm");
+  const lockButton=page.getByRole("button",{name:"Confirm & lock profile"});
+  await confirm.check();
+  await expect(confirm).toBeChecked();
+  await expect(lockButton).toBeEnabled();
+  await lockButton.click();
 
   await expect(page).toHaveURL(new RegExp("127\\.0\\.0\\.1:3001/admin/profiles/"+profileId));
   await expect(page.locator("#status-v1")).toHaveText("LOCKED");
