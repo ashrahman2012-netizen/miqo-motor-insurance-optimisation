@@ -159,3 +159,51 @@ export const recommendationQuoteEvidence=pgTable("recommendation_quote_evidence"
   unique("uq_recommendation_quote_evidence").on(t.recommendationSetId,t.normalisedQuoteId),
   unique("uq_recommendation_quote_ordinal").on(t.recommendationSetId,t.ordinal),
 ]);
+
+export const recommendationExplanation=pgTable("recommendation_explanation",{
+  recommendationExplanationId:text("recommendation_explanation_id").primaryKey(),
+  recommendationSetId:text("recommendation_set_id").notNull().unique().references(()=>recommendationSet.recommendationSetId),
+  objectiveId:text("objective_id").notNull(),
+  objectiveVersion:text("objective_version").notNull(),
+  catalogueVersion:text("catalogue_version").notNull().references(()=>optimisationCatalogueVersion.catalogueVersion),
+  policyFingerprint:text("policy_fingerprint").notNull(),
+  recommendationRuleVersion:text("recommendation_rule_version").notNull(),
+  explanationRuleVersion:text("explanation_rule_version").notNull(),
+  surfacedScenarioId:text("surfaced_scenario_id").notNull().references(()=>scenario.scenarioId),
+  surfacedMarketRouteId:text("surfaced_market_route_id").notNull().references(()=>marketRoute.marketRouteId),
+  surfacedNormalisedQuoteId:text("surfaced_normalised_quote_id").notNull().references(()=>normalisedQuote.normalisedQuoteId),
+  eligibleEvidenceJson:jsonb("eligible_evidence_json").notNull(),
+  excludedEvidenceJson:jsonb("excluded_evidence_json").notNull(),
+  materialReasonsJson:jsonb("material_reasons_json").notNull(),
+  explanationFingerprint:text("explanation_fingerprint").notNull().unique(),
+  createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[
+  check("recommendation_explanation_policy_fingerprint_format",sql`${t.policyFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("recommendation_explanation_fingerprint_format",sql`${t.explanationFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("recommendation_explanation_rule_version",sql`${t.explanationRuleVersion}='sp4-explainability-v1'`),
+]);
+
+export const optimisationExplanation=pgTable("optimisation_explanation",{
+  explanationId:text("explanation_id").primaryKey(),
+  recommendationSetId:text("recommendation_set_id").notNull().references(()=>recommendationSet.recommendationSetId),
+  scenarioId:text("scenario_id").notNull().references(()=>scenario.scenarioId),
+  marketRouteId:text("market_route_id").notNull().references(()=>marketRoute.marketRouteId),
+  fieldOrControl:text("field_or_control").notNull(),
+  classification:text("classification").notNull(),
+  source:text("source").notNull(),
+  customerCanChange:boolean("customer_can_change").notNull(),
+  baselineValue:jsonb("baseline_value"),
+  scenarioValue:jsonb("scenario_value"),
+  quotedEffectIfObservable:jsonb("quoted_effect_if_observable"),
+  legitimacyReason:text("legitimacy_reason").notNull(),
+  providerChannelApplicability:jsonb("provider_channel_applicability").notNull(),
+  ruleVersion:text("rule_version").notNull(),
+  explanationFingerprint:text("explanation_fingerprint").notNull().unique(),
+  createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[
+  check("optimisation_explanation_classification",sql`${t.classification} IN ('FIXED','CONTROLLABLE','TIME_DEPENDENT','PROVIDER_SPECIFIC')`),
+  check("optimisation_explanation_rule_version",sql`${t.ruleVersion}='sp4-explainability-v1'`),
+  check("optimisation_explanation_fingerprint_format",sql`${t.explanationFingerprint} ~ '^[0-9a-f]{64}$'`),
+  unique("uq_optimisation_explanation_control").on(t.recommendationSetId,t.scenarioId,t.marketRouteId,t.fieldOrControl),
+]);
+
