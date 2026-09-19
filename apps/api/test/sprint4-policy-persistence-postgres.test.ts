@@ -13,7 +13,7 @@ const {Client}=pg;
 async function resetProfileData(){
   const c=new Client({connectionString:process.env.DATABASE_URL});
   await c.connect();
-  await c.query("TRUNCATE customer_objective, audit_event, integrity_signal, prototype_completion, final_integrity_result, selection, shortlist_entry, shortlist, normalised_quote, raw_provider_response, quote_request, quote_run, scenario_delta, scenario, optimisation_preference, discrepancy, canonical_field_value, risk_profile_version, profile, customer RESTART IDENTITY CASCADE");
+  await c.query("TRUNCATE customer_objective, optimisation_catalogue_version, audit_event, integrity_signal, prototype_completion, final_integrity_result, selection, shortlist_entry, shortlist, normalised_quote, raw_provider_response, quote_request, quote_run, scenario_delta, scenario, optimisation_preference, discrepancy, canonical_field_value, risk_profile_version, profile, customer RESTART IDENTITY CASCADE");
   await c.end();
 }
 
