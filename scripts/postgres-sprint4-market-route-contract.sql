@@ -27,9 +27,9 @@ INSERT INTO profile(profile_id,customer_id)
 VALUES('PRO-SP4-ROUTE-PG','CUS-SP4-ROUTE-PG');
 
 INSERT INTO risk_profile_version(
-  risk_profile_version_id,profile_id,version_no,status,locked_at
+  risk_profile_version_id,profile_id,version_no,status
 ) VALUES(
-  'RPV-SP4-ROUTE-PG','PRO-SP4-ROUTE-PG',1,'LOCKED',now()
+  'RPV-SP4-ROUTE-PG','PRO-SP4-ROUTE-PG',1,'DRAFT'
 );
 
 INSERT INTO canonical_field_value(
@@ -38,6 +38,10 @@ INSERT INTO canonical_field_value(
 ('CFV-SP4-ROUTE-A','RPV-SP4-ROUTE-PG','main_driver_id','F','"DRV-SP4-ROUTE"'::jsonb,'customer_declared'),
 ('CFV-SP4-ROUTE-B','RPV-SP4-ROUTE-PG','annual_mileage','F','8000'::jsonb,'customer_declared'),
 ('CFV-SP4-ROUTE-C','RPV-SP4-ROUTE-PG','licence_held_since','F','"2018-04-16"'::jsonb,'customer_declared');
+
+UPDATE risk_profile_version
+SET status='LOCKED',locked_at=now()
+WHERE risk_profile_version_id='RPV-SP4-ROUTE-PG';
 
 INSERT INTO customer_objective(
   customer_objective_id,risk_profile_version_id,objective_id,objective_version,
