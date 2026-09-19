@@ -1,22 +1,26 @@
 BEGIN;
 
-ALTER TABLE scenario
-  ADD COLUMN customer_objective_id text REFERENCES customer_objective(customer_objective_id),
-  ADD COLUMN catalogue_version text REFERENCES optimisation_catalogue_version(catalogue_version),
-  ADD COLUMN policy_fingerprint text;
-
-ALTER TABLE scenario
-  ADD CONSTRAINT scenario_sp4_policy_fingerprint_format CHECK (
-    policy_fingerprint IS NULL OR policy_fingerprint ~ '^[0-9a-f]{64}$'
+CREATE TABLE sp4_scenario_lineage (
+  scenario_id text PRIMARY KEY REFERENCES scenario(scenario_id),
+  customer_objective_id text NOT NULL REFERENCES customer_objective(customer_objective_id),
+  risk_profile_version_id text NOT NULL REFERENCES risk_profile_version(risk_profile_version_id),
+  catalogue_version text NOT NULL REFERENCES optimisation_catalogue_version(catalogue_version),
+  policy_fingerprint text NOT NULL,
+  generation_version text NOT NULL,
+  exploration_fingerprint text NOT NULL,
+  candidate_fingerprint text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT sp4_scenario_lineage_policy_fingerprint_format CHECK (
+    policy_fingerprint ~ '^[0-9a-f]{64}$'
   ),
-  ADD CONSTRAINT scenario_sp4_lineage_complete CHECK (
-    generation_version <> 'sp4-gen-v1'
-    OR (
-      customer_objective_id IS NOT NULL
-      AND catalogue_version IS NOT NULL
-      AND policy_fingerprint IS NOT NULL
-    )
-  );
+  CONSTRAINT sp4_scenario_lineage_generation_fingerprint_format CHECK (
+    exploration_fingerprint ~ '^[0-9a-f]{64}$'
+    AND candidate_fingerprint ~ '^[0-9a-f]{64}$'
+  ),
+  CONSTRAINT uq_sp4_scenario_lineage_candidate UNIQUE (
+    customer_objective_id,exploration_fingerprint,candidate_fingerprint
+  )
+);
 
 CREATE TABLE scenario_generation_rejection (
   scenario_generation_rejection_id text PRIMARY KEY,
@@ -51,6 +55,9 @@ DECLARE
   objective_version_id text;
   objective_catalogue text;
   objective_fingerprint text;
+  lineage_version_id text;
+  lineage_catalogue text;
+  lineage_fingerprint text;
   profile_status profile_version_status;
 BEGIN
   IF NEW.status <> 'GENERATED' THEN
@@ -67,17 +74,29 @@ BEGIN
 
   IF NEW.generation_version = 'sp4-gen-v1' THEN
     SELECT risk_profile_version_id,catalogue_version,policy_fingerprint
+      INTO lineage_version_id,lineage_catalogue,lineage_fingerprint
+    FROM sp4_scenario_lineage
+    WHERE scenario_id=NEW.scenario_id;
+
+    IF lineage_version_id IS NULL THEN
+      RAISE EXCEPTION 'SP4_SCENARIO_LINEAGE_NOT_FOUND';
+    END IF;
+
+    SELECT risk_profile_version_id,catalogue_version,policy_fingerprint
       INTO objective_version_id,objective_catalogue,objective_fingerprint
     FROM customer_objective
-    WHERE customer_objective_id=NEW.customer_objective_id;
+    WHERE customer_objective_id=(
+      SELECT customer_objective_id FROM sp4_scenario_lineage WHERE scenario_id=NEW.scenario_id
+    );
 
     IF objective_version_id IS NULL THEN
       RAISE EXCEPTION 'SP4_SCENARIO_OBJECTIVE_NOT_FOUND';
     END IF;
 
-    IF objective_version_id IS DISTINCT FROM NEW.risk_profile_version_id
-       OR objective_catalogue IS DISTINCT FROM NEW.catalogue_version
-       OR objective_fingerprint IS DISTINCT FROM NEW.policy_fingerprint THEN
+    IF lineage_version_id IS DISTINCT FROM NEW.risk_profile_version_id
+       OR objective_version_id IS DISTINCT FROM NEW.risk_profile_version_id
+       OR objective_catalogue IS DISTINCT FROM lineage_catalogue
+       OR objective_fingerprint IS DISTINCT FROM lineage_fingerprint THEN
       RAISE EXCEPTION 'SP4_SCENARIO_POLICY_LINEAGE_MISMATCH';
     END IF;
 
@@ -103,6 +122,60 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION miqo_guard_sp4_scenario_lineage()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  objective_version_id text;
+  objective_catalogue text;
+  objective_fingerprint text;
+  scenario_version_id text;
+  scenario_generation_version text;
+  profile_status profile_version_status;
+BEGIN
+  SELECT risk_profile_version_id,catalogue_version,policy_fingerprint
+    INTO objective_version_id,objective_catalogue,objective_fingerprint
+  FROM customer_objective
+  WHERE customer_objective_id=NEW.customer_objective_id;
+
+  SELECT risk_profile_version_id,generation_version
+    INTO scenario_version_id,scenario_generation_version
+  FROM scenario
+  WHERE scenario_id=NEW.scenario_id;
+
+  SELECT status INTO profile_status
+  FROM risk_profile_version
+  WHERE risk_profile_version_id=NEW.risk_profile_version_id;
+
+  IF objective_version_id IS NULL THEN
+    RAISE EXCEPTION 'SP4_SCENARIO_OBJECTIVE_NOT_FOUND';
+  END IF;
+
+  IF scenario_version_id IS NULL THEN
+    RAISE EXCEPTION 'SP4_SCENARIO_NOT_FOUND';
+  END IF;
+
+  IF scenario_version_id IS DISTINCT FROM NEW.risk_profile_version_id
+     OR objective_version_id IS DISTINCT FROM NEW.risk_profile_version_id
+     OR objective_catalogue IS DISTINCT FROM NEW.catalogue_version
+     OR objective_fingerprint IS DISTINCT FROM NEW.policy_fingerprint
+     OR scenario_generation_version IS DISTINCT FROM NEW.generation_version THEN
+    RAISE EXCEPTION 'SP4_SCENARIO_POLICY_LINEAGE_MISMATCH';
+  END IF;
+
+  IF profile_status IS DISTINCT FROM 'LOCKED' THEN
+    RAISE EXCEPTION 'SP4_SCENARIO_REQUIRES_LOCKED_PROFILE';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_guard_sp4_scenario_lineage
+BEFORE INSERT ON sp4_scenario_lineage
+FOR EACH ROW EXECUTE FUNCTION miqo_guard_sp4_scenario_lineage();
 
 CREATE OR REPLACE FUNCTION miqo_guard_scenario_generation_rejection()
 RETURNS trigger
@@ -151,6 +224,10 @@ BEGIN
   RAISE EXCEPTION 'SP4_GENERATION_EVIDENCE_IMMUTABLE';
 END;
 $$;
+
+CREATE TRIGGER trg_sp4_scenario_lineage_immutable
+BEFORE UPDATE OR DELETE ON sp4_scenario_lineage
+FOR EACH ROW EXECUTE FUNCTION miqo_guard_sp4_generation_evidence_immutable();
 
 CREATE TRIGGER trg_scenario_generation_rejection_immutable
 BEFORE UPDATE OR DELETE ON scenario_generation_rejection
