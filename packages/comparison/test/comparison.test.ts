@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {analyseSprint4Recommendations,compareNormalisedQuotes} from "../src/index.ts";
+import {analyseSprint4Recommendations,buildSprint4RecommendationExplanation,compareNormalisedQuotes} from "../src/index.ts";
 
 const quotes=[
   {normalisedQuoteId:"Q-003",comparisonState:"NOT_COMPARABLE" as const,annualCashPremiumPence:64200,compulsoryExcessPence:null,voluntaryExcessPence:null},
@@ -113,4 +113,105 @@ test("Sprint 4 balanced objective remains dormant",()=>{
     explorationFingerprint:"2".repeat(64),
     quotes:[],
   }),/CUSTOMER_OBJECTIVE_DORMANT/);
+});
+
+
+test("S4-G11 explanation fingerprint is deterministic and preserves objective, controls, route applicability and evidence",()=>{
+  const args={
+    recommendationSetId:"REC-1",
+    objectiveId:"LOWEST_ANNUAL_PREMIUM" as const,
+    objectiveVersion:"sp4-objectives-v1",
+    catalogueVersion:"sp4-catalogue-v2.1",
+    policyFingerprint:"a".repeat(64),
+    recommendationRuleVersion:"sp4-recommendation-v1",
+    recommendationFingerprint:"b".repeat(64),
+    surfacedNormalisedQuoteId:"NOR-1",
+    surfacedScenarioId:"SCN-1",
+    surfacedMarketRouteId:"MR-1",
+    controls:[{
+      fieldOrControl:"voluntary_excess",
+      classification:"CONTROLLABLE" as const,
+      source:"scenario_delta",
+      customerCanChange:true,
+      baselineValue:250,
+      scenarioValue:500,
+      quotedEffectIfObservable:{
+        objectiveMetric:"annual_cash_premium_pence",
+        baselineValuePence:71000,
+        scenarioValuePence:68000,
+        differencePence:-3000,
+      },
+      legitimacyReason:"Customer-selectable voluntary excess within the approved catalogue.",
+      providerChannelApplicability:{
+        marketRouteId:"MR-1",routeKey:"MOCK-001-DIRECT",providerKey:"MOCK-PROVIDER-001",
+        channelKey:"DIRECT_SYNTHETIC",adapterVersion:"mock-adapter-v1",mappingVersion:"mock-mapping-v1",
+      },
+    }],
+    eligibleEvidence:[{
+      normalisedQuoteId:"NOR-1",scenarioId:"SCN-1",marketRouteId:"MR-1",ordinal:1,
+      objectiveMetric:"annual_cash_premium_pence",objectiveMetricValuePence:68000,evidenceFingerprint:"c".repeat(64),
+    }],
+    excludedEvidence:[{
+      normalisedQuoteId:"NOR-X",scenarioId:"SCN-X",marketRouteId:"MR-2",
+      exclusionReason:"COMPARISON_STATE_NOT_COMPARABLE",evidenceFingerprint:"d".repeat(64),
+    }],
+  };
+  const one=buildSprint4RecommendationExplanation(args);
+  const two=buildSprint4RecommendationExplanation({...args,controls:[...args.controls].reverse()});
+  assert.deepEqual(two,one);
+  assert.match(one.explanationFingerprint,/^[0-9a-f]{64}$/);
+  assert.equal(one.controls[0].baselineValue,250);
+  assert.equal(one.controls[0].scenarioValue,500);
+  assert.equal((one.controls[0].providerChannelApplicability as any).routeKey,"MOCK-001-DIRECT");
+  assert.equal(one.materialReasons.at(-1)?.code,"COMMERCIAL_INPUTS_EXCLUDED");
+});
+
+test("S4-G12 synthetic remuneration metadata cannot influence eligibility, metrics, fingerprint, ordering or surfaced quote",()=>{
+  const base={
+    objectiveId:"LOWEST_ANNUAL_PREMIUM" as const,
+    objectiveVersion:"sp4-objectives-v1",
+    catalogueVersion:"sp4-catalogue-v2.1",
+    policyFingerprint:"e".repeat(64),
+    explorationFingerprint:"f".repeat(64),
+    quotes:[
+      {
+        normalisedQuoteId:"NOR-1",quoteRequestId:"REQ-1",scenarioId:"SCN-1",marketRouteId:"MR-1",routeKey:"DIRECT",
+        comparisonState:"DIRECTLY_COMPARABLE" as const,annualCashPremiumPence:65000,financeCostPence:2000,
+        compulsoryExcessPence:25000,voluntaryExcessPence:50000,paymentStructure:"ANNUAL",
+      },
+      {
+        normalisedQuoteId:"NOR-2",quoteRequestId:"REQ-2",scenarioId:"SCN-2",marketRouteId:"MR-2",routeKey:"PCW",
+        comparisonState:"DIRECTLY_COMPARABLE" as const,annualCashPremiumPence:67000,financeCostPence:0,
+        compulsoryExcessPence:20000,voluntaryExcessPence:25000,paymentStructure:"ANNUAL",
+      },
+    ],
+  };
+  const noCommercial=analyseSprint4Recommendations(base);
+  const highCommission=analyseSprint4Recommendations({
+    ...base,
+    commercialMetadata:{
+      "MR-1":{providerRemunerationPence:999999,introducerRemunerationPence:500000,referralRevenuePence:250000},
+      "MR-2":{providerRemunerationPence:0,introducerRemunerationPence:0,referralRevenuePence:0},
+    },
+  } as any);
+  const reversedCommission=analyseSprint4Recommendations({
+    ...base,
+    commercialMetadata:{
+      "MR-1":{providerRemunerationPence:0,introducerRemunerationPence:0,referralRevenuePence:0},
+      "MR-2":{providerRemunerationPence:999999,introducerRemunerationPence:500000,referralRevenuePence:250000},
+    },
+  } as any);
+
+  for(const result of [highCommission,reversedCommission]){
+    assert.equal(result.recommendationFingerprint,noCommercial.recommendationFingerprint);
+    assert.equal(result.surfacedNormalisedQuoteId,noCommercial.surfacedNormalisedQuoteId);
+    assert.deepEqual(
+      result.eligible.map(item=>[item.normalisedQuoteId,item.ordinal,item.objectiveMetric,item.objectiveMetricValuePence]),
+      noCommercial.eligible.map(item=>[item.normalisedQuoteId,item.ordinal,item.objectiveMetric,item.objectiveMetricValuePence]),
+    );
+    assert.deepEqual(
+      result.excluded.map(item=>[item.normalisedQuoteId,item.exclusionReason]),
+      noCommercial.excluded.map(item=>[item.normalisedQuoteId,item.exclusionReason]),
+    );
+  }
 });
