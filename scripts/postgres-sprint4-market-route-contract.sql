@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 
 -- Requires Sprint 4 multi-scenario contract state:
--- OBJ-SP4-PG-001 / SCN-SP4-PG-001 / RPV-PG-001-V2.
+-- OBJ-SP4-ROUTE-PG / SCN-SP4-ROUTE-PG / RPV-SP4-ROUTE-PG.
 
 INSERT INTO market_route(
   market_route_id,route_key,route_catalogue_version,provider_key,channel_key,
@@ -18,19 +18,77 @@ INSERT INTO market_route(
   '2222222222222222222222222222222222222222222222222222222222222222',true
 );
 
+-- Isolated clean Sprint 4 route fixture. Earlier contracts intentionally leave
+-- discrepancy evidence on RPV-SP4-ROUTE-PG, so route quotation must not reuse it.
+INSERT INTO customer(customer_id,synthetic)
+VALUES('CUS-SP4-ROUTE-PG',true);
+
+INSERT INTO profile(profile_id,customer_id)
+VALUES('PRO-SP4-ROUTE-PG','CUS-SP4-ROUTE-PG');
+
+INSERT INTO risk_profile_version(
+  risk_profile_version_id,profile_id,version_no,status,locked_at
+) VALUES(
+  'RPV-SP4-ROUTE-PG','PRO-SP4-ROUTE-PG',1,'LOCKED',now()
+);
+
+INSERT INTO canonical_field_value(
+  canonical_field_value_id,risk_profile_version_id,field_id,control_class,value_json,source_type
+) VALUES
+('CFV-SP4-ROUTE-A','RPV-SP4-ROUTE-PG','main_driver_id','F','"DRV-SP4-ROUTE"'::jsonb,'customer_declared'),
+('CFV-SP4-ROUTE-B','RPV-SP4-ROUTE-PG','annual_mileage','F','8000'::jsonb,'customer_declared'),
+('CFV-SP4-ROUTE-C','RPV-SP4-ROUTE-PG','licence_held_since','F','"2018-04-16"'::jsonb,'customer_declared');
+
+INSERT INTO customer_objective(
+  customer_objective_id,risk_profile_version_id,objective_id,objective_version,
+  catalogue_version,policy_fingerprint
+) VALUES(
+  'OBJ-SP4-ROUTE-PG','RPV-SP4-ROUTE-PG','LOWEST_ANNUAL_PREMIUM','sp4-objectives-v1',
+  'sp4-catalogue-v2',
+  'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+);
+
+INSERT INTO scenario(
+  scenario_id,risk_profile_version_id,generation_version,generated_at,status,
+  preference_snapshot_json,generation_fingerprint,generation_ordinal
+) VALUES(
+  'SCN-SP4-ROUTE-PG','RPV-SP4-ROUTE-PG','sp4-gen-v1',now(),'GENERATING',
+  '{"contract":"sp4-route"}'::jsonb,
+  '7777777777777777777777777777777777777777777777777777777777777777',1
+);
+
+INSERT INTO sp4_scenario_lineage(
+  scenario_id,customer_objective_id,risk_profile_version_id,catalogue_version,
+  policy_fingerprint,generation_version,exploration_fingerprint,candidate_fingerprint
+) VALUES(
+  'SCN-SP4-ROUTE-PG','OBJ-SP4-ROUTE-PG','RPV-SP4-ROUTE-PG','sp4-catalogue-v2',
+  'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+  'sp4-gen-v1',
+  '7777777777777777777777777777777777777777777777777777777777777777',
+  '8888888888888888888888888888888888888888888888888888888888888888'
+);
+
+INSERT INTO scenario_delta(
+  scenario_delta_id,scenario_id,field_id,control_class,value_json
+) VALUES(
+  'SCD-SP4-ROUTE-PG','SCN-SP4-ROUTE-PG','voluntary_excess','O','500'::jsonb
+);
+
+UPDATE scenario SET status='GENERATED' WHERE scenario_id='SCN-SP4-ROUTE-PG';
+
 DO $$
 BEGIN
   BEGIN
     INSERT INTO scenario(
       scenario_id,risk_profile_version_id,status
     ) VALUES(
-      'SCN-SP4-PG-ROUTE-SEPARATION','RPV-PG-001-V2','DRAFT'
+      'SCN-SP4-ROUTE-SEPARATION','RPV-SP4-ROUTE-PG','DRAFT'
     );
 
     INSERT INTO scenario_delta(
       scenario_delta_id,scenario_id,field_id,control_class,value_json
     ) VALUES(
-      'SCD-SP4-PG-ROUTE-BAD','SCN-SP4-PG-ROUTE-SEPARATION','provider','O','"MOCK-PROVIDER-001"'::jsonb
+      'SCD-SP4-PG-ROUTE-BAD','SCN-SP4-ROUTE-SEPARATION','provider','O','"MOCK-PROVIDER-001"'::jsonb
     );
     RAISE EXCEPTION 'TEST_FAILURE_MARKET_ROUTE_FORCED_INTO_SCENARIO_DELTA';
   EXCEPTION WHEN OTHERS THEN
@@ -41,20 +99,20 @@ END $$;
 
 INSERT INTO quote_run(quote_run_id,risk_profile_version_id)
 VALUES
-  ('QRUN-SP4-ROUTE-DIRECT','RPV-PG-001-V2'),
-  ('QRUN-SP4-ROUTE-PCW','RPV-PG-001-V2');
+  ('QRUN-SP4-ROUTE-DIRECT','RPV-SP4-ROUTE-PG'),
+  ('QRUN-SP4-ROUTE-PCW','RPV-SP4-ROUTE-PG');
 
 INSERT INTO quote_request(
   quote_request_id,quote_run_id,scenario_id,provider_key,channel_key,
   adapter_version,mapping_version,request_fingerprint
 ) VALUES
 (
-  'QREQ-SP4-ROUTE-DIRECT','QRUN-SP4-ROUTE-DIRECT','SCN-SP4-PG-001',
+  'QREQ-SP4-ROUTE-DIRECT','QRUN-SP4-ROUTE-DIRECT','SCN-SP4-ROUTE-PG',
   'MOCK-PROVIDER-001','DIRECT_SYNTHETIC','mock-adapter-v1','mock-mapping-v1',
   'sp4-route-direct-request'
 ),
 (
-  'QREQ-SP4-ROUTE-PCW','QRUN-SP4-ROUTE-PCW','SCN-SP4-PG-001',
+  'QREQ-SP4-ROUTE-PCW','QRUN-SP4-ROUTE-PCW','SCN-SP4-ROUTE-PG',
   'MOCK-PROVIDER-001','PCW_SYNTHETIC','mock-adapter-v1','mock-mapping-pcw-v1',
   'sp4-route-pcw-request'
 );
@@ -64,14 +122,14 @@ INSERT INTO sp4_quote_request_lineage(
   risk_profile_version_id,route_fingerprint,orchestration_version
 ) VALUES
 (
-  'QREQ-SP4-ROUTE-DIRECT','MR-SP4-PG-DIRECT','OBJ-SP4-PG-001','SCN-SP4-PG-001',
-  'RPV-PG-001-V2',
+  'QREQ-SP4-ROUTE-DIRECT','MR-SP4-PG-DIRECT','OBJ-SP4-ROUTE-PG','SCN-SP4-ROUTE-PG',
+  'RPV-SP4-ROUTE-PG',
   '1111111111111111111111111111111111111111111111111111111111111111',
   'sp4-route-orchestrator-v1'
 ),
 (
-  'QREQ-SP4-ROUTE-PCW','MR-SP4-PG-PCW','OBJ-SP4-PG-001','SCN-SP4-PG-001',
-  'RPV-PG-001-V2',
+  'QREQ-SP4-ROUTE-PCW','MR-SP4-PG-PCW','OBJ-SP4-ROUTE-PG','SCN-SP4-ROUTE-PG',
+  'RPV-SP4-ROUTE-PG',
   '2222222222222222222222222222222222222222222222222222222222222222',
   'sp4-route-orchestrator-v1'
 );
@@ -115,13 +173,13 @@ DO $$
 BEGIN
   BEGIN
     INSERT INTO quote_run(quote_run_id,risk_profile_version_id)
-    VALUES('QRUN-SP4-ROUTE-BAD','RPV-PG-001-V2');
+    VALUES('QRUN-SP4-ROUTE-BAD','RPV-SP4-ROUTE-PG');
 
     INSERT INTO quote_request(
       quote_request_id,quote_run_id,scenario_id,provider_key,channel_key,
       adapter_version,mapping_version,request_fingerprint
     ) VALUES(
-      'QREQ-SP4-ROUTE-BAD','QRUN-SP4-ROUTE-BAD','SCN-SP4-PG-001',
+      'QREQ-SP4-ROUTE-BAD','QRUN-SP4-ROUTE-BAD','SCN-SP4-ROUTE-PG',
       'MOCK-PROVIDER-001','DIRECT_SYNTHETIC','mock-adapter-v1','mock-mapping-v1',
       'sp4-route-bad-request'
     );
@@ -130,8 +188,8 @@ BEGIN
       quote_request_id,market_route_id,customer_objective_id,scenario_id,
       risk_profile_version_id,route_fingerprint,orchestration_version
     ) VALUES(
-      'QREQ-SP4-ROUTE-BAD','MR-SP4-PG-PCW','OBJ-SP4-PG-001','SCN-SP4-PG-001',
-      'RPV-PG-001-V2',
+      'QREQ-SP4-ROUTE-BAD','MR-SP4-PG-PCW','OBJ-SP4-ROUTE-PG','SCN-SP4-ROUTE-PG',
+      'RPV-SP4-ROUTE-PG',
       '2222222222222222222222222222222222222222222222222222222222222222',
       'sp4-route-orchestrator-v1'
     );
@@ -166,7 +224,7 @@ BEGIN
   SELECT count(*) INTO route_count FROM market_route;
   SELECT count(*) INTO lineage_count
   FROM sp4_quote_request_lineage
-  WHERE scenario_id='SCN-SP4-PG-001';
+  WHERE scenario_id='SCN-SP4-ROUTE-PG';
   SELECT count(*) INTO raw_count
   FROM raw_provider_response
   WHERE quote_request_id IN ('QREQ-SP4-ROUTE-DIRECT','QREQ-SP4-ROUTE-PCW');
