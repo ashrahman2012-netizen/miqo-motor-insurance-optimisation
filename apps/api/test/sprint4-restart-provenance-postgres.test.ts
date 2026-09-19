@@ -63,18 +63,23 @@ function canonicalSnapshot(args:{objective:any;catalogue:any;exploration:any;quo
       })),
       rejections:exploration.rejections,
     },
-    quotes:quotes.items.map((item:any)=>({
-      orchestrationVersion:item.orchestrationVersion,
-      customerObjectiveId:item.customerObjectiveId,
-      riskProfileVersionId:item.riskProfileVersionId,
-      scenarioId:item.scenarioId,
-      marketRoute:item.marketRoute,
-      quoteRunId:item.quoteRunId,
-      quoteRequestId:item.quoteRequestId,
-      requestFingerprint:item.requestFingerprint,
-      rawProviderResponse:item.rawProviderResponse,
-      normalisedQuote:item.normalisedQuote,
-    })),
+    quotes:quotes.items
+      .map((item:any)=>({
+        orchestrationVersion:item.orchestrationVersion,
+        customerObjectiveId:item.customerObjectiveId,
+        riskProfileVersionId:item.riskProfileVersionId,
+        scenarioId:item.scenarioId,
+        marketRoute:item.marketRoute,
+        quoteRunId:item.quoteRunId,
+        quoteRequestId:item.quoteRequestId,
+        requestFingerprint:item.requestFingerprint,
+        rawProviderResponse:item.rawProviderResponse,
+        normalisedQuote:item.normalisedQuote,
+      }))
+      .sort((a:any,b:any)=>
+        a.scenarioId.localeCompare(b.scenarioId)
+        || a.marketRoute.routeKey.localeCompare(b.marketRoute.routeKey)
+      ),
     recommendation:{
       recommendationSetId:recommendation.recommendationSetId,
       customerObjectiveId:recommendation.customerObjectiveId,
