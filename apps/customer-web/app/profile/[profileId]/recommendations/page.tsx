@@ -114,7 +114,7 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
     const response=await fetch(API_URL+"/shortlists/"+shortlistBody.shortlistId+"/selections",{
       method:"POST",
       headers:{"content-type":"application/json"},
-      body:JSON.stringify({normalisedQuoteId:recommendation.surfacedNormalisedQuoteId}),
+      body:JSON.stringify({normalisedQuoteId:recommendation.surfacedNormalisedQuoteId,recommendationSetId:recommendation.recommendationSetId}),
     });
     const body=await response.json();
     if(!response.ok){setError(body.error??"Final selection failed");setBusy("");return;}

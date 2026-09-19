@@ -18,12 +18,13 @@ import {
   shortlist,
   shortlistEntry,
 } from "../../../packages/db/src/schema.ts";
+import {recommendationQuoteEvidence,recommendationSet} from "../../../packages/db/src/sp4-schema.ts";
 import {evaluateFinalIntegrity,FINAL_INTEGRITY_RULE_VERSION} from "../../../packages/integrity/src/index.ts";
 import {FinalIntegrityError,ValidationError} from "./errors.ts";
 
 const uuid=(prefix:string)=>`${prefix}-${randomUUID()}`;
 
-async function loadLineage(tx:any,shortlistId:string,normalisedQuoteId:string){
+async function loadLineage(tx:any,shortlistId:string,normalisedQuoteId:string,recommendationSetId?:string){
   const shortlistRow=(await tx.select().from(shortlist).where(eq(shortlist.shortlistId,shortlistId)).limit(1))[0];
   if(!shortlistRow)throw new ValidationError("SHORTLIST_NOT_FOUND");
 
@@ -65,16 +66,54 @@ async function loadLineage(tx:any,shortlistId:string,normalisedQuoteId:string){
     eq(integritySignal.blocking,true),
   )).orderBy(asc(integritySignal.createdAt));
 
-  return {shortlistRow,member,quote,raw,request,run,scenarioRow,version,deltas,blocking};
+  let recommendation:null|{
+    recommendationSetId:string;
+    customerObjectiveId:string;
+    explorationFingerprint:string;
+    recommendationFingerprint:string;
+  }=null;
+
+  if(recommendationSetId){
+    const set=(await tx.select().from(recommendationSet)
+      .where(eq(recommendationSet.recommendationSetId,recommendationSetId)).limit(1))[0];
+    if(!set)throw new ValidationError("SP4_RECOMMENDATION_SET_NOT_FOUND");
+    if(set.riskProfileVersionId!==version.riskProfileVersionId
+      || set.surfacedNormalisedQuoteId!==quote.normalisedQuoteId){
+      throw new ValidationError("SP4_SELECTION_RECOMMENDATION_MISMATCH");
+    }
+
+    const evidence=(await tx.select().from(recommendationQuoteEvidence).where(and(
+      eq(recommendationQuoteEvidence.recommendationSetId,recommendationSetId),
+      eq(recommendationQuoteEvidence.normalisedQuoteId,quote.normalisedQuoteId),
+    )).limit(1))[0];
+
+    if(!evidence
+      || evidence.evidenceStatus!=="ELIGIBLE"
+      || Number(evidence.ordinal)!==1
+      || evidence.quoteRequestId!==request.quoteRequestId
+      || evidence.scenarioId!==scenarioRow.scenarioId){
+      throw new ValidationError("SP4_SELECTION_RECOMMENDATION_EVIDENCE_MISMATCH");
+    }
+
+    recommendation={
+      recommendationSetId:set.recommendationSetId,
+      customerObjectiveId:set.customerObjectiveId,
+      explorationFingerprint:set.explorationFingerprint,
+      recommendationFingerprint:set.recommendationFingerprint,
+    };
+  }
+
+  return {shortlistRow,member,quote,raw,request,run,scenarioRow,version,deltas,blocking,recommendation};
 }
 
 export async function selectShortlistedQuote(db:MiqoDatabase,args:{
   shortlistId:string;
   normalisedQuoteId:string;
+  recommendationSetId?:string;
   simulateFailureAfterSelection?:boolean;
 }){
   const result=await db.transaction(async tx=>{
-    const lineage=await loadLineage(tx,args.shortlistId,args.normalisedQuoteId);
+    const lineage=await loadLineage(tx,args.shortlistId,args.normalisedQuoteId,args.recommendationSetId);
     const final=evaluateFinalIntegrity({
       selectedQuoteExists:Boolean(lineage.quote),
       selectionInShortlist:Boolean(lineage.member),
@@ -139,7 +178,14 @@ export async function selectShortlistedQuote(db:MiqoDatabase,args:{
           entityType:"selection",
           entityId:selectionId,
           traceId:lineage.version.profileId,
-          metadataJson:{shortlistId:args.shortlistId,normalisedQuoteId:args.normalisedQuoteId},
+          metadataJson:{
+            shortlistId:args.shortlistId,
+            normalisedQuoteId:args.normalisedQuoteId,
+            recommendationSetId:lineage.recommendation?.recommendationSetId??null,
+            customerObjectiveId:lineage.recommendation?.customerObjectiveId??null,
+            explorationFingerprint:lineage.recommendation?.explorationFingerprint??null,
+            recommendationFingerprint:lineage.recommendation?.recommendationFingerprint??null,
+          },
         },
         {
           auditEventId:uuid("AUD"),
@@ -176,6 +222,10 @@ export async function selectShortlistedQuote(db:MiqoDatabase,args:{
           scenarioId:lineage.scenarioRow.scenarioId,
           quoteRequestId:lineage.request.quoteRequestId,
           riskProfileVersionId:lineage.version.riskProfileVersionId,
+          recommendationSetId:lineage.recommendation?.recommendationSetId??null,
+          customerObjectiveId:lineage.recommendation?.customerObjectiveId??null,
+          explorationFingerprint:lineage.recommendation?.explorationFingerprint??null,
+          recommendationFingerprint:lineage.recommendation?.recommendationFingerprint??null,
         },
       },
       {

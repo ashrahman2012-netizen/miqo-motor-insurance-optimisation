@@ -12,6 +12,7 @@ import { listNormalisedQuotes, normaliseRawProviderResponse } from "./normalisat
 import { createShortlist, getShortlist } from "./comparison-service.ts";
 import { getSelection, selectShortlistedQuote } from "./selection-service.ts";
 import { getSelectionTrace } from "./trace-service.ts";
+import { getSprint4AdminSelectionTrace } from "./sprint4-admin-trace-service.ts";
 import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
 import { generateSprint4Scenarios, listSprint4ScenarioExplorations } from "./sprint4-scenario-service.ts";
 import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4MarketRouteQuotes } from "./sprint4-market-route-service.ts";
@@ -157,10 +158,12 @@ export async function buildApp() {
   app.post("/shortlists/:shortlistId/selections",{
     schema:{body:{type:"object",additionalProperties:false,required:["normalisedQuoteId"],properties:{
       normalisedQuoteId:{type:"string",minLength:1},
+      recommendationSetId:{type:"string",minLength:1},
     }}},
   },async(req:any,reply)=>reply.code(201).send(await selectShortlistedQuote(db,{
     shortlistId:req.params.shortlistId,
     normalisedQuoteId:req.body.normalisedQuoteId,
+    recommendationSetId:req.body.recommendationSetId,
   })));
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
@@ -169,6 +172,7 @@ export async function buildApp() {
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
   app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
   app.get("/admin/selections/:selectionId/trace",async(req:any)=>getSelectionTrace(db,req.params.selectionId));
+  app.get("/admin/selections/:selectionId/sp4-trace",async(req:any)=>getSprint4AdminSelectionTrace(db,req.params.selectionId));
 
   app.setErrorHandler((error:any,req:any,reply)=>{
     if(error instanceof FinalIntegrityError)return reply.code(409).send({error:error.message,selectionId:error.selectionId,signals:error.signals});
