@@ -17,6 +17,7 @@ import {
 } from "../../../packages/comparison/src/index.ts";
 import {ConflictError,ValidationError} from "./errors.ts";
 import {listSprint4MarketRouteQuotes} from "./sprint4-market-route-service.ts";
+import {ensureSprint4RecommendationExplanation} from "./sprint4-explanation-service.ts";
 
 const uuid=(prefix:string)=>prefix+"-"+randomUUID();
 
@@ -158,6 +159,7 @@ export async function createSprint4RecommendationSet(db:MiqoDatabase,args:{
       if(existing.recommendationFingerprint!==analysis.recommendationFingerprint){
         throw new ConflictError("SP4_RECOMMENDATION_FINGERPRINT_MISMATCH");
       }
+      await ensureSprint4RecommendationExplanation(tx as MiqoDatabase,existing.recommendationSetId);
       return presentRecommendationSet(tx as MiqoDatabase,existing.recommendationSetId,false);
     }
 
@@ -234,6 +236,7 @@ export async function createSprint4RecommendationSet(db:MiqoDatabase,args:{
       },
     });
 
+    await ensureSprint4RecommendationExplanation(tx as MiqoDatabase,recommendationSetId);
     return presentRecommendationSet(tx as MiqoDatabase,recommendationSetId,true);
   });
 }
