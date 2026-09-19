@@ -13,11 +13,23 @@ import {
   optimisationPolicyFingerprint,
 } from "../src/index.ts";
 
-test("Optimisation Catalogue v2 is versioned and O-only",()=>{
+test("Optimisation Catalogue v2 is versioned, O-only and metadata-complete",()=>{
   const catalogue=optimisationCatalogue();
   assert.equal(catalogue.catalogueVersion,OPTIMISATION_CATALOGUE_VERSION);
   assert.ok(catalogue.controls.length>=6);
   assert.ok(catalogue.controls.every(control=>control.controlClass==="O"));
+  for(const control of catalogue.controls){
+    assert.ok(control.permittedValues);
+    assert.ok(control.dependencies.length>0);
+    assert.ok(control.constraints.length>0);
+    assert.ok(["ALWAYS","PRE_PURCHASE_ONLY"].includes(control.applicability));
+    if(control.permittedValues.kind==="ENUM")assert.ok(control.permittedValues.values.length>0);
+    if(control.permittedValues.kind==="RULE")assert.ok(control.permittedValues.rule.length>0);
+    if(control.permittedValues.kind==="DYNAMIC"){
+      assert.ok(control.permittedValues.source.length>0);
+      assert.ok(control.permittedValues.rule.length>0);
+    }
+  }
 });
 
 test("locked factual fields cannot be promoted into optimisation controls",()=>{
