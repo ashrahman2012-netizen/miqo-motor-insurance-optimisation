@@ -1,5 +1,5 @@
 import {createHash,randomUUID} from "node:crypto";
-import {and,asc,eq} from "drizzle-orm";
+import {and,asc,eq,sql} from "drizzle-orm";
 import type {MiqoDatabase} from "../../../packages/db/src/client.ts";
 import {
   auditEvent,
@@ -163,6 +163,7 @@ export async function generateSprint4Scenarios(db:MiqoDatabase,args:{
 
   return db.transaction(async tx=>{
     const txDb=tx as MiqoDatabase;
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`sp4-scenario:${objective.customerObjectiveId}:${explorationFingerprint}`}))`);
 
     const existingLineage=await tx.select({scenarioId:sp4ScenarioLineage.scenarioId})
       .from(sp4ScenarioLineage).where(and(
