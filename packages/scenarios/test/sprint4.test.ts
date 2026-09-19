@@ -127,3 +127,37 @@ test("candidate vehicle is accepted only from persisted PRE_PURCHASE evidence",(
   });
   assert.ok(current[0].rejections.some(item=>item.ruleId==="CURRENT_VEHICLE_CANNOT_BE_CANDIDATE"));
 });
+
+
+test("S4-G12 commercial metadata is not part of scenario generation inputs or fingerprints",()=>{
+  const base={
+    riskProfileVersionId:"RPV-COMMERCIAL-INDEPENDENCE",
+    customerObjectiveId:"OBJ-COMMERCIAL-INDEPENDENCE",
+    catalogueVersion:"sp4-catalogue-v2.1",
+    policyFingerprint:"9".repeat(64),
+    choiceSets:{voluntary_excess:[250,500],payment_structure:["ANNUAL","MONTHLY"]},
+    context,
+  };
+  const withoutCommercial=scenarioExplorationFingerprint(base);
+  const highCommission=scenarioExplorationFingerprint({
+    ...base,
+    commercialMetadata:{providerRemunerationPence:999999,introducerRemunerationPence:500000},
+  } as any);
+  const lowCommission=scenarioExplorationFingerprint({
+    ...base,
+    commercialMetadata:{providerRemunerationPence:0,introducerRemunerationPence:0},
+  } as any);
+  assert.equal(highCommission,withoutCommercial);
+  assert.equal(lowCommission,withoutCommercial);
+
+  const one=buildSprint4ScenarioCandidates({
+    context,
+    choiceSets:base.choiceSets,
+  });
+  const two=buildSprint4ScenarioCandidates({
+    context,
+    choiceSets:base.choiceSets,
+    commercialMetadata:{providerRemunerationPence:999999},
+  } as any);
+  assert.deepEqual(two,one);
+});
