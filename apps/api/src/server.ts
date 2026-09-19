@@ -13,6 +13,7 @@ import { createShortlist, getShortlist } from "./comparison-service.ts";
 import { getSelection, selectShortlistedQuote } from "./selection-service.ts";
 import { getSelectionTrace } from "./trace-service.ts";
 import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
+import { generateSprint4Scenarios, listSprint4ScenarioExplorations } from "./sprint4-scenario-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -58,6 +59,19 @@ export async function buildApp() {
   });
   app.get("/profile-versions/:versionId/customer-objectives",async(req:any)=>listCustomerObjectives(db,req.params.versionId));
   app.get("/optimisation/catalogues/:catalogueVersion",async(req:any)=>getPersistedOptimisationCatalogue(db,req.params.catalogueVersion));
+  app.post("/customer-objectives/:customerObjectiveId/scenario-explorations",{
+    schema:{body:{type:"object",additionalProperties:false,required:["choices"],properties:{
+      choices:{type:"object",minProperties:1,additionalProperties:{type:"array",minItems:1}},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await generateSprint4Scenarios(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      choiceSets:req.body.choices,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/customer-objectives/:customerObjectiveId/scenario-explorations",async(req:any)=>
+    listSprint4ScenarioExplorations(db,req.params.customerObjectiveId));
   app.post("/profile-versions/:versionId/scenarios/generate",async(req:any,reply)=>{
     const result=await generateScenarios(db,{versionId:req.params.versionId});
     return reply.code(result.created?201:200).send(result);
