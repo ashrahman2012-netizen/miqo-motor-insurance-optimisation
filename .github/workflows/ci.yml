@@ -50,6 +50,7 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0005_mock_provider_raw_capture.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0006_quote_normalisation.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0007_selection_final_integrity.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0008_optimisation_policy_persistence.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-foundation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-scenario-contract.sql
@@ -57,6 +58,7 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-raw-provider-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-normalisation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint3-selection-contract.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-policy-persistence-contract.sql
 
   target-stack-sprint1:
     runs-on: ubuntu-latest

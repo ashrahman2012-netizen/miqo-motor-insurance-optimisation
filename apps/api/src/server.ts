@@ -12,6 +12,7 @@ import { listNormalisedQuotes, normaliseRawProviderResponse } from "./normalisat
 import { createShortlist, getShortlist } from "./comparison-service.ts";
 import { getSelection, selectShortlistedQuote } from "./selection-service.ts";
 import { getSelectionTrace } from "./trace-service.ts";
+import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -47,6 +48,16 @@ export async function buildApp() {
     }}},
   },async(req:any,reply)=>reply.code(200).send(await saveOptimisationPreferences(db,{versionId:req.params.versionId,preferences:req.body})));
   app.get("/profile-versions/:versionId/optimisation-preferences",async(req:any)=>listOptimisationPreferences(db,req.params.versionId));
+  app.post("/profile-versions/:versionId/customer-objectives",{
+    schema:{body:{type:"object",additionalProperties:false,required:["objectiveId"],properties:{
+      objectiveId:{type:"string",minLength:1},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await persistCustomerObjective(db,{versionId:req.params.versionId,objectiveId:req.body.objectiveId});
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/profile-versions/:versionId/customer-objectives",async(req:any)=>listCustomerObjectives(db,req.params.versionId));
+  app.get("/optimisation/catalogues/:catalogueVersion",async(req:any)=>getPersistedOptimisationCatalogue(db,req.params.catalogueVersion));
   app.post("/profile-versions/:versionId/scenarios/generate",async(req:any,reply)=>{
     const result=await generateScenarios(db,{versionId:req.params.versionId});
     return reply.code(result.created?201:200).send(result);

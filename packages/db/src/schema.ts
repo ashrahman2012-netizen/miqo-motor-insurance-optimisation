@@ -245,3 +245,30 @@ export const auditEvent = pgTable("audit_event", {
   metadataJson: jsonb("metadata_json").notNull().default({}),
   occurredAt: timestamp("occurred_at", {withTimezone:true}).notNull().defaultNow(),
 });
+
+
+export const optimisationCatalogueVersion = pgTable("optimisation_catalogue_version", {
+  catalogueVersion: text("catalogue_version").primaryKey(),
+  objectiveModelVersion: text("objective_model_version").notNull(),
+  policyFingerprint: text("policy_fingerprint").notNull(),
+  catalogueSnapshotJson: jsonb("catalogue_snapshot_json").notNull(),
+  objectiveModelSnapshotJson: jsonb("objective_model_snapshot_json").notNull(),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("uq_optimisation_catalogue_policy_fingerprint").on(t.policyFingerprint),
+  check("optimisation_catalogue_policy_fingerprint_format", sql`${t.policyFingerprint} ~ '^[0-9a-f]{64}$'`),
+]);
+
+export const customerObjective = pgTable("customer_objective", {
+  customerObjectiveId: text("customer_objective_id").primaryKey(),
+  riskProfileVersionId: text("risk_profile_version_id").notNull().references(() => riskProfileVersion.riskProfileVersionId),
+  objectiveId: text("objective_id").notNull(),
+  objectiveVersion: text("objective_version").notNull(),
+  catalogueVersion: text("catalogue_version").notNull().references(() => optimisationCatalogueVersion.catalogueVersion),
+  policyFingerprint: text("policy_fingerprint").notNull(),
+  selectedAt: timestamp("selected_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  unique("uq_customer_objective_policy_selection").on(t.riskProfileVersionId,t.objectiveId,t.policyFingerprint),
+  check("customer_objective_executable_v1", sql`${t.objectiveId} IN ('LOWEST_ANNUAL_PREMIUM','LOWEST_MONTHLY_COMMITMENT','LOWEST_FINANCE_COST','LOWER_EXCESS_EXPOSURE')`),
+  check("customer_objective_policy_fingerprint_format", sql`${t.policyFingerprint} ~ '^[0-9a-f]{64}$'`),
+]);
