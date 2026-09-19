@@ -1,5 +1,19 @@
 BEGIN;
 
+ALTER TABLE scenario DROP CONSTRAINT scenario_generated_provenance;
+
+ALTER TABLE scenario ADD CONSTRAINT scenario_generated_provenance CHECK (
+  status <> 'GENERATED'
+  OR (
+    generation_version IS NOT NULL
+    AND generated_at IS NOT NULL
+    AND (
+      generation_version = 'sp4-gen-v1'
+      OR optimisation_preference_id IS NOT NULL
+    )
+  )
+);
+
 CREATE TABLE sp4_scenario_lineage (
   scenario_id text PRIMARY KEY REFERENCES scenario(scenario_id),
   customer_objective_id text NOT NULL REFERENCES customer_objective(customer_objective_id),
@@ -64,15 +78,14 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  SELECT status INTO profile_status
-  FROM risk_profile_version
-  WHERE risk_profile_version_id = NEW.risk_profile_version_id;
-
-  IF profile_status <> 'LOCKED' THEN
-    RAISE EXCEPTION 'SCENARIO_REQUIRES_LOCKED_PROFILE';
-  END IF;
-
   IF NEW.generation_version = 'sp4-gen-v1' THEN
+    SELECT status INTO profile_status
+    FROM risk_profile_version
+    WHERE risk_profile_version_id = NEW.risk_profile_version_id;
+
+    IF profile_status <> 'LOCKED' THEN
+      RAISE EXCEPTION 'SCENARIO_REQUIRES_LOCKED_PROFILE';
+    END IF;
     SELECT risk_profile_version_id,catalogue_version,policy_fingerprint
       INTO lineage_version_id,lineage_catalogue,lineage_fingerprint
     FROM sp4_scenario_lineage
@@ -109,6 +122,14 @@ BEGIN
 
   IF preference_version_id IS DISTINCT FROM NEW.risk_profile_version_id THEN
     RAISE EXCEPTION 'SCENARIO_PREFERENCE_PROFILE_MISMATCH';
+  END IF;
+
+  SELECT status INTO profile_status
+  FROM risk_profile_version
+  WHERE risk_profile_version_id = NEW.risk_profile_version_id;
+
+  IF profile_status <> 'LOCKED' THEN
+    RAISE EXCEPTION 'SCENARIO_REQUIRES_LOCKED_PROFILE';
   END IF;
 
   IF EXISTS (
