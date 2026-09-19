@@ -103,7 +103,7 @@ export const quoteRequest = pgTable("quote_request", {
 }, t => [
   uniqueIndex("uq_quote_request_fingerprint").on(t.requestFingerprint),
   check("quote_request_synthetic_provider", sql`${t.providerKey} LIKE 'MOCK-%'`),
-  check("quote_request_synthetic_channel", sql`${t.channelKey} = 'DIRECT_SYNTHETIC'`),
+  check("quote_request_synthetic_channel", sql`${t.channelKey} IN ('DIRECT_SYNTHETIC','PCW_SYNTHETIC')`),
 ]);
 
 export const rawProviderResponse = pgTable("raw_provider_response", {

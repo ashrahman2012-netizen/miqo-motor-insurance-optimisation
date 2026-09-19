@@ -14,6 +14,7 @@ import { getSelection, selectShortlistedQuote } from "./selection-service.ts";
 import { getSelectionTrace } from "./trace-service.ts";
 import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
 import { generateSprint4Scenarios, listSprint4ScenarioExplorations } from "./sprint4-scenario-service.ts";
+import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4MarketRouteQuotes } from "./sprint4-market-route-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -59,6 +60,7 @@ export async function buildApp() {
   });
   app.get("/profile-versions/:versionId/customer-objectives",async(req:any)=>listCustomerObjectives(db,req.params.versionId));
   app.get("/optimisation/catalogues/:catalogueVersion",async(req:any)=>getPersistedOptimisationCatalogue(db,req.params.catalogueVersion));
+  app.get("/market-routes/synthetic",async()=>ensureSyntheticMarketRoutes(db));
   app.post("/customer-objectives/:customerObjectiveId/scenario-explorations",{
     schema:{body:{type:"object",additionalProperties:false,required:["choices"],properties:{
       choices:{type:"object",minProperties:1,additionalProperties:{type:"array",minItems:1}},
@@ -72,6 +74,18 @@ export async function buildApp() {
   });
   app.get("/customer-objectives/:customerObjectiveId/scenario-explorations",async(req:any)=>
     listSprint4ScenarioExplorations(db,req.params.customerObjectiveId));
+  app.post("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/market-route-quotes",async(req:any,reply)=>{
+    const result=await executeSprint4MarketRoutes(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/market-route-quotes",async(req:any)=>
+    listSprint4MarketRouteQuotes(db,{
+      customerObjectiveId:req.params.customerObjectiveId,
+      explorationFingerprint:req.params.explorationFingerprint,
+    }));
   app.post("/profile-versions/:versionId/scenarios/generate",async(req:any,reply)=>{
     const result=await generateScenarios(db,{versionId:req.params.versionId});
     return reply.code(result.created?201:200).send(result);
