@@ -18,20 +18,26 @@ INSERT INTO market_route(
   '2222222222222222222222222222222222222222222222222222222222222222',true
 );
 
-DO $$
+DO $
 BEGIN
   BEGIN
+    INSERT INTO scenario(
+      scenario_id,risk_profile_version_id,status
+    ) VALUES(
+      'SCN-SP4-PG-ROUTE-SEPARATION','RPV-PG-001-V2','DRAFT'
+    );
+
     INSERT INTO scenario_delta(
       scenario_delta_id,scenario_id,field_id,control_class,value_json
     ) VALUES(
-      'SCD-SP4-PG-ROUTE-BAD','SCN-SP4-PG-001','provider','O','"MOCK-PROVIDER-001"'::jsonb
+      'SCD-SP4-PG-ROUTE-BAD','SCN-SP4-PG-ROUTE-SEPARATION','provider','O','"MOCK-PROVIDER-001"'::jsonb
     );
     RAISE EXCEPTION 'TEST_FAILURE_MARKET_ROUTE_FORCED_INTO_SCENARIO_DELTA';
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM='TEST_FAILURE_MARKET_ROUTE_FORCED_INTO_SCENARIO_DELTA' THEN RAISE; END IF;
     IF position('scenario_delta_approved_o_field' in SQLERRM)=0 THEN RAISE; END IF;
   END;
-END $$;
+END $;
 
 INSERT INTO quote_run(quote_run_id,risk_profile_version_id)
 VALUES
