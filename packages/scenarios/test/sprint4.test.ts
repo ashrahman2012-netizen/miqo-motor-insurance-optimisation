@@ -99,3 +99,31 @@ test("exploration limit blocks combinatorial explosion",()=>{
     },
   }),/SCENARIO_EXPLORATION_LIMIT_EXCEEDED:108/);
 });
+
+
+test("candidate vehicle is accepted only from persisted PRE_PURCHASE evidence",()=>{
+  const prePurchaseContext={
+    vehicleMode:"PRE_PURCHASE" as const,
+    mainDriverId:"DRV-MAIN",
+    genuineNamedDriverIds:["DRV-2"],
+    candidateVehicleIds:["VEH-CAND-1"],
+    currentVehicleId:"VEH-CURRENT",
+  };
+  const accepted=buildSprint4ScenarioCandidates({
+    context:prePurchaseContext,
+    choiceSets:{candidate_vehicle:["VEH-CAND-1"]},
+  });
+  assert.equal(accepted[0].rejections.length,0);
+
+  const unknown=buildSprint4ScenarioCandidates({
+    context:prePurchaseContext,
+    choiceSets:{candidate_vehicle:["VEH-UNKNOWN"]},
+  });
+  assert.ok(unknown[0].rejections.some(item=>item.ruleId==="UNKNOWN_CANDIDATE_VEHICLE"));
+
+  const current=buildSprint4ScenarioCandidates({
+    context:{...prePurchaseContext,candidateVehicleIds:["VEH-CURRENT"]},
+    choiceSets:{candidate_vehicle:["VEH-CURRENT"]},
+  });
+  assert.ok(current[0].rejections.some(item=>item.ruleId==="CURRENT_VEHICLE_CANNOT_BE_CANDIDATE"));
+});

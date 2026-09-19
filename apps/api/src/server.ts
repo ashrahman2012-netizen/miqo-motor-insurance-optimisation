@@ -15,6 +15,7 @@ import { getSelectionTrace } from "./trace-service.ts";
 import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
 import { generateSprint4Scenarios, listSprint4ScenarioExplorations } from "./sprint4-scenario-service.ts";
 import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4MarketRouteQuotes } from "./sprint4-market-route-service.ts";
+import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -61,6 +62,27 @@ export async function buildApp() {
   app.get("/profile-versions/:versionId/customer-objectives",async(req:any)=>listCustomerObjectives(db,req.params.versionId));
   app.get("/optimisation/catalogues/:catalogueVersion",async(req:any)=>getPersistedOptimisationCatalogue(db,req.params.catalogueVersion));
   app.get("/market-routes/synthetic",async()=>ensureSyntheticMarketRoutes(db));
+  app.post("/profile-versions/:versionId/occupation-mappings",async(req:any,reply)=>{
+    const result=await persistOccupationTaxonomyMappings(db,req.params.versionId);
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/profile-versions/:versionId/occupation-mappings",async(req:any)=>
+    listOccupationTaxonomyMappings(db,req.params.versionId));
+  app.post("/profile-versions/:versionId/candidate-vehicles",{
+    schema:{body:{type:"object",additionalProperties:false,required:["candidateVehicleId","vehicleSnapshot"],properties:{
+      candidateVehicleId:{type:"string",minLength:1},
+      vehicleSnapshot:{type:"object",additionalProperties:true},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await registerCandidateVehicle(db,{
+      versionId:req.params.versionId,
+      candidateVehicleId:req.body.candidateVehicleId,
+      vehicleSnapshot:req.body.vehicleSnapshot,
+    });
+    return reply.code(result.created?201:200).send(result);
+  });
+  app.get("/profile-versions/:versionId/candidate-vehicles",async(req:any)=>
+    listCandidateVehicles(db,req.params.versionId));
   app.post("/customer-objectives/:customerObjectiveId/scenario-explorations",{
     schema:{body:{type:"object",additionalProperties:false,required:["choices"],properties:{
       choices:{type:"object",minProperties:1,additionalProperties:{type:"array",minItems:1}},

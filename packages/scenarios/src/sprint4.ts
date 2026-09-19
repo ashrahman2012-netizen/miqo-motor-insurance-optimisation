@@ -17,6 +17,7 @@ export type ScenarioGenerationContext=Readonly<{
   mainDriverId?:string|null;
   genuineNamedDriverIds?:ReadonlyArray<string>;
   candidateVehicleIds?:ReadonlyArray<string>;
+  currentVehicleId?:string|null;
 }>;
 
 export type ScenarioRejectionCategory=
@@ -44,6 +45,7 @@ const PERSISTABLE_CONTROLS=new Set<string>([
   "policy_start_date",
   "telematics_preference",
   "genuine_named_driver_inclusion",
+  "candidate_vehicle",
 ]);
 
 function canonicalise(value:unknown):unknown{
@@ -151,6 +153,32 @@ function validateControlValue(controlId:string,value:unknown,context:ScenarioGen
           ruleId:"UNKNOWN_GENUINE_NAMED_DRIVER",
           category:"POLICY_INELIGIBLE",
           reason:`Named-driver IDs are not present in the locked profile: ${unknown.sort().join(",")}`,
+        });
+      }
+    }
+  }
+
+  if(controlId==="candidate_vehicle"){
+    if(typeof value!=="string" || !value.trim()){
+      rejections.push({
+        ruleId:"INVALID_CANDIDATE_VEHICLE",
+        category:"IMPOSSIBLE",
+        reason:"candidate_vehicle must reference a persisted pre-purchase candidate vehicle ID.",
+      });
+    } else {
+      if(context.currentVehicleId && value===context.currentVehicleId){
+        rejections.push({
+          ruleId:"CURRENT_VEHICLE_CANNOT_BE_CANDIDATE",
+          category:"CONTRADICTORY",
+          reason:"The factual/current vehicle cannot be reintroduced as a pre-purchase candidate choice.",
+        });
+      }
+      const allowed=new Set(context.candidateVehicleIds??[]);
+      if(!allowed.has(value)){
+        rejections.push({
+          ruleId:"UNKNOWN_CANDIDATE_VEHICLE",
+          category:"POLICY_INELIGIBLE",
+          reason:`Candidate vehicle is not present in the persisted pre-purchase candidate set: ${value}`,
         });
       }
     }

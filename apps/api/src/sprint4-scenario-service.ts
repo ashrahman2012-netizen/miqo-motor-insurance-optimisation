@@ -10,6 +10,7 @@ import {
   scenarioDelta,
 } from "../../../packages/db/src/schema.ts";
 import {
+  candidateVehicle,
   scenarioGenerationRejection,
   sp4ScenarioLineage,
 } from "../../../packages/db/src/sp4-schema.ts";
@@ -66,12 +67,18 @@ async function loadContext(db:MiqoDatabase,versionId:string):Promise<ScenarioGen
     .filter(item=>item.fieldId.startsWith("named_driver_id"))
     .map(item=>String(item.valueJson))
     .sort();
+  const candidateVehicles=await db.select().from(candidateVehicle)
+    .where(eq(candidateVehicle.riskProfileVersionId,versionId))
+    .orderBy(asc(candidateVehicle.candidateVehicleId));
+  const currentVehicleRaw=byId.get("vehicle_id");
+  const currentVehicleId=typeof currentVehicleRaw==="string"?currentVehicleRaw:null;
 
   return Object.freeze({
     vehicleMode,
     mainDriverId,
     genuineNamedDriverIds:Object.freeze(genuineNamedDriverIds),
-    candidateVehicleIds:Object.freeze([]),
+    candidateVehicleIds:Object.freeze(candidateVehicles.map(item=>item.candidateVehicleId)),
+    currentVehicleId,
   });
 }
 

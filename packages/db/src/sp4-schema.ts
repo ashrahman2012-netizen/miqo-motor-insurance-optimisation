@@ -67,3 +67,47 @@ export const sp4QuoteRequestLineage=pgTable("sp4_quote_request_lineage",{
   check("sp4_quote_lineage_route_fingerprint_format",sql`${t.routeFingerprint} ~ '^[0-9a-f]{64}$'`),
   unique("uq_sp4_quote_route").on(t.scenarioId,t.marketRouteId),
 ]);
+
+
+export const occupationTaxonomyRule=pgTable("occupation_taxonomy_rule",{
+  occupationTaxonomyRuleId:text("occupation_taxonomy_rule_id").primaryKey(),
+  taxonomyVersion:text("taxonomy_version").notNull(),
+  providerKey:text("provider_key").notNull(),
+  mappingVersion:text("mapping_version").notNull(),
+  canonicalOccupation:text("canonical_occupation").notNull(),
+  providerOccupationCode:text("provider_occupation_code").notNull(),
+  ruleFingerprint:text("rule_fingerprint").notNull().unique(),
+  createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[
+  check("occupation_taxonomy_rule_fingerprint_format",sql`${t.ruleFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("occupation_taxonomy_rule_synthetic_provider",sql`${t.providerKey} LIKE 'MOCK-%'`),
+  unique("uq_occupation_taxonomy_rule").on(t.taxonomyVersion,t.providerKey,t.mappingVersion,t.canonicalOccupation),
+]);
+
+export const occupationTaxonomyMapping=pgTable("occupation_taxonomy_mapping",{
+  occupationTaxonomyMappingId:text("occupation_taxonomy_mapping_id").primaryKey(),
+  riskProfileVersionId:text("risk_profile_version_id").notNull().references(()=>riskProfileVersion.riskProfileVersionId),
+  marketRouteId:text("market_route_id").notNull().references(()=>marketRoute.marketRouteId),
+  occupationTaxonomyRuleId:text("occupation_taxonomy_rule_id").notNull().references(()=>occupationTaxonomyRule.occupationTaxonomyRuleId),
+  taxonomyVersion:text("taxonomy_version").notNull(),
+  canonicalOccupation:text("canonical_occupation").notNull(),
+  providerOccupationCode:text("provider_occupation_code").notNull(),
+  ruleFingerprint:text("rule_fingerprint").notNull(),
+  mappingFingerprint:text("mapping_fingerprint").notNull().unique(),
+  createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[
+  check("occupation_taxonomy_mapping_fingerprint_format",sql`${t.ruleFingerprint} ~ '^[0-9a-f]{64}$' AND ${t.mappingFingerprint} ~ '^[0-9a-f]{64}$'`),
+  unique("uq_occupation_taxonomy_mapping").on(t.riskProfileVersionId,t.marketRouteId,t.taxonomyVersion),
+]);
+
+export const candidateVehicle=pgTable("candidate_vehicle",{
+  candidateVehicleEvidenceId:text("candidate_vehicle_evidence_id").primaryKey(),
+  riskProfileVersionId:text("risk_profile_version_id").notNull().references(()=>riskProfileVersion.riskProfileVersionId),
+  candidateVehicleId:text("candidate_vehicle_id").notNull(),
+  vehicleSnapshotJson:jsonb("vehicle_snapshot_json").notNull(),
+  evidenceFingerprint:text("evidence_fingerprint").notNull().unique(),
+  createdAt:timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
+},t=>[
+  check("candidate_vehicle_evidence_fingerprint_format",sql`${t.evidenceFingerprint} ~ '^[0-9a-f]{64}$'`),
+  unique("uq_candidate_vehicle_profile").on(t.riskProfileVersionId,t.candidateVehicleId),
+]);
