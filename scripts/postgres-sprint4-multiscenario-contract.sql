@@ -164,10 +164,10 @@ BEGIN
   IF delta_class <> 'O' THEN RAISE EXCEPTION 'TEST_FAILURE_SP4_NON_O_DELTA'; END IF;
   IF stored_catalogue <> 'sp4-catalogue-v2' THEN RAISE EXCEPTION 'TEST_FAILURE_SP4_CATALOGUE_LINEAGE'; END IF;
   IF stored_objective <> 'OBJ-SP4-PG-001' THEN RAISE EXCEPTION 'TEST_FAILURE_SP4_OBJECTIVE_LINEAGE'; END IF;
+  -- RPV-PG-001-V2 is the corrected Sprint 1 fixture. The rejected
+  -- optimisation candidate must not mutate that certified factual value.
   IF mileage <> '6000'::jsonb THEN
-    -- RPV-PG-001-V2 is the corrected Sprint 1 fixture. This check confirms the
-    -- rejected optimisation candidate did not mutate it further.
-    IF mileage IS NULL THEN RAISE EXCEPTION 'TEST_FAILURE_SP4_MILEAGE_MISSING'; END IF;
+    RAISE EXCEPTION 'TEST_FAILURE_SP4_FACT_MUTATED';
   END IF;
   IF rejection_rule <> 'CONTROL_NOT_IN_OPTIMISATION_CATALOGUE' THEN RAISE EXCEPTION 'TEST_FAILURE_SP4_REJECTION_REASON'; END IF;
 END $$;
