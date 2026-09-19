@@ -118,6 +118,7 @@ export async function auditEvents(db:MiqoDatabase,profileId:string) {
     WHEN 'customer_objective_selected' THEN 45
     WHEN 'optimisation_preferences_saved' THEN 50
     WHEN 'scenario_generated' THEN 60
+    WHEN 'sp4_scenario_exploration_generated' THEN 60
     WHEN 'pre_quote_integrity_blocked' THEN 70
     WHEN 'pre_quote_integrity_passed' THEN 70
     WHEN 'quote_request_prepared' THEN 80
