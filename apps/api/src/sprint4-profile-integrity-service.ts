@@ -77,6 +77,7 @@ export async function persistOccupationTaxonomyMappings(db:MiqoDatabase,versionI
   if(!occupation || occupation.controlClass!=="F" || typeof occupation.valueJson!=="string"){
     throw new ValidationError("CANONICAL_OCCUPATION_FACT_NOT_FOUND");
   }
+  const canonicalOccupation=String(occupation.valueJson);
 
   const routes=(await ensureSyntheticMarketRoutes(db)).items;
   return db.transaction(async tx=>{
@@ -90,7 +91,7 @@ export async function persistOccupationTaxonomyMappings(db:MiqoDatabase,versionI
         mapped=mapCanonicalOccupation({
           providerKey:route.providerKey,
           mappingVersion:route.mappingVersion,
-          canonicalOccupation:occupation.valueJson,
+          canonicalOccupation,
         });
       }catch{
         throw new ValidationError("OCCUPATION_TAXONOMY_MAPPING_NOT_FOUND");
