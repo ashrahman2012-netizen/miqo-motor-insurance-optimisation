@@ -25,6 +25,7 @@ jobs:
       - run: npm run test -w @miqo/normalisation
       - run: npm run test -w @miqo/comparison
       - run: npm run test -w @miqo/integrity
+      - run: npm run test -w @miqo/optimisation
       - run: npm run smoke:domain
       - run: npm run build
 
