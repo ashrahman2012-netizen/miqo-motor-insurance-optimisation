@@ -18,7 +18,7 @@ INSERT INTO market_route(
   '2222222222222222222222222222222222222222222222222222222222222222',true
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO scenario(
@@ -37,7 +37,7 @@ BEGIN
     IF SQLERRM='TEST_FAILURE_MARKET_ROUTE_FORCED_INTO_SCENARIO_DELTA' THEN RAISE; END IF;
     IF position('scenario_delta_approved_o_field' in SQLERRM)=0 THEN RAISE; END IF;
   END;
-END $;
+END $$;
 
 INSERT INTO quote_run(quote_run_id,risk_profile_version_id)
 VALUES
