@@ -45,7 +45,7 @@ test("BUILD-001F persists Your Results and renders Why This Surfaced from stored
   expect(before.status()).toBe(422);
 
   await page.getByRole("button",{name:"Generate Your Results"}).click();
-  await expect(page.getByRole("heading",{name:"Why This Surfaced"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Why This Surfaced",level:1})).toBeVisible();
   await expect(page.locator('[data-testid="results-surfaced"]')).toBeVisible();
   await expect(page.getByText("Commercial independence",{exact:true}).first()).toBeVisible();
   await expect(page.getByText(/commercial inputs were excluded|commission|remuneration/i).first()).toBeVisible();
