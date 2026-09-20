@@ -1,6 +1,6 @@
 # MIQO-SP5-EXEC-001 — Controlled Sprint 5 Execution Programme
 
-**Status:** ENGINEERING EXECUTION COMPLETE — EXTERNAL PRODUCTION ACTIVATION BLOCKED  
+**Status:** CLOSED — SEE `MIQO-SP5-CLOSE-001`  
 **Date:** 20 September 2026  
 **Branch:** `miqo/sp5-exec-001`  
 **Acceptance authority:** `MIQO-SP5-ACCEPT-001 v1.0`  
@@ -132,5 +132,9 @@ PRODUCTION ACTIVATION: NOT AUTHORISED
 ```
 
 Sprint 5 has reached the intended fail-closed external-dependency boundary. No additional engineering assumption may convert G20 or G21 to PASS.
+
+## 10. Closure reference
+
+Sprint 5 execution is formally closed by `MIQO-SP5-CLOSE-001`. The 22 PASS / 2 BLOCKED result is frozen; G20 and G21 remain external dependencies and production activation remains not authorised.
 
 **End of MIQO-SP5-EXEC-001**
