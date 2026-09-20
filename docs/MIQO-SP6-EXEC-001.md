@@ -109,6 +109,8 @@ The next provider-specific gate requires a genuine `ProviderCandidateRecord`. Th
 
 Synthetic placeholders or example provider identities cannot satisfy S6-G3.
 
+Canonical intake record: `MIQO-SP6-PROVIDER-CANDIDATE-001`. It remains DRAFT / non-satisfying until populated with genuine provider-specific external evidence.
+
 ## 9. Current execution position
 
 ```text
