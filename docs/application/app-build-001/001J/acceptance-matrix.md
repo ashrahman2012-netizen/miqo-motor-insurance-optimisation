@@ -25,3 +25,12 @@ BUILD-001J may close only when **AB-CERT-G0 through AB-CERT-G10 are PASS on the 
 This certification does not authorise live-provider operation, provider activation, policy purchase/binding, production authentication, insurer document issuance, customer messaging, external support integration, dormant adjusted-comparison methodology, or regulatory/legal accessibility certification. Those require separate controlled work and evidence.
 
 A green production build means the web applications compile for deployment; it does not by itself mean the MIQOS service is approved for live insurance business.
+
+
+## Gate outcome
+
+| Gate range | Outcome |
+|---|---|
+| AB-CERT-G0 → AB-CERT-G10 | **PASS** |
+
+**Programme decision:** `MIQOS-APP-BUILD-001 — COMPLETE` for the bounded internal engineering certification scope. The closing branch head must remain green in the required CI jobs; live-provider and production go-live capabilities remain explicitly outside this decision.
