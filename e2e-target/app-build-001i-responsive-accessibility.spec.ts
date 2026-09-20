@@ -51,13 +51,28 @@ function query(state:any){
 }
 
 async function expectNoViewportOverflow(page:Page){
-  const result=await page.evaluate(()=>({
-    scrollWidth:document.documentElement.scrollWidth,
-    clientWidth:document.documentElement.clientWidth,
-    bodyWidth:document.body.scrollWidth,
-    innerWidth:window.innerWidth,
-  }));
-  const context=page.url()+" viewport="+result.innerWidth+" document="+result.scrollWidth+"/"+result.clientWidth+" body="+result.bodyWidth;
+  const result=await page.evaluate(()=>{
+    const innerWidth=window.innerWidth;
+    const offenders=Array.from(document.querySelectorAll<HTMLElement>("body *")).map(element=>{
+      const rect=element.getBoundingClientRect();
+      return {
+        tag:element.tagName.toLowerCase(),
+        id:element.id,
+        className:typeof element.className==="string"?element.className:"",
+        left:Math.round(rect.left),
+        right:Math.round(rect.right),
+        width:Math.round(rect.width),
+      };
+    }).filter(item=>item.right>innerWidth+1||item.left<-1).slice(0,12);
+    return {
+      scrollWidth:document.documentElement.scrollWidth,
+      clientWidth:document.documentElement.clientWidth,
+      bodyWidth:document.body.scrollWidth,
+      innerWidth,
+      offenders,
+    };
+  });
+  const context=page.url()+" viewport="+result.innerWidth+" document="+result.scrollWidth+"/"+result.clientWidth+" body="+result.bodyWidth+" offenders="+JSON.stringify(result.offenders);
   expect(result.scrollWidth,"document must not horizontally overflow the viewport: "+context).toBeLessThanOrEqual(result.clientWidth+1);
   expect(result.bodyWidth,"body must not horizontally overflow the viewport: "+context).toBeLessThanOrEqual(result.innerWidth+1);
 }
