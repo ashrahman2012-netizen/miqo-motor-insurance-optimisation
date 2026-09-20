@@ -1,6 +1,7 @@
 import {
   composeAdminAuditTracePageVM,
   type AdminAuditEventApi,
+  type AdminDiscrepancyApi,
   type AdminRawProviderResponseApi,
   type AdminSprint4TraceApi,
 } from "@miqo/application-adapters";
@@ -26,6 +27,7 @@ export async function loadAdminAuditTrace(args:{
 }):Promise<AdminAuditTracePageVM>{
   let trace:AdminSprint4TraceApi|null=null;
   let auditEvents:ReadonlyArray<AdminAuditEventApi>=[];
+  let discrepancies:ReadonlyArray<AdminDiscrepancyApi>=[];
   let rawProviderResponse:AdminRawProviderResponseApi|null=null;
   let profileId=args.filters.profileId;
 
@@ -55,10 +57,12 @@ export async function loadAdminAuditTrace(args:{
   }
 
   if(profileId){
-    const audit=await getJson<{items:ReadonlyArray<AdminAuditEventApi>}>(
-      `/admin/audit?profileId=${encodeURIComponent(profileId)}`,
-    );
+    const [audit,discrepancyResponse]=await Promise.all([
+      getJson<{items:ReadonlyArray<AdminAuditEventApi>}>(`/admin/audit?profileId=${encodeURIComponent(profileId)}`),
+      getJson<{items:ReadonlyArray<AdminDiscrepancyApi>}>(`/profiles/${encodeURIComponent(profileId)}/discrepancies`),
+    ]);
     auditEvents=audit.items??[];
+    discrepancies=discrepancyResponse.items??[];
   }
 
   return composeAdminAuditTracePageVM({
@@ -67,5 +71,6 @@ export async function loadAdminAuditTrace(args:{
     trace,
     auditEvents,
     rawProviderResponse,
+    discrepancies,
   });
 }
