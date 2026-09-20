@@ -18,7 +18,8 @@ function ScenarioTable({vm}:{vm:Awaited<ReturnType<typeof loadScenarioExplorer>>
     </div>
     {!exploration?<PageState state="EMPTY" title="No exploration selected" message="Select an executable objective and generate scenarios to create persisted scenario evidence."/>:
       exploration.scenarios.length===0?<PageState state="EMPTY" title="No accepted scenarios" message="All candidate combinations were rejected by deterministic scenario rules."/>:
-      <div className={styles.tableWrap}><table className={styles.scenarioTable}>
+      <div className={styles.tableWrap} role="region" aria-label="Generated scenario evidence table" tabIndex={0}><table className={styles.scenarioTable}>
+        <caption className="miqos-sr-only">Generated scenario evidence for the selected objective and optimisation choices</caption>
         <thead><tr><th>#</th><th>Scenario ID</th><th>Key O-class choices</th><th>Generator</th><th>Readiness</th></tr></thead>
         <tbody>{exploration.scenarios.map(scenario=><tr key={scenario.scenarioId}>
           <td>{scenario.generationOrdinal??"—"}</td>
