@@ -119,7 +119,7 @@ function reasonTitle(code:string){
   return known[code]??code.replaceAll("_"," ").toLowerCase().replace(/^./,value=>value.toUpperCase());
 }
 
-function displayValue(value:unknown){
+function displayValue(value:unknown):string{
   if(value===null||value===undefined)return "Not supplied";
   if(Array.isArray(value))return value.length?value.map(displayValue).join(", "):"None";
   if(typeof value==="boolean")return value?"Yes":"No";
