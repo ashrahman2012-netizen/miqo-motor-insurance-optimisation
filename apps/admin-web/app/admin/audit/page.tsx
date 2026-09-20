@@ -168,7 +168,7 @@ function EvidenceData({vm}:{vm:AdminAuditTracePageVM}){
       <div><span>SHA-256</span><FingerprintValue value={vm.rawProviderResponse.payloadSha256}/></div>
       <div><span>Provider reference</span><code>{vm.rawProviderResponse.providerReference??"—"}</code></div>
     </div>:null}
-    {vm.rawProviderResponse?<pre className={styles.rawPayload}>{JSON.stringify(vm.rawProviderResponse.payload,null,2)}</pre>:null}
+    {vm.rawProviderResponse?<pre className={styles.rawPayload} tabIndex={0} role="region" aria-label="Raw provider response payload">{JSON.stringify(vm.rawProviderResponse.payload,null,2)}</pre>:null}
     {vm.normalisedEvidence?<div className={styles.normalisedCard}>
       <div className={styles.normalisedHeader}><div><span>Normalised quote</span><LineageId value={vm.normalisedEvidence.normalisedQuoteId} label="Normalised quote"/></div><ComparisonStateBadge state={vm.normalisedEvidence.comparisonState}/></div>
       <dl>
