@@ -11,7 +11,10 @@ function ScenarioTable({vm}:{vm:Awaited<ReturnType<typeof loadScenarioExplorer>>
   return <section className={styles.panel} id="generated-scenarios">
     <div className={styles.panelHeader}>
       <div><span className={styles.kicker}>Generated scenarios</span><h2>Scenario evidence</h2><p>Accepted candidates contain O-class deltas only. Quote outcomes are deliberately outside BUILD-001D.</p></div>
-      {exploration?<StatusBadge status={exploration.pageState.state==="PARTIAL"?"PENDING":"READY"}/>:<StatusBadge status="PENDING"/>}
+      <div className={styles.source}>
+        {exploration&&vm.selectedCustomerObjectiveId?<a className={styles.link} href={"/quotes?profileId="+encodeURIComponent(vm.profileId)+"&customerObjectiveId="+encodeURIComponent(vm.selectedCustomerObjectiveId)+"&explorationFingerprint="+encodeURIComponent(exploration.explorationFingerprint)}>View quote comparison →</a>:null}
+        {exploration?<StatusBadge status={exploration.pageState.state==="PARTIAL"?"PENDING":"READY"}/>:<StatusBadge status="PENDING"/>}
+      </div>
     </div>
     {!exploration?<PageState state="EMPTY" title="No exploration selected" message="Select an executable objective and generate scenarios to create persisted scenario evidence."/>:
       exploration.scenarios.length===0?<PageState state="EMPTY" title="No accepted scenarios" message="All candidate combinations were rejected by deterministic scenario rules."/>:
