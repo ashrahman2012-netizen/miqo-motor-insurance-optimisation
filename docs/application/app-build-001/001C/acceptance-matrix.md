@@ -22,3 +22,8 @@
 BUILD-001C does not invent external-data discrepancy detection or a new discrepancy-resolution domain service. It renders discrepancy records already persisted by the authoritative backend and uses the already-certified factual correction endpoint for locked-profile corrections.
 
 The supplied reference screen contains richer motor-risk fields than the current certified Sprint 1 minimum factual model. BUILD-001C therefore presents only fields currently supported by the authoritative profile service: main driver ID, annual mileage and licence-held-since. Additional insurance facts are not fabricated for visual parity.
+
+
+## Visual authority revision
+
+This certified increment now inherits **MIQOS-DS-001 v1.1 — Visual Baseline Refinement**. The revision changes visual tokens and presentation semantics only; all previously certified behavioural gates remain unchanged. See `docs/application/app-build-001/visual-retrofit-register-v1.1.md`.
