@@ -2,7 +2,7 @@
 
 **Document ID:** MIQO-SP6-EXEC-001C-PREP  
 **Version:** 1.0  
-**Status:** ACTIVE — PROVIDER-NEUTRAL PREPARATION  
+**Status:** COMPLETE — PROVIDER-NEUTRAL FRAMEWORK READY / PROVIDER-SPECIFIC G7–G10 BLOCKED  
 **Sprint:** MIQO-SP6-EXEC-001  
 **Frozen gates prepared:** S6-G7 → S6-G10  
 **Upstream dependency:** S6-G3 remains BLOCKED  
@@ -181,7 +181,38 @@ This PREP increment stops when the repository can truthfully evidence:
 
 No Batch D/E execution is implied by completion of this increment.
 
-## 8. Current upstream state
+## 8. Implementation and CI evidence
+
+Implementation:
+- `4ab68ba8db3efd8da93f480e685a7c292cb4e011` — provider-neutral environment, credential, resilience and certification-harness controls;
+- `7dc464b5f6f9522ee48cc4f67f5008b7041edcdb` — C1–C4 executable tests;
+- `1ce783684d1578ddce12dbb165cace66452f17e4` — deterministic provider-response review record;
+- `9572e809b484d99f790cf804767d0953ae50d217` — remediation allowing external `secret://` references while rejecting inline credential values.
+
+Initial CI run `35513064456` exposed a credential-reference validator defect: the intended `secret://` reference format was incorrectly rejected as though it were an inline secret.
+
+The defect was remediated without weakening the security control.
+
+Definitive remediated CI run: **35513112621**
+
+| Job | Outcome |
+|---|---|
+| `locked-dependencies` | PASS |
+| `postgres-contract` | PASS |
+| `target-stack-sprint1` | PASS |
+
+### Controlled readiness state
+
+| Gate | State after C-PREP |
+|---|---|
+| **S6-G7** | **BLOCKED — FRAMEWORK READY**; provider-specific endpoint and credential bindings required |
+| **S6-G8** | **BLOCKED — FRAMEWORK READY**; actual approved credential provisioning/lifecycle evidence required |
+| **S6-G9** | **BLOCKED — FRAMEWORK READY**; genuine provider resilience values and provider-specific fault-injection evidence required |
+| **S6-G10** | **BLOCKED — HARNESS READY**; approved candidate, G4–G9 provider binding, access and certification execution required |
+
+No provider-specific PASS is inferred from fixture values.
+
+## 9. Current upstream state
 
 ```text
 S6-G0 → G2        PASS
@@ -190,5 +221,13 @@ S6-G4 → G6        provider-neutral framework ready
 Seopa onboarding  SENT / AWAITING_PROVIDER_RESPONSE
 S6-G7 → G10       provider-neutral PREP authorised
 ```
+
+## 10. C-PREP exit determination
+
+The bounded increment has reached its intended exit condition:
+
+> **Everything necessary to execute a genuine provider certification is implemented except the provider-specific facts, permissions, schemas, credentials and certification access that only the provider can supply.**
+
+The next critical-path event remains the Seopa response and deterministic review through `MIQO-SP6-PROVIDER-RESPONSE-REVIEW-001`.
 
 **End of MIQO-SP6-EXEC-001C-PREP**
