@@ -21,7 +21,7 @@ function filesUnder(path){
   return out;
 }
 
-const increments=["001A","001B","001C","001D","001E","001F","001G","001H","001I"];
+const increments=["001A","001B","001C","001D","001E","001F","001G","001H","001I","001J"];
 for(const increment of increments){
   assert(
     existsSync(join(root,`docs/application/app-build-001/${increment}/acceptance-matrix.md`)),
@@ -117,6 +117,12 @@ const ci=read(".github/workflows/ci.yml");
 assert(/MIQO_DATA_CLASSIFICATION:\s*SYNTHETIC/.test(ci),"target-stack CI is not explicitly synthetic");
 assert(/MIQO_LIVE_PROVIDERS_ENABLED:\s*"false"/.test(ci),"target-stack CI does not explicitly disable live providers");
 assert(/playwright test -c playwright\.target\.config\.ts/.test(ci),"target-stack Playwright proof missing from CI");
+
+const manifest=JSON.parse(read("docs/application/app-build-001/001J/certification-manifest.json"));
+assert(manifest.status==="CERTIFIED","final certification manifest is not CERTIFIED");
+assert(manifest.certificationClass==="INTERNAL_ENGINEERING_SYNTHETIC_TARGET_STACK","unexpected certification class");
+assert(manifest.liveProviderActivity==="DISABLED","final certification manifest must keep live provider activity disabled");
+assert(manifest.invariants?.liveProviderHandoffAuthorised===false,"final certification manifest must not authorise live provider handoff");
 
 const semantics=JSON.parse(read("packages/ui/tokens/miqos-semantic-mappings.v1.1.json"));
 assert(semantics.statuses?.ADJUSTED_COMPARABLE==="dormant","ADJUSTED_COMPARABLE semantic state is no longer dormant");
