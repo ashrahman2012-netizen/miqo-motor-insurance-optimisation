@@ -55,6 +55,27 @@
         "GET /admin/audit?profileId=..."
       ],
       "viewModel": "AuditTimelineVM"
+    },
+    {
+      "surface": "documents",
+      "sources": [
+        "CustomerDashboardVM / persisted profile, exploration, quote and RecommendationSet evidence"
+      ],
+      "viewModel": "CustomerDocumentsPageVM"
+    },
+    {
+      "surface": "activity",
+      "sources": [
+        "GET /profiles/:profileId/snapshot (append-only audit projection)"
+      ],
+      "viewModel": "CustomerActivityPageVM"
+    },
+    {
+      "surface": "support",
+      "sources": [
+        "ApplicationEnvironmentContext + active profile navigation context"
+      ],
+      "viewModel": "CustomerSupportPageVM"
     }
   ],
   "invariants": {
@@ -64,6 +85,9 @@
     "frontendDeterminesEligibility": false,
     "frontendEvaluatesIntegrity": false,
     "adjustedComparableActiveRanking": false,
-    "rawAndNormalisedRemainDistinct": true
+    "rawAndNormalisedRemainDistinct": true,
+    "customerActivityExposesRawProviderPayloads": false,
+    "documentsImplyInsurerIssuedFiles": false,
+    "supportCreatesExternalRecords": false
   }
 }
