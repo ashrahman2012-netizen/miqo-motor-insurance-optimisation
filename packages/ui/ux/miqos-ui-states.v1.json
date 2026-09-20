@@ -1,0 +1,40 @@
+{
+  "$schemaVersion": "miqos-ui-states-v1",
+  "status": "FROZEN_FOR_APPLICATION_PREPARATION",
+  "asyncStates": [
+    "IDLE",
+    "LOADING",
+    "REFRESHING",
+    "SUCCESS",
+    "EMPTY",
+    "PARTIAL",
+    "ERROR",
+    "BLOCKED",
+    "NOT_AUTHORISED"
+  ],
+  "domainStates": [
+    "NO_PROFILE",
+    "PROFILE_INCOMPLETE",
+    "VALIDATION_FAILED",
+    "DISCREPANCY_REVIEW_REQUIRED",
+    "PROFILE_NOT_LOCKED",
+    "NO_OBJECTIVE",
+    "NO_SCENARIOS",
+    "ALL_SCENARIOS_REJECTED",
+    "NO_QUOTES",
+    "PARTIAL_QUOTES",
+    "ALL_QUOTES_NOT_COMPARABLE",
+    "NO_ELIGIBLE_RESULTS",
+    "FINAL_INTEGRITY_BLOCKED",
+    "ENVIRONMENT_UNKNOWN",
+    "PROVIDER_ACTION_NOT_AUTHORISED"
+  ],
+  "rules": {
+    "emptyRequiresSuccessfulRequest": true,
+    "blockedDistinctFromError": true,
+    "unknownEnvironmentFailsClosed": true,
+    "adjustedComparableActiveRanking": false,
+    "colorAloneInsufficient": true,
+    "essentialDragOnlyInteractionAllowed": false
+  }
+}
