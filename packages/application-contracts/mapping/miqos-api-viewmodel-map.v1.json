@@ -1,0 +1,69 @@
+{
+  "$schemaVersion": "miqos-api-viewmodel-map-v1",
+  "status": "FROZEN_FOR_APPLICATION_PREPARATION",
+  "mappings": [
+    {
+      "surface": "profile-review",
+      "sources": [
+        "GET /profiles/:profileId",
+        "POST /profiles/:profileId/validate",
+        "GET /profiles/:profileId/discrepancies"
+      ],
+      "viewModel": "ProfileReviewVM"
+    },
+    {
+      "surface": "objective",
+      "sources": [
+        "GET /profile-versions/:versionId/customer-objectives",
+        "GET /optimisation/catalogues/:catalogueVersion"
+      ],
+      "viewModel": "ObjectiveSelectorVM"
+    },
+    {
+      "surface": "scenarios",
+      "sources": [
+        "POST/GET /customer-objectives/:customerObjectiveId/scenario-explorations"
+      ],
+      "viewModel": "ScenarioExplorationVM"
+    },
+    {
+      "surface": "quote-comparison",
+      "sources": [
+        "market-route quotation resources",
+        "normalised quote/comparison evidence"
+      ],
+      "viewModel": "QuoteComparisonVM"
+    },
+    {
+      "surface": "results",
+      "sources": [
+        "RecommendationSet resource",
+        "GET /recommendations/:recommendationSetId/explanation"
+      ],
+      "viewModel": "ResultDetailVM"
+    },
+    {
+      "surface": "admin-trace",
+      "sources": [
+        "GET /admin/selections/:selectionId/sp4-trace"
+      ],
+      "viewModel": "LineageExplorerVM"
+    },
+    {
+      "surface": "audit",
+      "sources": [
+        "GET /admin/audit?profileId=..."
+      ],
+      "viewModel": "AuditTimelineVM"
+    }
+  ],
+  "invariants": {
+    "idsAreOpaque": true,
+    "moneyUnit": "integer_pence",
+    "frontendRanksQuotes": false,
+    "frontendDeterminesEligibility": false,
+    "frontendEvaluatesIntegrity": false,
+    "adjustedComparableActiveRanking": false,
+    "rawAndNormalisedRemainDistinct": true
+  }
+}

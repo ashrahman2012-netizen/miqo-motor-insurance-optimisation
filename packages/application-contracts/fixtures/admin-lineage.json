@@ -1,0 +1,139 @@
+{
+  "selectionId": "SEL-SYN-CONTRACT-001",
+  "nodes": [
+    {
+      "nodeId": "PRO-SYN-CONTRACT-001",
+      "kind": "PROFILE",
+      "label": "Profile",
+      "status": null,
+      "metadata": {}
+    },
+    {
+      "nodeId": "RPV-SYN-CONTRACT-001",
+      "kind": "PROFILE_VERSION",
+      "label": "Profile version 1",
+      "status": {
+        "code": "LOCKED",
+        "label": "LOCKED",
+        "semanticFamily": "info",
+        "reason": null
+      },
+      "metadata": {
+        "versionNo": 1
+      }
+    },
+    {
+      "nodeId": "OBJ-SYN-CONTRACT-001",
+      "kind": "OBJECTIVE",
+      "label": "Lowest annual premium",
+      "status": null,
+      "metadata": {
+        "objectiveVersion": "sp4-objectives-v1"
+      }
+    },
+    {
+      "nodeId": "SCN-SYN-001",
+      "kind": "SCENARIO",
+      "label": "Scenario 1",
+      "status": null,
+      "metadata": {
+        "generationVersion": "sp4-gen-v1"
+      }
+    },
+    {
+      "nodeId": "MR-SYN-001",
+      "kind": "MARKET_ROUTE",
+      "label": "Synthetic direct route",
+      "status": null,
+      "metadata": {
+        "providerKey": "MOCK-PROVIDER-001",
+        "channelKey": "DIRECT_SYNTHETIC"
+      }
+    },
+    {
+      "nodeId": "QR-SYN-001",
+      "kind": "QUOTE_REQUEST",
+      "label": "Quote request",
+      "status": null,
+      "metadata": {}
+    },
+    {
+      "nodeId": "RAW-SYN-001",
+      "kind": "RAW_PROVIDER_RESPONSE",
+      "label": "Raw provider response",
+      "status": null,
+      "metadata": {
+        "payloadSha256": "synthetic-sha256-placeholder"
+      }
+    },
+    {
+      "nodeId": "NQ-SYN-001",
+      "kind": "NORMALISED_QUOTE",
+      "label": "Normalised quote",
+      "status": {
+        "code": "DIRECTLY_COMPARABLE",
+        "label": "DIRECTLY COMPARABLE",
+        "semanticFamily": "success",
+        "reason": null
+      },
+      "metadata": {
+        "normalisationVersion": "norm-v1"
+      }
+    },
+    {
+      "nodeId": "REC-SP4-SYN-CONTRACT-001",
+      "kind": "RECOMMENDATION_SET",
+      "label": "Recommendation set",
+      "status": null,
+      "metadata": {}
+    },
+    {
+      "nodeId": "REX-SP4-SYN-CONTRACT-001",
+      "kind": "EXPLANATION",
+      "label": "Explanation",
+      "status": null,
+      "metadata": {}
+    },
+    {
+      "nodeId": "SEL-SYN-CONTRACT-001",
+      "kind": "SELECTION",
+      "label": "Selection",
+      "status": {
+        "code": "ACCEPTED",
+        "label": "ACCEPTED",
+        "semanticFamily": "success",
+        "reason": null
+      },
+      "metadata": {}
+    },
+    {
+      "nodeId": "FIR-SYN-CONTRACT-001",
+      "kind": "FINAL_INTEGRITY",
+      "label": "Final integrity",
+      "status": {
+        "code": "PASS",
+        "label": "PASS",
+        "semanticFamily": "success",
+        "reason": null
+      },
+      "metadata": {}
+    },
+    {
+      "nodeId": "COMP-SYN-CONTRACT-001",
+      "kind": "COMPLETION",
+      "label": "Prototype completion",
+      "status": null,
+      "metadata": {
+        "status": "PROTOTYPE_JOURNEY_COMPLETE"
+      }
+    }
+  ],
+  "pageState": {
+    "state": "SUCCESS",
+    "code": null,
+    "title": null,
+    "message": null,
+    "retryable": false,
+    "referenceId": null
+  }
+}

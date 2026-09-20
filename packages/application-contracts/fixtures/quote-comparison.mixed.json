@@ -1,0 +1,104 @@
+{
+  "objective": {
+    "customerObjectiveId": "OBJ-SYN-CONTRACT-001",
+    "objectiveId": "LOWEST_ANNUAL_PREMIUM",
+    "label": "Lowest annual premium",
+    "explanation": "Surface eligible directly comparable quotes by annual cash premium without combining premium and excess.",
+    "primaryDimension": "annual_cash_premium_pence",
+    "executable": true,
+    "selected": true,
+    "objectiveVersion": "sp4-objectives-v1",
+    "catalogueVersion": "sp4-catalogue-v2.1"
+  },
+  "directlyComparable": [
+    {
+      "normalisedQuoteId": "NQ-SYN-001",
+      "quoteRequestId": "QR-SYN-001",
+      "scenarioId": "SCN-SYN-001",
+      "marketRoute": {
+        "marketRouteId": "MR-SYN-001",
+        "routeKey": "mock-direct",
+        "displayName": "Synthetic direct route",
+        "providerKey": "MOCK-PROVIDER-001",
+        "channelKey": "DIRECT_SYNTHETIC",
+        "environment": "SYNTHETIC",
+        "adapterVersion": "adapter-v1",
+        "mappingVersion": "mapping-v1",
+        "certificationState": null
+      },
+      "comparisonState": "DIRECTLY_COMPARABLE",
+      "comparisonReason": "All required comparison dimensions are present.",
+      "ordinal": 1,
+      "objectiveMetric": "annual_cash_premium_pence",
+      "objectiveMetricValuePence": 64215,
+      "pricing": {
+        "annualCashPremiumPence": 64215,
+        "financeCostPence": 0,
+        "monthlyCommitmentPence": null,
+        "totalPayablePence": 64215
+      },
+      "excess": {
+        "compulsoryExcessPence": 25000,
+        "voluntaryExcessPence": 50000,
+        "totalExcessExposurePence": 75000
+      },
+      "normalisationVersion": "norm-v1",
+      "eligible": true,
+      "exclusionReason": null,
+      "openAction": {
+        "state": "AVAILABLE",
+        "reason": null
+      }
+    }
+  ],
+  "notComparable": [
+    {
+      "normalisedQuoteId": "NQ-SYN-002",
+      "quoteRequestId": "QR-SYN-002",
+      "scenarioId": "SCN-SYN-001",
+      "marketRoute": {
+        "marketRouteId": "MR-SYN-002",
+        "routeKey": "mock-pcw",
+        "displayName": "Synthetic comparison route",
+        "providerKey": "MOCK-PROVIDER-002",
+        "channelKey": "PCW_SYNTHETIC",
+        "environment": "SYNTHETIC",
+        "adapterVersion": "adapter-v1",
+        "mappingVersion": "mapping-v1",
+        "certificationState": null
+      },
+      "comparisonState": "NOT_COMPARABLE",
+      "comparisonReason": "Required comparison dimension is unavailable.",
+      "ordinal": null,
+      "objectiveMetric": null,
+      "objectiveMetricValuePence": null,
+      "pricing": {
+        "annualCashPremiumPence": 61500,
+        "financeCostPence": null,
+        "monthlyCommitmentPence": null,
+        "totalPayablePence": null
+      },
+      "excess": {
+        "compulsoryExcessPence": 30000,
+        "voluntaryExcessPence": 50000,
+        "totalExcessExposurePence": 80000
+      },
+      "normalisationVersion": "norm-v1",
+      "eligible": false,
+      "exclusionReason": "NOT_COMPARABLE",
+      "openAction": {
+        "state": "AVAILABLE",
+        "reason": "Quote details remain inspectable."
+      }
+    }
+  ],
+  "unavailableRoutes": [],
+  "pageState": {
+    "state": "SUCCESS",
+    "code": null,
+    "title": null,
+    "message": null,
+    "retryable": false,
+    "referenceId": null
+  }
+}

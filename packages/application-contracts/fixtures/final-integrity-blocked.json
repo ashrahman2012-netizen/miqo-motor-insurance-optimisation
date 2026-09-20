@@ -1,0 +1,21 @@
+{
+  "pageState": {
+    "state": "BLOCKED",
+    "code": "FINAL_INTEGRITY_BLOCKED",
+    "title": "Selection cannot continue",
+    "message": "A final integrity control blocked this selection. Review the stated control reason before continuing.",
+    "retryable": false,
+    "referenceId": "SEL-SYN-BLOCKED-001"
+  },
+  "integrity": {
+    "outcome": "BLOCKED",
+    "ruleVersion": "final-integrity-v1",
+    "reasons": [
+      "The selected quote no longer satisfies the required final integrity lineage checks."
+    ]
+  },
+  "action": {
+    "state": "BLOCKED",
+    "reason": "Final integrity must pass before any permitted handoff."
+  }
+}

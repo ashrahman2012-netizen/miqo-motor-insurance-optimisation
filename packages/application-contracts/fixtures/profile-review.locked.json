@@ -1,0 +1,49 @@
+{
+  "profileId": "PRO-SYN-CONTRACT-001",
+  "version": {
+    "versionId": "RPV-SYN-CONTRACT-001",
+    "versionNo": 1,
+    "status": "LOCKED",
+    "lockedAt": "2026-09-20T12:00:00.000Z"
+  },
+  "fields": [
+    {
+      "fieldId": "main_driver_id",
+      "label": "Main driver",
+      "controlClass": "F",
+      "value": "DRV-SYN-001",
+      "displayValue": "Synthetic Driver 001",
+      "sourceType": "customer_declared",
+      "provenanceAvailable": true,
+      "editable": false
+    },
+    {
+      "fieldId": "annual_mileage",
+      "label": "Annual mileage",
+      "controlClass": "F",
+      "value": 8000,
+      "displayValue": "8,000 miles",
+      "sourceType": "customer_declared",
+      "provenanceAvailable": true,
+      "editable": false
+    }
+  ],
+  "validation": {
+    "valid": true,
+    "versionId": "RPV-SYN-CONTRACT-001",
+    "issues": []
+  },
+  "discrepancies": [],
+  "lockAction": {
+    "state": "HIDDEN",
+    "reason": "Profile version is already locked."
+  },
+  "pageState": {
+    "state": "SUCCESS",
+    "code": null,
+    "title": null,
+    "message": null,
+    "retryable": false,
+    "referenceId": null
+  }
+}

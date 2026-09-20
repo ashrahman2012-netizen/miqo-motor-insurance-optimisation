@@ -1,0 +1,26 @@
+{
+  "$schemaVersion": "miqos-contract-fixture-manifest-v1",
+  "fixtures": [
+    {
+      "file": "profile-review.locked.json",
+      "type": "ProfileReviewVM"
+    },
+    {
+      "file": "quote-comparison.mixed.json",
+      "type": "QuoteComparisonVM"
+    },
+    {
+      "file": "result-detail.synthetic.json",
+      "type": "ResultDetailVM"
+    },
+    {
+      "file": "admin-lineage.json",
+      "type": "LineageExplorerVM"
+    },
+    {
+      "file": "final-integrity-blocked.json",
+      "type": "PageStateVM + IntegrityVM"
+    }
+  ],
+  "classification": "SYNTHETIC"
+}

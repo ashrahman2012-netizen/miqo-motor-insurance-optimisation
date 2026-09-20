@@ -1,0 +1,86 @@
+{
+  "resultSetId": "REC-SP4-SYN-CONTRACT-001",
+  "sourceRecommendationSetId": "REC-SP4-SYN-CONTRACT-001",
+  "objective": {
+    "customerObjectiveId": "OBJ-SYN-CONTRACT-001",
+    "objectiveId": "LOWEST_ANNUAL_PREMIUM",
+    "label": "Lowest annual premium",
+    "explanation": "Surface eligible directly comparable quotes by annual cash premium without combining premium and excess.",
+    "primaryDimension": "annual_cash_premium_pence",
+    "executable": true,
+    "selected": true,
+    "objectiveVersion": "sp4-objectives-v1",
+    "catalogueVersion": "sp4-catalogue-v2.1"
+  },
+  "surfacedResult": {
+    "normalisedQuoteId": "NQ-SYN-001",
+    "quoteRequestId": "QR-SYN-001",
+    "scenarioId": "SCN-SYN-001",
+    "marketRoute": {
+      "marketRouteId": "MR-SYN-001",
+      "routeKey": "mock-direct",
+      "displayName": "Synthetic direct route",
+      "providerKey": "MOCK-PROVIDER-001",
+      "channelKey": "DIRECT_SYNTHETIC",
+      "environment": "SYNTHETIC",
+      "adapterVersion": "adapter-v1",
+      "mappingVersion": "mapping-v1",
+      "certificationState": null
+    },
+    "comparisonState": "DIRECTLY_COMPARABLE",
+    "comparisonReason": "Eligible under the active direct-comparison rule.",
+    "ordinal": 1,
+    "objectiveMetric": "annual_cash_premium_pence",
+    "objectiveMetricValuePence": 64215,
+    "pricing": {
+      "annualCashPremiumPence": 64215,
+      "financeCostPence": 0,
+      "monthlyCommitmentPence": null,
+      "totalPayablePence": 64215
+    },
+    "excess": {
+      "compulsoryExcessPence": 25000,
+      "voluntaryExcessPence": 50000,
+      "totalExcessExposurePence": 75000
+    },
+    "normalisationVersion": "norm-v1",
+    "eligible": true,
+    "exclusionReason": null,
+    "openAction": {
+      "state": "AVAILABLE",
+      "reason": null
+    }
+  },
+  "alternatives": [],
+  "excluded": [],
+  "whyThisSurfaced": [
+    {
+      "reasonId": "WHY-001",
+      "title": "Selected objective",
+      "detail": "This was the lowest annual premium among the eligible directly comparable synthetic quotes.",
+      "controlId": null,
+      "controlClass": null
+    }
+  ],
+  "integrity": {
+    "outcome": "PASS",
+    "ruleVersion": "final-integrity-v1",
+    "reasons": []
+  },
+  "handoff": {
+    "action": {
+      "state": "NOT_AUTHORISED",
+      "reason": "Synthetic environment does not permit insurer purchase or binding."
+    },
+    "label": null,
+    "disclosure": "Synthetic test result only. No live insurer connection."
+  },
+  "pageState": {
+    "state": "SUCCESS",
+    "code": null,
+    "title": null,
+    "message": null,
+    "retryable": false,
+    "referenceId": null
+  }
+}

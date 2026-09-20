@@ -1,0 +1,10 @@
+{
+  "name": "@miqo/application-contracts",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
