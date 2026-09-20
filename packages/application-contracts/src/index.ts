@@ -640,3 +640,64 @@ export interface AdminAuditTracePageVM {
   readonly governance: AdminGovernanceSummaryVM;
   readonly pageState: PageStateVM;
 }
+
+
+// BUILD-001H — customer documents/records, activity and support.
+export type CustomerRecordKind =
+  | "PROFILE_RECORD"
+  | "SCENARIO_EXPLORATION"
+  | "QUOTE_EVIDENCE"
+  | "RESULT_SET";
+
+export interface CustomerRecordVM {
+  readonly recordId: string;
+  readonly kind: CustomerRecordKind;
+  readonly title: string;
+  readonly description: string;
+  readonly status: StatusVM;
+  readonly createdAt: IsoDateTime | null;
+  readonly sourceId: string | null;
+  readonly fingerprint: string | null;
+  readonly openHref: string | null;
+  readonly downloadAction: ActionAvailabilityVM;
+}
+
+export interface CustomerDocumentsPageVM {
+  readonly profileId: string | null;
+  readonly records: ReadonlyArray<CustomerRecordVM>;
+  readonly uploadAction: ActionAvailabilityVM;
+  readonly pageState: PageStateVM;
+}
+
+export interface CustomerActivityEventVM {
+  readonly activityId: string;
+  readonly occurredAt: IsoDateTime;
+  readonly category: "PROFILE" | "OBJECTIVE" | "SCENARIO" | "QUOTES" | "RESULTS" | "INTEGRITY" | "JOURNEY";
+  readonly title: string;
+  readonly detail: string;
+  readonly status: StatusVM;
+  readonly sourceAuditEventId: string;
+}
+
+export interface CustomerActivityPageVM {
+  readonly profileId: string | null;
+  readonly events: ReadonlyArray<CustomerActivityEventVM>;
+  readonly fullAuditAction: ActionAvailabilityVM;
+  readonly pageState: PageStateVM;
+}
+
+export interface CustomerSupportTopicVM {
+  readonly topicId: string;
+  readonly title: string;
+  readonly summary: string;
+  readonly href: string | null;
+  readonly actionLabel: string | null;
+}
+
+export interface CustomerSupportPageVM {
+  readonly profileId: string | null;
+  readonly environment: ApplicationEnvironment;
+  readonly topics: ReadonlyArray<CustomerSupportTopicVM>;
+  readonly contactAction: ActionAvailabilityVM;
+  readonly pageState: PageStateVM;
+}
