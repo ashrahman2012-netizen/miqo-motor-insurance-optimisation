@@ -57,8 +57,9 @@ async function expectNoViewportOverflow(page:Page){
     bodyWidth:document.body.scrollWidth,
     innerWidth:window.innerWidth,
   }));
-  expect(result.scrollWidth,"document must not horizontally overflow the viewport").toBeLessThanOrEqual(result.clientWidth+1);
-  expect(result.bodyWidth,"body must not horizontally overflow the viewport").toBeLessThanOrEqual(result.innerWidth+1);
+  const context=page.url()+" viewport="+result.innerWidth+" document="+result.scrollWidth+"/"+result.clientWidth+" body="+result.bodyWidth;
+  expect(result.scrollWidth,"document must not horizontally overflow the viewport: "+context).toBeLessThanOrEqual(result.clientWidth+1);
+  expect(result.bodyWidth,"body must not horizontally overflow the viewport: "+context).toBeLessThanOrEqual(result.innerWidth+1);
 }
 
 async function expectAccessibleFrame(page:Page,heading:string){
