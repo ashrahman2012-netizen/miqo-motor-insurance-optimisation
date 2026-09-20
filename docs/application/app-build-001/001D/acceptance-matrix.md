@@ -22,3 +22,8 @@
 The supplied design illustrates `Telematics Accepted` as an objective. The certified objective model does not define that objective; telematics is an O-class optimisation control. BUILD-001D therefore shows the actual executable objective model: lowest annual premium, lowest monthly commitment, lowest finance cost and lower excess exposure, while Balanced cost and exposure remains visible but dormant pending a separately approved methodology.
 
 The reference also shows annual premium, excess and expected route coverage directly in the scenario table. Those are quotation/market-route outcomes and are intentionally not fabricated in BUILD-001D. This increment shows scenario identity, O-class deltas, readiness and provenance only; quotation comparison belongs to BUILD-001E.
+
+
+## Visual authority revision
+
+This certified increment now inherits **MIQOS-DS-001 v1.1 — Visual Baseline Refinement**. The revision changes visual tokens and presentation semantics only; all previously certified behavioural gates remain unchanged. See `docs/application/app-build-001/visual-retrofit-register-v1.1.md`.
