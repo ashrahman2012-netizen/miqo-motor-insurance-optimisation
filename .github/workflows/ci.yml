@@ -28,6 +28,8 @@ jobs:
       - run: npm run test -w @miqo/optimisation
       - run: npm run test -w @miqo/scenarios
       - run: npm run test -w @miqo/quote-orchestration
+      - run: npm run typecheck -w @miqo/ui
+      - run: npm run test -w @miqo/ui
       - run: npm run smoke:domain
       - run: npm run build
 

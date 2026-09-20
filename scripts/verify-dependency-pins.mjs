@@ -2,9 +2,12 @@ import { readFileSync } from "node:fs";
 
 const checks = [
   ["package.json", "devDependencies", ["@playwright/test", "typescript", "vitest"]],
-  ["apps/customer-web/package.json", "dependencies", ["next", "react", "react-dom"]],
+  ["apps/customer-web/package.json", "dependencies", ["@miqo/ui", "next", "react", "react-dom"]],
   ["apps/customer-web/package.json", "devDependencies", ["typescript", "@types/node", "@types/react"]],
-  ["apps/admin-web/package.json", "dependencies", ["next", "react", "react-dom"]],
+  ["apps/admin-web/package.json", "dependencies", ["@miqo/ui", "next", "react", "react-dom"]],
+  ["packages/ui/package.json", "dependencies", ["@miqo/application-contracts"]],
+  ["packages/ui/package.json", "peerDependencies", ["react", "react-dom"]],
+  ["packages/ui/package.json", "devDependencies", ["typescript", "vitest", "@types/react"]],
   ["apps/api/package.json", "dependencies", ["fastify", "zod", "@fastify/cors"]],
   ["packages/db/package.json", "dependencies", ["drizzle-orm", "pg"]],
   ["packages/db/package.json", "devDependencies", ["drizzle-kit"]]
