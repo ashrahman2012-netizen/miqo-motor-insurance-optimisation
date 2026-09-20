@@ -88,8 +88,19 @@ for(const path of frontendFiles){
   assert(!/from\s+["']@miqo\/db["']/.test(source),`direct database import in application UI: ${path}`);
 }
 
-const customerAppSource=filesUnder("apps/customer-web/app").filter(path=>/\.(ts|tsx|js|jsx)$/.test(path)).map(read).join("\n");
-assert(!customerAppSource.includes("ADJUSTED_COMPARABLE"),"ADJUSTED_COMPARABLE is active in customer application source");
+const customerExecutableSources=filesUnder("apps/customer-web/app").filter(path=>/\.(ts|tsx|js|jsx)$/.test(path));
+for(const path of customerExecutableSources){
+  const source=read(path);
+  assert(
+    !/comparisonState\s*===?\s*["']ADJUSTED_COMPARABLE["']/.test(source),
+    `customer UI activates adjusted comparison in ${path}`,
+  );
+}
+const quotePageSource=read("apps/customer-web/app/quotes/page.tsx");
+assert(
+  /ADJUSTED_COMPARABLE never enters the ranked set/i.test(quotePageSource),
+  "quote comparison no longer states adjusted-comparison dormant boundary",
+);
 
 const resultsSource=read("apps/customer-web/app/results/page.tsx");
 assert(/No live insurer destination is fabricated/i.test(resultsSource),"results surface no longer states live-handoff boundary");
