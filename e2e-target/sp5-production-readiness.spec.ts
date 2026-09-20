@@ -15,6 +15,7 @@ test("S5-G22 production-readiness journey remains fail-closed for unauthorised c
   await page.waitForLoadState("networkidle");
   await page.getByLabel("I confirm").check();
   await page.getByRole("button",{name:"Confirm & lock profile"}).click();
+  await expect(page).toHaveURL("http://127.0.0.1:3001/admin/profiles/"+profileId);
 
   await page.goto("http://127.0.0.1:3000/profile/"+profileId+"/recommendations");
   await page.getByLabel("Customer objective").selectOption("LOWEST_ANNUAL_PREMIUM");
