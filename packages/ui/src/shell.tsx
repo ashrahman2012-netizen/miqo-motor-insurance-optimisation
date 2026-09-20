@@ -18,8 +18,8 @@ export function SidebarNavigation({items,currentPath,label,onNavigate}:{items:Re
   })}</ul></nav>;
 }
 
-export function TopNavigation({applicationLabel,contextLabel,onOpenNavigation,menuButtonRef}:{applicationLabel:string;contextLabel:string;onOpenNavigation:()=>void;menuButtonRef:RefObject<HTMLButtonElement|null>}) {
-  return <header className="miqos-top-nav"><div className="miqos-top-nav__identity"><button ref={menuButtonRef} type="button" className="miqos-mobile-menu-button" aria-label="Open navigation" aria-controls="miqos-mobile-navigation" onClick={onOpenNavigation}><span aria-hidden="true">☰</span></button><div><strong className="miqos-wordmark">{applicationLabel}</strong><span className="miqos-top-nav__context">{contextLabel}</span></div></div><EnvironmentBadge/></header>;
+export function TopNavigation({applicationLabel,contextLabel,onOpenNavigation,menuButtonRef,navigationOpen}:{applicationLabel:string;contextLabel:string;onOpenNavigation:()=>void;menuButtonRef:RefObject<HTMLButtonElement|null>;navigationOpen:boolean}) {
+  return <header className="miqos-top-nav"><div className="miqos-top-nav__identity"><button ref={menuButtonRef} type="button" className="miqos-mobile-menu-button" aria-label="Open navigation" aria-controls="miqos-mobile-navigation" aria-expanded={navigationOpen} onClick={onOpenNavigation}><span aria-hidden="true">☰</span></button><div><strong className="miqos-wordmark">{applicationLabel}</strong><span className="miqos-top-nav__context">{contextLabel}</span></div></div><EnvironmentBadge/></header>;
 }
 
 export function AppShell({applicationLabel="MIQOS",contextLabel,navigation,navigationLabel,currentPath,children}:{applicationLabel?:string;contextLabel:string;navigation:ReadonlyArray<NavigationItem>;navigationLabel:string;currentPath:string;children:ReactNode}) {
@@ -49,10 +49,10 @@ export function AppShell({applicationLabel="MIQOS",contextLabel,navigation,navig
         <div className="miqos-sidebar__footer">Change choices, not facts.</div>
       </aside>
       <div className="miqos-app-shell__body">
-        <TopNavigation applicationLabel={applicationLabel} contextLabel={contextLabel} onOpenNavigation={()=>setMobileOpen(true)} menuButtonRef={menuButtonRef}/>
+        <TopNavigation applicationLabel={applicationLabel} contextLabel={contextLabel} onOpenNavigation={()=>setMobileOpen(true)} menuButtonRef={menuButtonRef} navigationOpen={mobileOpen}/>
         <div id="main-content" className="miqos-workspace" tabIndex={-1}>{children}</div>
       </div>
     </div>
-    {mobileOpen?<div className="miqos-mobile-nav-layer"><button type="button" className="miqos-mobile-nav-backdrop" aria-label="Close navigation backdrop" onClick={closeMobile}/><aside id="miqos-mobile-navigation" className="miqos-mobile-nav"><div className="miqos-mobile-nav__header"><strong>MIQOS</strong><button ref={closeButtonRef} type="button" className="miqos-icon-button" aria-label="Close navigation" onClick={closeMobile}>×</button></div><SidebarNavigation items={navigation} currentPath={currentPath} label={navigationLabel} onNavigate={()=>setMobileOpen(false)}/></aside></div>:null}
+    {mobileOpen?<div className="miqos-mobile-nav-layer"><button type="button" className="miqos-mobile-nav-backdrop" aria-label="Dismiss navigation overlay" onClick={closeMobile}/><aside id="miqos-mobile-navigation" className="miqos-mobile-nav"><div className="miqos-mobile-nav__header"><strong>MIQOS</strong><button ref={closeButtonRef} type="button" className="miqos-icon-button" aria-label="Close navigation" onClick={closeMobile}>×</button></div><SidebarNavigation items={navigation} currentPath={currentPath} label={navigationLabel} onNavigate={()=>setMobileOpen(false)}/></aside></div>:null}
   </>;
 }
