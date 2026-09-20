@@ -1,0 +1,95 @@
+{
+  "$schemaVersion": "miqos-route-map-v1",
+  "status": "FROZEN_FOR_APPLICATION_PREPARATION",
+  "customer": {
+    "primaryNavigation": [
+      {
+        "label": "Dashboard",
+        "path": "/dashboard"
+      },
+      {
+        "label": "Your Profile",
+        "path": "/profile"
+      },
+      {
+        "label": "Optimise",
+        "path": "/optimise"
+      },
+      {
+        "label": "Quotes",
+        "path": "/quotes/compare"
+      },
+      {
+        "label": "Your Results",
+        "path": "/results"
+      },
+      {
+        "label": "Documents",
+        "path": "/documents"
+      },
+      {
+        "label": "Activity",
+        "path": "/activity"
+      },
+      {
+        "label": "Help & Support",
+        "path": "/support"
+      },
+      {
+        "label": "Settings",
+        "path": "/settings"
+      }
+    ],
+    "routes": [
+      "/dashboard",
+      "/profile/capture",
+      "/profile/validation",
+      "/profile/discrepancies",
+      "/profile/review",
+      "/profile/lock",
+      "/optimise/objective",
+      "/optimise/controls",
+      "/optimise/scenarios",
+      "/optimise/vehicles",
+      "/quotes/compare",
+      "/quotes/:quoteId",
+      "/results/:resultSetId",
+      "/results/:resultSetId/why",
+      "/documents",
+      "/activity",
+      "/support",
+      "/settings"
+    ]
+  },
+  "admin": {
+    "routes": [
+      "/admin/dashboard",
+      "/admin/cases",
+      "/admin/cases/:caseId",
+      "/admin/cases/:caseId/profile",
+      "/admin/cases/:caseId/profile/:versionId",
+      "/admin/optimisation",
+      "/admin/optimisation/catalogues/:catalogueVersion",
+      "/admin/scenarios",
+      "/admin/scenarios/:scenarioId",
+      "/admin/market-routes",
+      "/admin/market-routes/:marketRouteId",
+      "/admin/quote-runs",
+      "/admin/quote-runs/:quoteRunId",
+      "/admin/quotes/:quoteId",
+      "/admin/recommendations",
+      "/admin/recommendations/:recommendationSetId",
+      "/admin/integrity",
+      "/admin/integrity/:integritySignalId",
+      "/admin/discrepancies",
+      "/admin/discrepancies/:discrepancyId",
+      "/admin/audit",
+      "/admin/audit/trace/:selectionId",
+      "/admin/providers",
+      "/admin/providers/:providerKey",
+      "/admin/certification",
+      "/admin/certification/:certificationId",
+      "/admin/system"
+    ]
+  }
+}
