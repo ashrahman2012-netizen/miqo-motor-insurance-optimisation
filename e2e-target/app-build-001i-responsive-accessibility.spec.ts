@@ -74,7 +74,7 @@ test("BUILD-001I canonical customer surfaces remain usable at desktop and mobile
   const q=query(state);
   const routes=[
     ["/dashboard?"+q,"Customer Dashboard"],
-    ["/profile?profileId="+encodeURIComponent(state.profile.profileId),"Profile Review & Lock"],
+    ["/profile/review?profileId="+encodeURIComponent(state.profile.profileId),"Profile Review & Lock"],
     ["/optimise?"+q,"Objective & Scenario Explorer"],
     ["/quotes?"+q,"Quote Comparison"],
     ["/results?"+q,"Why This Surfaced"],
