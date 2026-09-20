@@ -28,3 +28,8 @@ The current synthetic runtime can explicitly execute the already-certified marke
 The visual reference included an Adjusted comparison category. The frozen application preparation decision keeps ADJUSTED_COMPARABLE dormant. BUILD-001E therefore renders such evidence as not ranked and never upgrades it into the eligible set.
 
 The visual reference also implied a generic rank. In the executable application, rank is always relative to the selected customer objective. Rank #1 is labelled as an ordering result, not a recommendation. BUILD-001F remains responsible for persisted RecommendationSet / Why This Surfaced presentation.
+
+
+## Visual authority revision
+
+This certified increment now inherits **MIQOS-DS-001 v1.1 — Visual Baseline Refinement**. The revision changes visual tokens and presentation semantics only; all previously certified behavioural gates remain unchanged. See `docs/application/app-build-001/visual-retrofit-register-v1.1.md`.
