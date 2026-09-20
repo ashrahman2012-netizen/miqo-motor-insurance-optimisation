@@ -1,8 +1,8 @@
 # MIQO-SP6-PROVIDER-CANDIDATE-001 — Provider Candidate Control Record
 
 **Document ID:** MIQO-SP6-PROVIDER-CANDIDATE-001  
-**Version:** 0.2-DRAFT  
-**Status:** CANDIDATE IDENTIFIED — EXTERNAL CERTIFICATION ACCESS / TECHNICAL PACK PENDING — S6-G3 BLOCKED  
+**Version:** 0.3-DRAFT  
+**Status:** CANDIDATE IDENTIFIED — OUTREACH SENT / PROVIDER RESPONSE PENDING — S6-G3 BLOCKED  
 **Sprint:** MIQO-SP6-EXEC-001  
 **Gate:** S6-G3 — Named Provider Candidate  
 **Onboarding workstream:** MIQO-SP6-PROVIDER-ONBOARD-001  
@@ -39,7 +39,7 @@ The actual permissions and suitability for the proposed MIQO integration remain 
 | Target environment | **CERTIFICATION** | MIQO requirement |
 | Provider certification/sandbox environment name | **TBD** | Not publicly supplied |
 | Certification base endpoint/reference | **TBD** | No partner certification endpoint evidenced publicly |
-| Environment access status | **NOT_REQUESTED** | Must move through external outreach |
+| Environment access status | **REQUESTED** | Seopa certification/API enquiry sent 20 September 2026 |
 | Permitted test-data classification | **SYNTHETIC** proposed | Provider confirmation required |
 | Provider restrictions on test data | **TBD** | Provider technical/governance input required |
 
@@ -63,7 +63,7 @@ The route remains non-LIVE.
 
 | Field | Current value | Evidence state |
 |---|---|---|
-| Provider API/integration documentation reference | **TBD — request Seopa partner technical pack** | External input required |
+| Provider API/integration documentation reference | **REQUESTED** | Awaiting Seopa response / technical pack |
 | Documentation version/date | **TBD** | External input required |
 | Request schema reference | **TBD** | External input required |
 | Response schema reference | **TBD** | External input required |
@@ -101,7 +101,7 @@ Credential **values must never be entered in this document**.
 |---|---|---|
 | Contractual-authority status | **PENDING** | No executed provider authority supplied |
 | Agreement / authority reference | **TBD** | External input required if/when approved |
-| Permitted certification access | **PENDING** | Decisive S6-G3 dependency |
+| Permitted certification access | **PENDING — REQUESTED** | Decisive S6-G3 dependency; enquiry sent 20 September 2026 |
 | Permitted production access | **PENDING / NOT AUTHORISED BY MIQO** | Later gate only |
 | Restrictions / conditions | **TBD** | External input required |
 
@@ -160,14 +160,25 @@ Before S6-G3 can pass, Seopa must confirm whether MIQO can use a certification i
 
 Affiliate redirect alone does not satisfy the current MIQO quote-engine architecture.
 
-## 13. Current gate state
+## 13. Outreach evidence
+
+- Enquiry control: `MIQO-SP6-SEOPA-ENQUIRY-001`
+- External contact date: **20 September 2026**
+- Recipient: **info@seopa.com**
+- Gmail message ID: `1a0beeda458d4ac4`
+- Gmail thread ID: `1a0bee474467a27d`
+- Purpose: request certification/sandbox access, headless/API suitability confirmation, schemas, authentication/resilience requirements, test-data rules, certification pack and technical onboarding ownership.
+- No credentials or secret values were transmitted.
+- No LIVE, REAL_DATA or DISTRIBUTION authority was claimed.
+
+## 14. Current gate state
 
 ```text
 Provider discovery              PASS
 ProviderCandidateRecord         CREATED / INCOMPLETE
-External technical outreach     REQUIRED
-Certification permission        PENDING
-Technical pack                  PENDING
+External technical outreach     SENT
+Certification permission        PENDING PROVIDER RESPONSE
+Technical pack                  REQUESTED / PENDING
         ↓
 S6-G3                           BLOCKED
         ↓
