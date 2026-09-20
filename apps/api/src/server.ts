@@ -13,7 +13,7 @@ import { createShortlist, getShortlist } from "./comparison-service.ts";
 import { getSelection, selectShortlistedQuote } from "./selection-service.ts";
 import { getSelectionTrace } from "./trace-service.ts";
 import { getSprint4AdminSelectionTrace } from "./sprint4-admin-trace-service.ts";
-import { getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
+import { getCurrentOptimisationPolicy, getPersistedOptimisationCatalogue, listCustomerObjectives, persistCustomerObjective } from "./optimisation-policy-service.ts";
 import { generateSprint4Scenarios, listSprint4ScenarioExplorations } from "./sprint4-scenario-service.ts";
 import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4MarketRouteQuotes } from "./sprint4-market-route-service.ts";
 import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
@@ -63,6 +63,7 @@ export async function buildApp() {
     return reply.code(result.created?201:200).send(result);
   });
   app.get("/profile-versions/:versionId/customer-objectives",async(req:any)=>listCustomerObjectives(db,req.params.versionId));
+  app.get("/optimisation/policy/current",async()=>getCurrentOptimisationPolicy());
   app.get("/optimisation/catalogues/:catalogueVersion",async(req:any)=>getPersistedOptimisationCatalogue(db,req.params.catalogueVersion));
   app.get("/market-routes/synthetic",async()=>ensureSyntheticMarketRoutes(db));
   app.post("/profile-versions/:versionId/occupation-mappings",async(req:any,reply)=>{

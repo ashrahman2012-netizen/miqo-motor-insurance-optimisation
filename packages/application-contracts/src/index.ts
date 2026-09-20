@@ -460,3 +460,24 @@ export interface ProfileLifecycleVM {
   readonly latestValidationAt: IsoDateTime | null;
   readonly blockingDiscrepancyCount: number;
 }
+
+
+// BUILD-001D — objective, optimisation catalogue and scenario explorer.
+export interface OptimisationPolicyProvenanceVM {
+  readonly catalogueVersion: string;
+  readonly objectiveModelVersion: string;
+  readonly policyFingerprint: string;
+  readonly scenarioGeneratorVersion: string;
+  readonly explorationFingerprint: string | null;
+}
+
+export interface ScenarioExplorerVM {
+  readonly profileId: string;
+  readonly profileVersion: ProfileVersionVM;
+  readonly objectiveSelector: ObjectiveSelectorVM;
+  readonly selectedCustomerObjectiveId: string | null;
+  readonly controls: ReadonlyArray<OptimisationControlVM>;
+  readonly exploration: ScenarioExplorationVM | null;
+  readonly provenance: OptimisationPolicyProvenanceVM;
+  readonly pageState: PageStateVM;
+}

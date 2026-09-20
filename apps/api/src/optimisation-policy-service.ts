@@ -15,6 +15,7 @@ import {
   optimisationCatalogue,
   optimisationPolicyFingerprint,
 } from "../../../packages/optimisation/src/index.ts";
+import {SP4_SCENARIO_GENERATOR_VERSION} from "../../../packages/scenarios/src/sprint4.ts";
 import {ConflictError,ValidationError} from "./errors.ts";
 
 const uuid=(prefix:string)=>`${prefix}-${randomUUID()}`;
@@ -162,5 +163,17 @@ export async function getPersistedOptimisationCatalogue(db:MiqoDatabase,catalogu
     catalogue:row.catalogueSnapshotJson,
     objectiveModel:row.objectiveModelSnapshotJson,
     createdAt:row.createdAt,
+  };
+}
+
+
+export function getCurrentOptimisationPolicy(){
+  return {
+    catalogueVersion:OPTIMISATION_CATALOGUE_VERSION,
+    objectiveModelVersion:CUSTOMER_OBJECTIVE_MODEL_VERSION,
+    policyFingerprint:optimisationPolicyFingerprint(),
+    scenarioGeneratorVersion:SP4_SCENARIO_GENERATOR_VERSION,
+    catalogue:optimisationCatalogue(),
+    objectiveModel:customerObjectiveModel(),
   };
 }
