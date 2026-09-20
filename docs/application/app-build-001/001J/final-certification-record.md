@@ -1,7 +1,7 @@
 # MIQOS-APP-BUILD-001 — Final Application Certification Record
 
 **Increment:** BUILD-001J — Final Application Certification  
-**Status before final CI:** CANDIDATE  
+**Status:** CERTIFIED  
 **Certification environment:** SYNTHETIC  
 **Live provider activity:** DISABLED  
 **Design authority:** MIQOS-DS-001 v1.1
@@ -49,7 +49,7 @@ The closing branch head must show all three CI jobs green and must include:
 - deterministic `certify:app-build-001` checks;
 - production builds for all participating workspaces.
 
-The final branch head and CI run are recorded operationally at closure rather than hard-coded into this source document.
+The certification record is valid only while the closing branch head passes the required CI jobs. The exact closing head and CI run are recorded operationally at closure rather than hard-coded into this source document.
 
 ## Explicit non-certifications / deferred capability
 
@@ -66,3 +66,8 @@ This application certification is not a production go-live decision. It does not
 - external WCAG audit, legal accessibility attestation, penetration test, load test or regulatory approval.
 
 These boundaries remain visible so later programmes can extend capability without rewriting the certified application semantics.
+
+
+## Certification decision
+
+BUILD-001J is **PASS** and MIQOS-APP-BUILD-001 is **COMPLETE** for the bounded internal engineering application-build scope defined above. Any later source change invalidates the operational closing-head evidence until CI is green again.
