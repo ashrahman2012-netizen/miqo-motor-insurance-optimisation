@@ -20,11 +20,11 @@ export default function CustomerDashboard(){
         {label:"Data mode",value:<StatusBadge status="SYNTHETIC"/>},
         {label:"Handoff",value:<StatusBadge status="NOT_AUTHORISED"/>},
       ]}/></Card>
-      <Card emphasis><p className="miqos-eyebrow">Top result for selected objective</p><h2>{dashboard.surfacedResult.routeLabel}</h2><ComparisonStateBadge state={dashboard.surfacedResult.comparisonState}/><DefinitionList items={[
-        {label:"Annual premium",value:<MoneyAmount pence={dashboard.surfacedResult.annualPremiumPence}/>},
-        {label:"Compulsory excess",value:<MoneyAmount pence={dashboard.surfacedResult.compulsoryExcessPence}/>},
-        {label:"Voluntary excess",value:<MoneyAmount pence={dashboard.surfacedResult.voluntaryExcessPence}/>},
-        {label:"Policy type",value:dashboard.surfacedResult.policyType},
+      <Card emphasis><p className="miqos-eyebrow">Top result for selected objective</p><h2>{dashboard.surfacedResult.marketRoute.displayName}</h2><ComparisonStateBadge state={dashboard.surfacedResult.comparisonState}/><DefinitionList items={[
+        {label:"Annual premium",value:<MoneyAmount pence={dashboard.surfacedResult.pricing.annualCashPremiumPence}/>},
+        {label:"Compulsory excess",value:<MoneyAmount pence={dashboard.surfacedResult.excess.compulsoryExcessPence}/>},
+        {label:"Voluntary excess",value:<MoneyAmount pence={dashboard.surfacedResult.excess.voluntaryExcessPence}/>},
+        {label:"Policy type",value:"Comprehensive"},
       ]}/><p style={{marginBottom:0}}>Synthetic proving data only. This screen does not execute a quote, select a provider, purchase or bind insurance.</p></Card>
     </ContentGrid>
   </main>;
