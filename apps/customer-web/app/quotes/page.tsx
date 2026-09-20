@@ -12,6 +12,7 @@ import {resolveApplicationEnvironment} from "../environment";
 import {resolveProfileId} from "../profile/profile-context";
 import {loadQuoteComparison} from "./load-quotes";
 import {QuoteComparisonControls} from "./quote-actions";
+import {MobileQuoteComparison} from "./mobile-quote-comparison";
 import styles from "./quotes.module.css";
 
 function first(value:string|string[]|undefined){return Array.isArray(value)?value[0]:value;}
@@ -22,7 +23,9 @@ function Metric({quote}:{quote:NormalisedQuoteVM}){
 }
 
 function RankedTable({quotes}:{quotes:ReadonlyArray<NormalisedQuoteVM>}){
-  return <div className={styles.tableWrap}><table className={styles.quoteTable}>
+  return <>
+    <div className={styles.tableWrap} role="region" aria-label="Ranked eligible quote comparison table" tabIndex={0}><table className={styles.quoteTable}>
+    <caption className="miqos-sr-only">Ranked eligible quote comparison for the selected customer objective</caption>
     <thead><tr>
       <th>Rank</th><th>Market route</th><th>Scenario</th><th>Annual premium</th><th>Finance cost</th><th>Total excess</th><th>Comparison</th><th>Objective metric</th>
     </tr></thead>
@@ -36,7 +39,9 @@ function RankedTable({quotes}:{quotes:ReadonlyArray<NormalisedQuoteVM>}){
       <td><ComparisonStateBadge state={quote.comparisonState}/></td>
       <td><Metric quote={quote}/></td>
     </tr>)}</tbody>
-  </table></div>;
+  </table></div>
+  <MobileQuoteComparison quotes={quotes}/>
+  </>;
 }
 
 function ExcludedRow({quote,reason}:{quote:NormalisedQuoteVM;reason:string}){
