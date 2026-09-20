@@ -481,3 +481,34 @@ export interface ScenarioExplorerVM {
   readonly provenance: OptimisationPolicyProvenanceVM;
   readonly pageState: PageStateVM;
 }
+
+
+// BUILD-001E — customer quote-comparison application read model.
+export interface QuoteExplorationOptionVM {
+  readonly explorationFingerprint: string;
+  readonly generationVersion: string;
+  readonly scenarioCount: number;
+  readonly rejectedCombinationCount: number;
+}
+
+export interface ObjectiveExcludedQuoteVM {
+  readonly quote: NormalisedQuoteVM;
+  readonly exclusionReason: string;
+}
+
+export interface QuoteComparisonPageVM {
+  readonly profileId: string;
+  readonly profileVersion: ProfileVersionVM;
+  readonly customerObjectiveId: string | null;
+  readonly explorationFingerprint: string | null;
+  readonly explorations: ReadonlyArray<QuoteExplorationOptionVM>;
+  readonly comparison: QuoteComparisonVM | null;
+  readonly objectiveExcluded: ReadonlyArray<ObjectiveExcludedQuoteVM>;
+  readonly quoteCount: number;
+  readonly normalisedQuoteCount: number;
+  readonly unavailableQuoteCount: number;
+  readonly comparisonRuleVersion: string | null;
+  readonly comparisonFingerprint: string | null;
+  readonly runAction: ActionAvailabilityVM;
+  readonly pageState: PageStateVM;
+}
