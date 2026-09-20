@@ -544,3 +544,84 @@ export interface ResultsPageVM {
   readonly finalIntegrity: FinalIntegrityStateVM | null;
   readonly pageState: PageStateVM;
 }
+
+
+// BUILD-001G — Admin Audit & Trace Console.
+export interface AdminAuditTraceFiltersVM {
+  readonly profileId: string | null;
+  readonly selectionId: string | null;
+  readonly scenarioId: string | null;
+  readonly eventType: string | null;
+  readonly dateFrom: string | null;
+  readonly dateTo: string | null;
+}
+
+export interface AdminCurrentArtefactVM {
+  readonly profileId: string;
+  readonly profileVersionId: string;
+  readonly profileVersionNo: number;
+  readonly profileStatus: ProfileVersionStatus;
+  readonly customerObjectiveId: string | null;
+  readonly objectiveId: string | null;
+  readonly scenarioId: string | null;
+  readonly explorationFingerprint: string | null;
+  readonly marketRouteId: string | null;
+  readonly quoteRequestId: string | null;
+  readonly rawProviderResponseId: string | null;
+  readonly normalisedQuoteId: string | null;
+  readonly recommendationSetId: string | null;
+  readonly recommendationFingerprint: string | null;
+  readonly explanationFingerprint: string | null;
+  readonly selectionId: string | null;
+  readonly finalIntegrityResultId: string | null;
+  readonly ruleVersions: Readonly<Record<string,string>>;
+}
+
+export interface AdminRawProviderResponseVM {
+  readonly rawProviderResponseId: string;
+  readonly quoteRequestId: string;
+  readonly providerReference: string | null;
+  readonly payloadSha256: string;
+  readonly payload: unknown;
+  readonly responseTimestamp: IsoDateTime | null;
+  readonly receivedAt: IsoDateTime | null;
+}
+
+export interface AdminNormalisedEvidenceVM {
+  readonly normalisedQuoteId: string;
+  readonly normalisationVersion: string;
+  readonly normalisationFingerprint: string;
+  readonly comparisonState: ComparisonState;
+  readonly annualCashPremiumPence: Pence;
+  readonly financeCostPence: Pence | null;
+  readonly compulsoryExcessPence: Pence;
+  readonly voluntaryExcessPence: Pence;
+}
+
+export interface AdminIntegrityQueueItemVM {
+  readonly itemId: string;
+  readonly category: "FINAL_INTEGRITY" | "RECOMMENDATION" | "EXPLANATION" | "LINEAGE";
+  readonly label: string;
+  readonly status: StatusVM;
+  readonly detail: string;
+}
+
+export interface AdminGovernanceSummaryVM {
+  readonly auditTrail: StatusVM;
+  readonly appendOnly: StatusVM;
+  readonly commercialIndependence: StatusVM;
+  readonly environment: ApplicationEnvironment;
+  readonly nonAdvised: StatusVM;
+}
+
+export interface AdminAuditTracePageVM {
+  readonly filters: AdminAuditTraceFiltersVM;
+  readonly lineage: LineageExplorerVM | null;
+  readonly timeline: AuditTimelineVM | null;
+  readonly currentArtefact: AdminCurrentArtefactVM | null;
+  readonly rawProviderResponse: AdminRawProviderResponseVM | null;
+  readonly normalisedEvidence: AdminNormalisedEvidenceVM | null;
+  readonly integrityQueue: ReadonlyArray<AdminIntegrityQueueItemVM>;
+  readonly governance: AdminGovernanceSummaryVM;
+  readonly pageState: PageStateVM;
+}
