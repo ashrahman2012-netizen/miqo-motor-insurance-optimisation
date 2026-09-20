@@ -126,6 +126,8 @@ export async function auditEvents(db:MiqoDatabase,profileId:string) {
     WHEN 'provider_response_normalised' THEN 100
     WHEN 'comparison_generated' THEN 110
     WHEN 'shortlist_created' THEN 120
+    WHEN 'sp4_recommendation_set_created' THEN 122
+    WHEN 'sp4_recommendation_explanation_created' THEN 124
     WHEN 'quote_selection_attempted' THEN 130
     WHEN 'quote_selected' THEN 130
     WHEN 'final_integrity_blocked' THEN 140
