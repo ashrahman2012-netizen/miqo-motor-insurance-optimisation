@@ -38,7 +38,7 @@ S6-G3 — NAMED PROVIDER CANDIDATE
 |---|---|---|---|
 | A | S6-G0–G2 | Sprint 5 inheritance, dependency freeze, provider-neutral control baseline | CERTIFIED PASS — 3/3 |
 | B | S6-G3–G6 | named provider candidate, adapter/mapping, schemas, provenance | PROVIDER-NEUTRAL FRAMEWORK CERTIFIED / BLOCKED AT G3 |
-| C | S6-G7–G10 | endpoints/credentials, resilience, certification-route execution | QUEUED |
+| C | S6-G7–G10 | endpoints/credentials, resilience, certification-route execution | PROVIDER-NEUTRAL PREP COMPLETE / PROVIDER-SPECIFIC G7–G10 BLOCKED |
 | D | S6-G11–G13 | reconciliation, LIVE fail-closed gate, independent activation | QUEUED |
 | E | S6-G14–G16 | pilot bounds, kill switch/rollback, operational evidence | QUEUED |
 | F | S6-G17 | explicit pilot exit decision | QUEUED / EXTERNAL GOVERNANCE |
@@ -173,5 +173,36 @@ S6-G6   BLOCKED — FRAMEWORK READY / PROVIDER-SPECIFIC RECONSTRUCTION REQUIRED
 ```
 
 The execution pointer is stopped at S6-G3 in accordance with the frozen acceptance matrix and PREP gateway.
+
+## 11. Parallel Batch C preparation
+
+`MIQO-SP6-EXEC-001C-PREP` is complete and CI-green.
+
+Provider-neutral readiness now exists for:
+- certification/production environment separation;
+- scoped/versioned credential lifecycle and fail-closed secret resolution;
+- provider-required resilience values using `UNSET_PROVIDER_REQUIRED`;
+- a certification harness that distinguishes `CERTIFICATION_BLOCKED`, `CERTIFICATION_FAIL` and `CERTIFICATION_PASS`;
+- deterministic provider-response intake via `MIQO-SP6-PROVIDER-RESPONSE-REVIEW-001`.
+
+Definitive C-PREP CI run: `35513112621` — all jobs PASS.
+
+This does not change the gate ordering:
+
+```text
+Seopa response
+      ↓
+ProviderResponseReview
+      ↓
+S6-G3 determination
+      ↓
+provider-specific G4 → G6
+      ↓
+populate provider-specific G7 → G9
+      ↓
+execute G10 certification harness
+```
+
+S6-G7–G10 remain BLOCKED from provider-specific PASS until their frozen evidence requirements are met.
 
 **End of MIQO-SP6-EXEC-001**
