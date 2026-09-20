@@ -387,14 +387,16 @@ export function composeCustomerDashboardVM(input:DashboardCompositionInput):Cust
   let quoteHref=`/quotes?profileId=${encodeURIComponent(input.profileId)}`;
   if(objective)quoteHref+=`&customerObjectiveId=${encodeURIComponent(objective.customerObjectiveId)}`;
   if(input.selectedExploration)quoteHref+=`&explorationFingerprint=${encodeURIComponent(input.selectedExploration.explorationFingerprint)}`;
-  const legacyResultsHref=`${legacyProfileBase}/recommendations`;
+  let resultsHref=`/results?profileId=${encodeURIComponent(input.profileId)}`;
+  if(objective)resultsHref+=`&customerObjectiveId=${encodeURIComponent(objective.customerObjectiveId)}`;
+  if(input.selectedExploration)resultsHref+=`&explorationFingerprint=${encodeURIComponent(input.selectedExploration.explorationFingerprint)}`;
 
   const quickActions=[
     {actionId:"REVIEW_PROFILE" as const,label:"Review profile",href:`/profile/review${profileQuery}`,availability:available()},
     {actionId:"SET_OBJECTIVE" as const,label:"Set objective",href:locked?optimisationHref:null,availability:locked?available():blocked("Lock the applicable profile version first.")},
     {actionId:"VIEW_SCENARIOS" as const,label:"View scenarios",href:objective?optimisationHref+"#generated-scenarios":null,availability:objective?available():blocked("Select an objective first.")},
     {actionId:"COMPARE_QUOTES" as const,label:"Compare quotes",href:objective&&scenarios.generatedScenarioCount?quoteHref:null,availability:objective&&scenarios.generatedScenarioCount?available():blocked("Generate scenarios for the selected objective first.")},
-    {actionId:"OPEN_RESULTS" as const,label:"Open Your Results",href:result?legacyResultsHref+"#sp4-explanation":null,availability:result?available():blocked("No surfaced result is available yet.")},
+    {actionId:"OPEN_RESULTS" as const,label:"Open Your Results",href:result?resultsHref:null,availability:result?available():blocked("No surfaced result is available yet.")},
   ];
 
   return {
