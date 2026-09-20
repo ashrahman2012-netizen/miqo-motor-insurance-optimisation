@@ -1,0 +1,101 @@
+{
+  "$schemaVersion": "miqos-component-catalogue-v1",
+  "status": "FROZEN_FOR_APPLICATION_PREPARATION",
+  "iconImplementationTarget": "lucide-react",
+  "layers": {
+    "L1_PRIMITIVES": [
+      "Button",
+      "IconButton",
+      "TextLink",
+      "TextField",
+      "SelectField",
+      "CheckboxField",
+      "RadioGroup",
+      "RadioCard",
+      "FieldMessage",
+      "Card",
+      "Panel",
+      "Divider",
+      "Badge",
+      "Alert",
+      "Dialog",
+      "Drawer",
+      "Tabs",
+      "DataTable",
+      "Skeleton",
+      "Spinner",
+      "EmptyState",
+      "PageState"
+    ],
+    "L2_SEMANTIC": [
+      "StatusBadge",
+      "ControlClassBadge",
+      "EnvironmentBanner",
+      "EnvironmentBadge",
+      "IntegrityBadge",
+      "ComparisonStateBadge",
+      "MoneyAmount",
+      "MetricValue",
+      "DefinitionList",
+      "PageHeader",
+      "JourneyStepper",
+      "ProvenanceLink",
+      "ReasonList",
+      "AsyncStateBoundary"
+    ],
+    "L3_PROFILE": [
+      "ProfileField",
+      "FieldProvenance",
+      "ProfileVersionCard",
+      "DiscrepancyCard",
+      "ValidationSummary",
+      "LockConfirmation"
+    ],
+    "L3_OPTIMISATION": [
+      "ObjectiveSelector",
+      "OptimisationControl",
+      "ScenarioCard",
+      "ScenarioMatrix",
+      "RejectedCombination"
+    ],
+    "L3_QUOTES_RESULTS": [
+      "MarketRouteBadge",
+      "QuoteCard",
+      "QuoteComparisonTable",
+      "QuoteComparisonCards",
+      "ResultHero",
+      "ResultReason",
+      "AlternativeResult",
+      "IntegritySummary",
+      "HandoffPanel"
+    ],
+    "L3_ADMIN": [
+      "LineageExplorer",
+      "AuditTimeline",
+      "ArtefactInspector",
+      "RawNormalisedViewer",
+      "IntegrityQueue",
+      "ProviderCertificationStatus",
+      "ActivationStatus"
+    ]
+  },
+  "ownership": {
+    "packages/ui": "presentation-only",
+    "apps/customer-web": "customer routing/page composition/application orchestration",
+    "apps/admin-web": "admin routing/page composition/application orchestration",
+    "p4-contract-layer": "api-to-viewmodel mapping",
+    "apps/api": "http/application boundary",
+    "domain-services": "business-state authority",
+    "packages/db": "persistence"
+  },
+  "rules": {
+    "sharedComponentsFetchData": false,
+    "sharedComponentsCallMutationEndpoints": false,
+    "uiCalculatesRanking": false,
+    "uiCalculatesEligibility": false,
+    "uiEvaluatesIntegrity": false,
+    "uiAuthorisesEnvironment": false,
+    "providerSpecificSharedComponents": false,
+    "responsiveComparisonUsesSharedModel": true
+  }
+}
