@@ -26,15 +26,44 @@ export function AppShell({applicationLabel="MIQOS",contextLabel,navigation,navig
   const [mobileOpen,setMobileOpen]=useState(false);
   const closeButtonRef=useRef<HTMLButtonElement>(null);
   const menuButtonRef=useRef<HTMLButtonElement>(null);
+  const mobileNavRef=useRef<HTMLElement>(null);
 
   useEffect(()=>{
     if(!mobileOpen) return;
+    const previousOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
     closeButtonRef.current?.focus();
+
     const onKeyDown=(event:KeyboardEvent)=>{
-      if(event.key==="Escape"){setMobileOpen(false);menuButtonRef.current?.focus();}
+      if(event.key==="Escape"){
+        event.preventDefault();
+        setMobileOpen(false);
+        menuButtonRef.current?.focus();
+        return;
+      }
+      if(event.key!=="Tab") return;
+      const root=mobileNavRef.current;
+      if(!root) return;
+      const focusable=Array.from(root.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+      )).filter(element=>element.getClientRects().length>0);
+      if(!focusable.length) return;
+      const first=focusable[0];
+      const last=focusable[focusable.length-1];
+      const active=document.activeElement;
+      if(event.shiftKey&&(active===first||!root.contains(active))){
+        event.preventDefault();
+        last.focus();
+      }else if(!event.shiftKey&&(active===last||!root.contains(active))){
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown",onKeyDown);
-    return()=>document.removeEventListener("keydown",onKeyDown);
+    return()=>{
+      document.removeEventListener("keydown",onKeyDown);
+      document.body.style.overflow=previousOverflow;
+    };
   },[mobileOpen]);
 
   const closeMobile=()=>{setMobileOpen(false);menuButtonRef.current?.focus();};
@@ -53,6 +82,6 @@ export function AppShell({applicationLabel="MIQOS",contextLabel,navigation,navig
         <div id="main-content" className="miqos-workspace" tabIndex={-1}>{children}</div>
       </div>
     </div>
-    {mobileOpen?<div className="miqos-mobile-nav-layer"><button type="button" className="miqos-mobile-nav-backdrop" aria-label="Dismiss navigation overlay" onClick={closeMobile}/><aside id="miqos-mobile-navigation" className="miqos-mobile-nav"><div className="miqos-mobile-nav__header"><strong>MIQOS</strong><button ref={closeButtonRef} type="button" className="miqos-icon-button" aria-label="Close navigation" onClick={closeMobile}>×</button></div><SidebarNavigation items={navigation} currentPath={currentPath} label={navigationLabel} onNavigate={()=>setMobileOpen(false)}/></aside></div>:null}
+    {mobileOpen?<div className="miqos-mobile-nav-layer"><div className="miqos-mobile-nav-backdrop" aria-hidden="true" onClick={closeMobile}/><aside ref={mobileNavRef} id="miqos-mobile-navigation" className="miqos-mobile-nav" role="dialog" aria-modal="true" aria-label="Mobile navigation"><div className="miqos-mobile-nav__header"><strong>MIQOS</strong><button ref={closeButtonRef} type="button" className="miqos-icon-button" aria-label="Close navigation" onClick={closeMobile}>×</button></div><SidebarNavigation items={navigation} currentPath={currentPath} label={navigationLabel} onNavigate={()=>setMobileOpen(false)}/></aside></div>:null}
   </>;
 }
