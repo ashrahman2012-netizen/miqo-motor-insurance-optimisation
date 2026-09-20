@@ -37,7 +37,8 @@ function ReasonCard({reason}:{reason:ResultReasonVM}){
 }
 
 function AlternativeRows({quotes,surfaced}:{quotes:ReadonlyArray<NormalisedQuoteVM>;surfaced:NormalisedQuoteVM}){
-  return <div className={styles.tableWrap}><table className={styles.alternativeTable}>
+  return <div className={styles.tableWrap} role="region" aria-label="Alternative eligible results table" tabIndex={0}><table className={styles.alternativeTable}>
+    <caption className="miqos-sr-only">Alternative eligible results ordered by the selected customer objective</caption>
     <thead><tr><th>Rank</th><th>Route</th><th>Annual premium</th><th>Difference</th><th>Total excess</th></tr></thead>
     <tbody>{quotes.map(quote=>{
       const difference=quote.pricing.annualCashPremiumPence-surfaced.pricing.annualCashPremiumPence;
