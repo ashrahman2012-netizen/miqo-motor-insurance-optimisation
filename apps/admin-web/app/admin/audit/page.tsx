@@ -174,7 +174,7 @@ const EVENT_TYPES=[
   "profile_created","profile_validated","profile_locked","customer_objective_selected",
   "sp4_scenario_exploration_generated","quote_request_prepared","raw_provider_response_captured",
   "provider_response_normalised","comparison_generated","shortlist_created",
-  "sp4_recommendation_created","sp4_recommendation_explanation_created",
+  "sp4_recommendation_set_created","sp4_recommendation_explanation_created",
   "quote_selected","final_integrity_passed","final_integrity_blocked","prototype_completed",
 ];
 
