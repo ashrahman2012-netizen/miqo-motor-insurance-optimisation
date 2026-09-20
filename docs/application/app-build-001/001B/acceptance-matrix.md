@@ -22,3 +22,8 @@
 The dashboard may calculate descriptive display aggregates such as quotation counts and histogram buckets. It may not select the surfaced result, change comparison state, infer eligibility, modify facts, execute quotes or activate provider/handoff behaviour.
 
 The screenshot contains conceptual fields not supported by the current backend read model (for example a policy-type label and standalone case entity). BUILD-001B does not fabricate those fields: it displays profile/version references and only financial/comparison dimensions supported by persisted evidence.
+
+
+## Visual authority revision
+
+This certified increment now inherits **MIQOS-DS-001 v1.1 — Visual Baseline Refinement**. The revision changes visual tokens and presentation semantics only; all previously certified behavioural gates remain unchanged. See `docs/application/app-build-001/visual-retrofit-register-v1.1.md`.
