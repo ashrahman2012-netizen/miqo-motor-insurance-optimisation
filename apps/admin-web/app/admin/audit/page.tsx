@@ -135,12 +135,23 @@ function Governance({vm}:{vm:AdminAuditTracePageVM}){
 
 function IntegrityQueue({vm}:{vm:AdminAuditTracePageVM}){
   return <section className={styles.panel} data-testid="admin-integrity-queue">
-    <div className={styles.panelHeader}><div><span className={styles.kicker}>Integrity queue</span><h2>Evidence checks</h2></div></div>
+    <div className={styles.panelHeader}><div><span className={styles.kicker}>Integrity & discrepancy queue</span><h2>Evidence checks</h2><p>Integrity outcomes and factual discrepancies remain separate persisted evidence classes.</p></div></div>
     {vm.integrityQueue.length?<div className={styles.integrityRows}>{vm.integrityQueue.map(item=><article key={item.itemId}>
       <div><strong>{item.label}</strong><span>{item.category.replaceAll("_"," ")}</span></div>
       <SemanticBadge value={item.status}/>
       <p>{item.detail}</p>
     </article>)}</div>:<p className={styles.muted}>Load a selection to inspect recommendation, explanation and final-integrity evidence.</p>}
+    <div className={styles.discrepancySection}>
+      <div className={styles.subheading}><strong>Current profile discrepancies</strong><span>{vm.discrepancies.length}</span></div>
+      {vm.discrepancies.length?<div className={styles.discrepancyRows}>{vm.discrepancies.map(item=><article key={item.discrepancyId}>
+        <div><strong>{item.fieldId.replaceAll("_"," ")}</strong><span>{item.state}</span></div>
+        <StatusBadge status={item.blocking?"BLOCKED":"INFORMATIONAL"} label={item.blocking?"BLOCKING":"INFORMATIONAL"}/>
+        <dl>
+          <div><dt>Declared</dt><dd>{JSON.stringify(item.declaredValue)}</dd></div>
+          <div><dt>Verified</dt><dd>{JSON.stringify(item.verifiedValue)}</dd></div>
+        </dl>
+      </article>)}</div>:<p className={styles.muted}>No current-profile discrepancy records are present.</p>}
+    </div>
   </section>;
 }
 
