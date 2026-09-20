@@ -18,3 +18,8 @@
 | AB-G10 | UI typecheck/unit tests plus existing CI and target-stack Playwright are green |
 
 BUILD-001A closes only when AB-G0 through AB-G10 PASS.
+
+
+## Visual authority revision
+
+This certified increment now inherits **MIQOS-DS-001 v1.1 — Visual Baseline Refinement**. The revision changes visual tokens and presentation semantics only; all previously certified behavioural gates remain unchanged. See `docs/application/app-build-001/visual-retrofit-register-v1.1.md`.
