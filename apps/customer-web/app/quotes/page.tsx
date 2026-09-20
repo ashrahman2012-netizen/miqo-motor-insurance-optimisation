@@ -147,6 +147,7 @@ export default async function QuotesPage({searchParams}:{searchParams:Promise<{p
       {ranked.length&&ranked[0]?<div className={styles.rankOne}>
         <div><span className={styles.kicker}>Rank 1 for selected objective</span><strong>{ranked[0].marketRoute.displayName}</strong><small>This is an ordering result, not a customer recommendation.</small></div>
         <div><span>Objective metric</span><Metric quote={ranked[0]}/></div>
+        {vm.customerObjectiveId&&vm.explorationFingerprint?<a className="miqos-button miqos-button--primary" href={"/results?profileId="+encodeURIComponent(profileId)+"&customerObjectiveId="+encodeURIComponent(vm.customerObjectiveId)+"&explorationFingerprint="+encodeURIComponent(vm.explorationFingerprint)}>Open Your Results</a>:null}
       </div>:null}
     </section>
 
