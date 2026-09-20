@@ -36,6 +36,12 @@ export async function loadAdminAuditTrace(args:{
     if(profileId&&profileId!==trace.profile.profileId){
       throw new Error("ADMIN_TRACE_PROFILE_SELECTION_MISMATCH");
     }
+    if(args.filters.profileVersionId&&args.filters.profileVersionId!==trace.riskProfileVersion.riskProfileVersionId){
+      throw new Error("ADMIN_TRACE_PROFILE_VERSION_SELECTION_MISMATCH");
+    }
+    if(args.filters.recommendationSetId&&args.filters.recommendationSetId!==trace.recommendation.recommendationSetId){
+      throw new Error("ADMIN_TRACE_RECOMMENDATION_SELECTION_MISMATCH");
+    }
     profileId=trace.profile.profileId;
 
     const selected=trace.marketRouteQuotes.find(item=>
