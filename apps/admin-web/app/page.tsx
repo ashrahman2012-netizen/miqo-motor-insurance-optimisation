@@ -1,4 +1,4 @@
-import {Card,ContentGrid,GovernanceBadge,PageHeader,SectionHeading,StatusBadge} from "@miqo/ui";
+import {Card,ContentGrid,GovernanceBadge,PageHeader,SectionHeading,StatusBadge,TextLink} from "@miqo/ui";
 export default function AdminDashboard(){
   return <main>
     <PageHeader eyebrow="Administration · BUILD-001A" title="Admin dashboard" description="Operational shell proving surface. Audit, provider certification and workflow actions remain governed by later increments and authoritative backend state."/>
@@ -9,6 +9,6 @@ export default function AdminDashboard(){
       <Card><p className="miqos-eyebrow">Customer positioning</p><GovernanceBadge state="NON_ADVISED"/><p>Objective-based information; not personal insurance advice.</p></Card>
     </ContentGrid>
     <SectionHeading title="Operational foundation" description="Admin/customer navigation is separated without implementing operational workflows in 001A."/>
-    <ContentGrid columns={3}><Card><h2>Cases</h2><p>Case/profile operational view is reserved for later build composition.</p></Card><Card><h2>Audit & Trace</h2><p>Lineage components will consume persisted trace ViewModels, not database entities.</p></Card><Card><h2>Provider certification</h2><p>Visible as a governed admin area; no provider activation capability is implemented here.</p></Card></ContentGrid>
+    <ContentGrid columns={3}><Card><h2>Cases</h2><p>Case/profile operational view is reserved for later build composition.</p></Card><Card><h2>Audit & Trace</h2><p>Canonical append-only audit history and end-to-end selection lineage now run through typed application ViewModels.</p><TextLink href="/admin/audit">Open Audit & Trace Console →</TextLink></Card><Card><h2>Provider certification</h2><p>Visible as a governed admin area; no provider activation capability is implemented here.</p></Card></ContentGrid>
   </main>;
 }
