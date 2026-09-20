@@ -1,4 +1,4 @@
-import {EnvironmentBadge,PageHeader} from "@miqo/ui";
+import {EnvironmentBadge,PageHeader,PageState} from "@miqo/ui";
 import {resolveApplicationEnvironment} from "../environment";
 import {resolveProfileId} from "../profile/profile-context";
 import {loadSupportPage} from "./load-support";
@@ -7,7 +7,7 @@ import styles from "../customer-records.module.css";
 export default async function SupportPage({searchParams}:{searchParams:Promise<{profileId?:string|string[]}>}){
   const environment=resolveApplicationEnvironment();
   if(!environment){
-    return <main><PageHeader eyebrow="Help & Support" title="Help & Support" description="Guidance for using MIQOS."/></main>;
+    return <main><PageHeader eyebrow="Help & Support" title="Help & Support" description="Guidance for using MIQOS."/><PageState state="NOT_AUTHORISED" title="Environment unavailable" message="Runtime identity could not be resolved, so environment-specific support guidance is not presented."/></main>;
   }
   const profileId=await resolveProfileId(searchParams);
   const vm=await loadSupportPage({profileId,environment:environment.environment});
