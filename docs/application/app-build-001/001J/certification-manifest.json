@@ -45,5 +45,13 @@
   ],
   "programmeStatus": "COMPLETE",
   "certificationDecision": "PASS",
-  "closureRule": "Certification is operationally valid only on a branch head where all required CI jobs pass."
+  "closureRule": "Certification is operationally valid only on a branch head where all required CI jobs pass.",
+  "certifiedDate": "2026-09-21",
+  "productionGoLiveAuthorised": false,
+  "liveProviderCertificationAuthorised": false,
+  "notes": [
+    "Certification is internal engineering certification of the controlled synthetic target stack.",
+    "Live provider activity remains disabled and requires separate provider certification/activation.",
+    "The final branch head must retain all required CI jobs green."
+  ]
 }
