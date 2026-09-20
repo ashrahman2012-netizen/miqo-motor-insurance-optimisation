@@ -106,6 +106,7 @@ function CurrentArtefact({vm}:{vm:AdminAuditTracePageVM}){
       <div><dt>Profile version</dt><dd><VersionBadge value={"v"+item.profileVersionNo}/><LineageId value={item.profileVersionId} label="Profile version"/></dd></div>
       <div><dt>Scenario</dt><dd>{item.scenarioId?<LineageId value={item.scenarioId} label="Scenario"/>:"—"}</dd></div>
       <div><dt>Exploration</dt><dd>{item.explorationFingerprint?<FingerprintValue value={item.explorationFingerprint}/>:"—"}</dd></div>
+      <div><dt>Route fingerprint</dt><dd>{item.routeFingerprint?<FingerprintValue value={item.routeFingerprint}/>:"—"}</dd></div>
       <div><dt>Quote request</dt><dd>{item.quoteRequestId?<LineageId value={item.quoteRequestId} label="Quote request"/>:"—"}</dd></div>
       <div><dt>Normalised quote</dt><dd>{item.normalisedQuoteId?<LineageId value={item.normalisedQuoteId} label="Normalised quote"/>:"—"}</dd></div>
       <div><dt>Recommendation set</dt><dd>{item.recommendationSetId?<LineageId value={item.recommendationSetId} label="Recommendation set"/>:"—"}</dd></div>
@@ -180,6 +181,8 @@ const EVENT_TYPES=[
 
 export default async function AdminAuditTrace({searchParams}:{searchParams:Promise<{
   profileId?:string|string[];
+  profileVersionId?:string|string[];
+  recommendationSetId?:string|string[];
   selectionId?:string|string[];
   scenarioId?:string|string[];
   eventType?:string|string[];
@@ -193,6 +196,8 @@ export default async function AdminAuditTrace({searchParams}:{searchParams:Promi
   const params=await searchParams;
   const filters:AdminAuditTraceFiltersVM={
     profileId:clean(first(params.profileId)),
+    profileVersionId:clean(first(params.profileVersionId)),
+    recommendationSetId:clean(first(params.recommendationSetId)),
     selectionId:clean(first(params.selectionId)),
     scenarioId:clean(first(params.scenarioId)),
     eventType:clean(first(params.eventType)),
@@ -209,6 +214,8 @@ export default async function AdminAuditTrace({searchParams}:{searchParams:Promi
 
     <form className={styles.filterPanel} method="get" action="/admin/audit" aria-label="Audit and trace filters">
       <label><span>Profile / Case reference</span><input name="profileId" defaultValue={filters.profileId??""} placeholder="e.g. PRO-…"/></label>
+      <label><span>Profile version</span><input name="profileVersionId" defaultValue={filters.profileVersionId??""} placeholder="e.g. RPV-…"/></label>
+      <label><span>Recommendation set</span><input name="recommendationSetId" defaultValue={filters.recommendationSetId??""} placeholder="e.g. REC-…"/></label>
       <label><span>Selection reference</span><input name="selectionId" defaultValue={filters.selectionId??""} placeholder="e.g. SEL-…"/></label>
       <label><span>Scenario ID</span><input name="scenarioId" defaultValue={filters.scenarioId??""} placeholder="All scenarios"/></label>
       <label><span>Event type</span><select name="eventType" defaultValue={filters.eventType??""}><option value="">All events</option>{EVENT_TYPES.map(value=><option key={value} value={value}>{value.replaceAll("_"," ")}</option>)}</select></label>
