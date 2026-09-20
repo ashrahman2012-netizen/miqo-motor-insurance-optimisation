@@ -10,12 +10,8 @@ test("BUILD-001A customer shell, semantics and synthetic dashboard fixture",asyn
   await expect(customerNav.getByRole("link",{name:"Your Profile"})).toBeVisible();
   await expect(customerNav.getByRole("link",{name:"Your Results"})).toBeVisible();
 
-  await expect(page.getByText("LOCKED",{exact:true}).first()).toBeVisible();
-  await expect(page.getByText("READY",{exact:true}).first()).toBeVisible();
-  await expect(page.getByText("DIRECTLY COMPARABLE",{exact:true})).toBeVisible();
-  await expect(page.getByText("Synthetic Direct Route",{exact:true})).toBeVisible();
-  await expect(page.getByText("£642.15",{exact:true})).toBeVisible();
-  await expect(page.getByText("NOT AUTHORISED",{exact:true})).toBeVisible();
+  await expect(page.getByText("No active case",{exact:true})).toBeVisible();
+  await expect(page.getByRole("link",{name:"Start synthetic profile"})).toBeVisible();
 });
 
 test("BUILD-001A responsive navigation is keyboard-addressable",async({page})=>{
