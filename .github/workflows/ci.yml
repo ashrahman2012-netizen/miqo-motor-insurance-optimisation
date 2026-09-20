@@ -32,6 +32,7 @@ jobs:
       - run: npm run test -w @miqo/application-adapters
       - run: npm run typecheck -w @miqo/ui
       - run: npm run test -w @miqo/ui
+      - run: npm run certify:app-build-001
       - run: npm run smoke:domain
       - run: npm run build
 
@@ -104,4 +105,5 @@ jobs:
       - run: npm run test:api:postgres
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test -c playwright.target.config.ts
+      - run: npm run certify:app-build-001
       - run: npm run build
