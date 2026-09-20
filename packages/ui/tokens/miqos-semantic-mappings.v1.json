@@ -1,0 +1,78 @@
+{
+  "$schemaVersion": "miqos-semantic-mappings-v1",
+  "status": "FROZEN_FOR_APPLICATION_PREPARATION",
+  "controlClasses": {
+    "F": {
+      "label": "Fact",
+      "accent": "#94A3B8",
+      "iconConcept": "document-lock",
+      "interactive": false
+    },
+    "V": {
+      "label": "Verified / Enriched",
+      "accent": "#22D3EE",
+      "iconConcept": "verification-source",
+      "interactive": false
+    },
+    "D": {
+      "label": "Derived",
+      "accent": "#A78BFA",
+      "iconConcept": "calculated-function",
+      "interactive": false
+    },
+    "O": {
+      "label": "Customer choice",
+      "accent": "#006CE7",
+      "iconConcept": "sliders-choice",
+      "interactive": true
+    },
+    "I": {
+      "label": "Integrity signal",
+      "accent": "#2DD4BF",
+      "iconConcept": "shield-integrity",
+      "interactive": false,
+      "severityIndependent": true
+    }
+  },
+  "statuses": {
+    "PASS": "success",
+    "READY": "success",
+    "LOCKED": "info",
+    "DRAFT": "neutral",
+    "PENDING": "warning",
+    "BLOCKED": "danger",
+    "EXCLUDED": "neutral",
+    "NOT_COMPARABLE": "neutral-attention",
+    "DIRECTLY_COMPARABLE": "success",
+    "ADJUSTED_COMPARABLE": "dormant",
+    "CERTIFICATION": "certification",
+    "SYNTHETIC": "info",
+    "NOT_AUTHORISED": "danger",
+    "SUPERSEDED": "neutral",
+    "ELIGIBLE": "success",
+    "RESOLVED": "success",
+    "INFORMATIONAL": "info"
+  },
+  "environments": {
+    "SYNTHETIC": {
+      "customerBanner": "PERSISTENT",
+      "adminBadge": "INFO",
+      "message": "SYNTHETIC — Test data and test quotations only. No live insurer connection."
+    },
+    "CERTIFICATION": {
+      "customerBanner": "PERSISTENT",
+      "adminBadge": "CERTIFICATION",
+      "message": "CERTIFICATION — Controlled provider verification environment. Results are not customer quotations."
+    },
+    "PRODUCTION": {
+      "customerBanner": "NONE",
+      "adminBadge": "NEUTRAL",
+      "message": null
+    }
+  },
+  "unknownEnvironment": {
+    "failClosed": true,
+    "status": "NOT_AUTHORISED",
+    "message": "ENVIRONMENT UNKNOWN / NOT AUTHORISED"
+  }
+}
