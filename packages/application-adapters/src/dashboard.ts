@@ -384,10 +384,9 @@ export function composeCustomerDashboardVM(input:DashboardCompositionInput):Cust
   const legacyProfileBase=`/profile/${encodeURIComponent(input.profileId)}`;
   const profileQuery=`?profileId=${encodeURIComponent(input.profileId)}`;
   const optimisationHref=`/optimise${profileQuery}`;
-  const quoteParams=new URLSearchParams({profileId:input.profileId});
-  if(objective)quoteParams.set("customerObjectiveId",objective.customerObjectiveId);
-  if(input.selectedExploration)quoteParams.set("explorationFingerprint",input.selectedExploration.explorationFingerprint);
-  const quoteHref=`/quotes?${quoteParams.toString()}`;
+  let quoteHref=`/quotes?profileId=${encodeURIComponent(input.profileId)}`;
+  if(objective)quoteHref+=`&customerObjectiveId=${encodeURIComponent(objective.customerObjectiveId)}`;
+  if(input.selectedExploration)quoteHref+=`&explorationFingerprint=${encodeURIComponent(input.selectedExploration.explorationFingerprint)}`;
   const legacyResultsHref=`${legacyProfileBase}/recommendations`;
 
   const quickActions=[
