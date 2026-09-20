@@ -1,0 +1,71 @@
+{
+  "$schemaVersion": "miqos-app-build-plan-v1",
+  "programme": "MIQOS-APP-BUILD-001",
+  "sourceProgramme": "MIQOS-APP-PREP-001",
+  "status": "AUTHORISED_AFTER_APP_G15_AND_GREEN_CI",
+  "branch": {
+    "source": "miqos/app-prep-001",
+    "target": "miqos/app-build-001",
+    "createInNextPhase": true
+  },
+  "waves": [
+    {
+      "id": "BUILD-001A",
+      "name": "Foundation, App Shell & Shared Design System"
+    },
+    {
+      "id": "BUILD-001B",
+      "name": "Customer Dashboard"
+    },
+    {
+      "id": "BUILD-001C",
+      "name": "Profile / Validation / Discrepancy / Lock"
+    },
+    {
+      "id": "BUILD-001D",
+      "name": "Objective / Optimisation / Scenario Explorer"
+    },
+    {
+      "id": "BUILD-001E",
+      "name": "Quote Comparison"
+    },
+    {
+      "id": "BUILD-001F",
+      "name": "Your Results / Why This Surfaced / Handoff State"
+    },
+    {
+      "id": "BUILD-001G",
+      "name": "Admin Audit & Trace Console"
+    },
+    {
+      "id": "BUILD-001H",
+      "name": "Activity / Documents / Support / Settings Scope"
+    },
+    {
+      "id": "BUILD-001I",
+      "name": "Responsive / Accessibility / Contract / E2E Hardening"
+    },
+    {
+      "id": "BUILD-001J",
+      "name": "Application Certification & Closeout"
+    }
+  ],
+  "adapterBoundary": {
+    "package": "@miqo/application-adapters",
+    "path": "packages/application-adapters",
+    "networkCalls": false,
+    "databaseAccess": false,
+    "businessRuleAuthority": false
+  },
+  "universalControls": {
+    "exactPinnedDependencies": true,
+    "preserveSyntheticBoundary": true,
+    "frontendRanksQuotes": false,
+    "frontendDeterminesEligibility": false,
+    "frontendEvaluatesIntegrity": false,
+    "adjustedComparableActiveRanking": false,
+    "providerSpecificUiForks": false
+  },
+  "productionDeploymentCertified": false,
+  "liveProviderActivationCertified": false
+}
