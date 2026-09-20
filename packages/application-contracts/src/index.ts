@@ -426,3 +426,37 @@ export interface CustomerDashboardVM {
   readonly quickActions: ReadonlyArray<DashboardQuickActionVM>;
   readonly latestUpdatedAt: IsoDateTime | null;
 }
+
+
+// BUILD-001C — customer profile lifecycle application read model.
+export type ProfileLifecycleStageId =
+  | "CAPTURE"
+  | "VALIDATION"
+  | "DISCREPANCIES"
+  | "CONFIRMATION"
+  | "LOCK";
+
+export type ProfileLifecycleStageState =
+  | "COMPLETE"
+  | "CURRENT"
+  | "PENDING"
+  | "BLOCKED";
+
+export interface ProfileLifecycleStageVM {
+  readonly id: ProfileLifecycleStageId;
+  readonly label: string;
+  readonly state: ProfileLifecycleStageState;
+  readonly detail: string | null;
+}
+
+export interface ProfileVersionHistoryVM extends ProfileVersionVM {
+  readonly current: boolean;
+}
+
+export interface ProfileLifecycleVM {
+  readonly review: ProfileReviewVM;
+  readonly history: ReadonlyArray<ProfileVersionHistoryVM>;
+  readonly journey: ReadonlyArray<ProfileLifecycleStageVM>;
+  readonly latestValidationAt: IsoDateTime | null;
+  readonly blockingDiscrepancyCount: number;
+}
