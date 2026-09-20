@@ -57,6 +57,9 @@ export function composeCustomerDocumentsPageVM(args:{
   }
 
   const query=profileQuery(dashboard.profileId);
+  let evidenceQuery=query;
+  if(dashboard.objective)evidenceQuery+="&customerObjectiveId="+encodeURIComponent(dashboard.objective.customerObjectiveId);
+  if(dashboard.scenarios.explorationFingerprint)evidenceQuery+="&explorationFingerprint="+encodeURIComponent(dashboard.scenarios.explorationFingerprint);
   const records:CustomerRecordVM[]=[
     {
       recordId:"profile:"+dashboard.profileVersion.versionId,
@@ -103,7 +106,7 @@ export function composeCustomerDocumentsPageVM(args:{
       createdAt:null,
       sourceId:dashboard.scenarios.explorationFingerprint,
       fingerprint:null,
-      openHref:"/quotes"+query,
+      openHref:"/quotes"+evidenceQuery,
       downloadAction:action("BLOCKED","No downloadable insurer or MIQOS quote document has been generated."),
     });
   }
@@ -118,7 +121,7 @@ export function composeCustomerDocumentsPageVM(args:{
       createdAt:null,
       sourceId:dashboard.result.recommendationSetId,
       fingerprint:dashboard.result.recommendationFingerprint,
-      openHref:"/results"+query,
+      openHref:"/results"+evidenceQuery,
       downloadAction:action("BLOCKED","No downloadable policy or recommendation document has been generated."),
     });
   }
