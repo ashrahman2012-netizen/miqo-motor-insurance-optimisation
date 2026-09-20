@@ -121,23 +121,23 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  candidate_evidence_class text;
-  candidate_status text;
-  candidate_environment text;
+  v_candidate_evidence_class text;
+  v_candidate_status text;
+  v_candidate_environment text;
 BEGIN
-  SELECT evidence_class,candidate_status,target_environment
-    INTO candidate_evidence_class,candidate_status,candidate_environment
-  FROM sp6_provider_candidate_control
-  WHERE provider_candidate_id=NEW.provider_candidate_id;
+  SELECT p.evidence_class,p.candidate_status,p.target_environment
+    INTO v_candidate_evidence_class,v_candidate_status,v_candidate_environment
+  FROM sp6_provider_candidate_control p
+  WHERE p.provider_candidate_id=NEW.provider_candidate_id;
 
-  IF candidate_evidence_class IS NULL THEN
+  IF v_candidate_evidence_class IS NULL THEN
     RAISE EXCEPTION 'SP6_PROVIDER_CANDIDATE_NOT_FOUND';
   END IF;
 
   IF NEW.certification_state<>'DRAFT' THEN
-    IF candidate_evidence_class<>'EXTERNAL_PROVIDER'
-       OR candidate_status<>'APPROVED_FOR_CERTIFICATION'
-       OR candidate_environment<>'CERTIFICATION' THEN
+    IF v_candidate_evidence_class<>'EXTERNAL_PROVIDER'
+       OR v_candidate_status<>'APPROVED_FOR_CERTIFICATION'
+       OR v_candidate_environment<>'CERTIFICATION' THEN
       RAISE EXCEPTION 'SP6_PROVIDER_CERTIFICATION_EXTERNAL_CANDIDATE_REQUIRED';
     END IF;
   END IF;
