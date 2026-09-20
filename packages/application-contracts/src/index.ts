@@ -512,3 +512,35 @@ export interface QuoteComparisonPageVM {
   readonly runAction: ActionAvailabilityVM;
   readonly pageState: PageStateVM;
 }
+
+
+// BUILD-001F — customer results, explainability and handoff-readiness model.
+export interface ResultEvidenceProvenanceVM {
+  readonly recommendationRuleVersion: string;
+  readonly recommendationFingerprint: string;
+  readonly explanationRuleVersion: string;
+  readonly explanationFingerprint: string;
+}
+
+export interface FinalIntegrityStateVM {
+  readonly selectionId: string;
+  readonly status: string;
+  readonly outcome: "PASS" | "BLOCKED" | "UNKNOWN";
+  readonly ruleVersion: string | null;
+  readonly completed: boolean;
+  readonly dataClassification: string | null;
+  readonly liveProviderActivity: string | null;
+}
+
+export interface ResultsPageVM {
+  readonly profileId: string;
+  readonly profileVersion: ProfileVersionVM;
+  readonly customerObjectiveId: string | null;
+  readonly explorationFingerprint: string | null;
+  readonly detail: ResultDetailVM | null;
+  readonly provenance: ResultEvidenceProvenanceVM | null;
+  readonly generateAction: ActionAvailabilityVM;
+  readonly finalIntegrityAction: ActionAvailabilityVM;
+  readonly finalIntegrity: FinalIntegrityStateVM | null;
+  readonly pageState: PageStateVM;
+}
