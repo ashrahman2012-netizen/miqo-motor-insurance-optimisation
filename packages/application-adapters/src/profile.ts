@@ -140,7 +140,7 @@ function buildJourney(args:{
   return [capture,validation,discrepancies,confirmation,lock];
 }
 
-export function selectCurrentProfileVersion(snapshot:ProfileSnapshotApi):ProfileVersionApi|null {
+export function selectCurrentProfileLifecycleVersion(snapshot:ProfileSnapshotApi):ProfileVersionApi|null {
   return [...snapshot.versions].sort((a,b)=>b.versionNo-a.versionNo||b.versionId.localeCompare(a.versionId))[0]??null;
 }
 
@@ -149,7 +149,7 @@ export function composeProfileLifecycleVM(args:{
   snapshot:ProfileSnapshotApi;
   discrepancies:ReadonlyArray<ProfileDiscrepancyApi>;
 }):ProfileLifecycleVM {
-  const current=selectCurrentProfileVersion(args.snapshot);
+  const current=selectCurrentProfileLifecycleVersion(args.snapshot);
   if(!current)throw new Error("PROFILE_VERSION_NOT_FOUND");
 
   const fields:ReadonlyArray<ProfileFieldVM>=current.values.map(item=>({
