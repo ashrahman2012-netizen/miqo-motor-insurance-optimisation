@@ -381,11 +381,12 @@ export function composeCustomerDashboardVM(input:DashboardCompositionInput):Cust
     .filter(Boolean)
     .sort((a,b)=>Date.parse(b)-Date.parse(a))[0]??null;
   const locked=current.status==="LOCKED";
-  const profileBase=`/profile/${encodeURIComponent(input.profileId)}`;
-  const optimisationHref=`${profileBase}/recommendations`;
+  const legacyProfileBase=`/profile/${encodeURIComponent(input.profileId)}`;
+  const profileQuery=`?profileId=${encodeURIComponent(input.profileId)}`;
+  const optimisationHref=`${legacyProfileBase}/recommendations`;
 
   const quickActions=[
-    {actionId:"REVIEW_PROFILE" as const,label:"Review profile",href:`${profileBase}/review`,availability:available()},
+    {actionId:"REVIEW_PROFILE" as const,label:"Review profile",href:`/profile/review${profileQuery}`,availability:available()},
     {actionId:"SET_OBJECTIVE" as const,label:"Set objective",href:locked?optimisationHref:null,availability:locked?available():blocked("Lock the applicable profile version first.")},
     {actionId:"VIEW_SCENARIOS" as const,label:"View scenarios",href:objective?optimisationHref+"#sp4-scenarios":null,availability:objective?available():blocked("Select an objective first.")},
     {actionId:"COMPARE_QUOTES" as const,label:"Compare quotes",href:quotes.quoteCount?optimisationHref+"#sp4-route-summary":null,availability:quotes.quoteCount?available():blocked("No quotation evidence is available yet.")},
