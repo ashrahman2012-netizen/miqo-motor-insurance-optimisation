@@ -19,6 +19,7 @@ import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4Mar
 import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
+import { getSprint4ObjectiveQuoteComparison } from "./sprint4-comparison-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -112,6 +113,7 @@ export async function buildApp() {
       customerObjectiveId:req.params.customerObjectiveId,
       explorationFingerprint:req.params.explorationFingerprint,
     }));
+  app.get("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/quote-comparison",async(req:any)=>getSprint4ObjectiveQuoteComparison(db,{customerObjectiveId:req.params.customerObjectiveId,explorationFingerprint:req.params.explorationFingerprint}));
   app.post("/customer-objectives/:customerObjectiveId/scenario-explorations/:explorationFingerprint/recommendations",async(req:any,reply)=>{
     const result=await createSprint4RecommendationSet(db,{
       customerObjectiveId:req.params.customerObjectiveId,
