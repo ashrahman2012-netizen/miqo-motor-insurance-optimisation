@@ -139,7 +139,7 @@ export default async function QuotesPage({searchParams}:{searchParams:Promise<{p
       </div>
 
       {ranked.length?<RankedTable quotes={ranked}/>:<PageState
-        state={vm.pageState.state}
+        state={vm.pageState.state==="BLOCKED"?"BLOCKED":vm.pageState.state==="NOT_AUTHORISED"?"NOT_AUTHORISED":"EMPTY"}
         title={vm.pageState.title??"No ranked quotes"}
         message={vm.pageState.message??"No eligible quotation evidence is available for the current comparison."}
       />}
