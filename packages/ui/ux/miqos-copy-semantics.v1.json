@@ -1,0 +1,29 @@
+{
+  "$schemaVersion": "miqos-copy-semantics-v1",
+  "status": "FROZEN_FOR_APPLICATION_PREPARATION",
+  "customerMappings": {
+    "RecommendationSet": "Your Results",
+    "Recommendation": "Surfaced result",
+    "RecommendationExplanation": "Why This Surfaced",
+    "RiskProfileVersion": "Profile version",
+    "NormalisedQuote": "Quote",
+    "CustomerObjective": "Your objective"
+  },
+  "preferredPhrases": [
+    "Top result for your selected objective",
+    "Why this surfaced",
+    "Lowest annual premium among eligible directly comparable quotes",
+    "Based on your locked profile and selected choices",
+    "Information only — not personal insurance advice",
+    "Change choices, not facts"
+  ],
+  "avoidAsPrimaryAssertions": [
+    "We recommend",
+    "Best policy for you",
+    "Best insurer for you",
+    "You should buy",
+    "Guaranteed cheapest"
+  ],
+  "rankingRule": "Any ordinal or rank must name the selected objective and eligible population.",
+  "financialRule": "Premium, finance cost and excess remain separate dimensions."
+}
