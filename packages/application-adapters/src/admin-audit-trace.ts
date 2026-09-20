@@ -179,7 +179,7 @@ function eventSummary(event:AdminAuditEventApi){
     provider_response_normalised:"Provider response normalised",
     comparison_generated:"Comparison generated",
     shortlist_created:"Shortlist created",
-    sp4_recommendation_created:"Recommendation set created",
+    sp4_recommendation_set_created:"Recommendation set created",
     sp4_recommendation_explanation_created:"Recommendation explanation created",
     quote_selection_attempted:"Quote selection attempted",
     quote_selected:"Quote selected",
