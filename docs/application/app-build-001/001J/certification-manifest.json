@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "miqos-app-build-certification-v1",
+  "programme": "MIQOS-APP-BUILD-001",
+  "increment": "BUILD-001J",
+  "status": "CANDIDATE_PENDING_FINAL_CI",
+  "certificationClass": "INTERNAL_ENGINEERING_SYNTHETIC_TARGET_STACK",
+  "designAuthority": "MIQOS-DS-001 v1.1",
+  "dataClassification": "SYNTHETIC",
+  "liveProviderActivity": "DISABLED",
+  "certifiedIncrements": [
+    "001A",
+    "001B",
+    "001C",
+    "001D",
+    "001E",
+    "001F",
+    "001G",
+    "001H",
+    "001I",
+    "001J"
+  ],
+  "requiredCiJobs": [
+    "locked-dependencies",
+    "postgres-contract",
+    "target-stack-sprint1"
+  ],
+  "invariants": {
+    "nonAdvisedCustomerLanguage": true,
+    "providerIndependentFrontend": true,
+    "directDatabaseBindingInUi": false,
+    "adjustedComparableActive": false,
+    "liveProviderHandoffAuthorised": false,
+    "insurerDocumentsFabricated": false,
+    "customerActivityContainsRawProviderEvidence": false
+  },
+  "deferred": [
+    "live provider certification and activation",
+    "production authentication integration",
+    "live purchase/binding handoff",
+    "insurer-issued documents and document ingestion",
+    "messaging/support ticket integrations",
+    "adjusted-comparable methodology",
+    "external accessibility/legal certification",
+    "penetration/load/regulatory certification"
+  ]
+}
