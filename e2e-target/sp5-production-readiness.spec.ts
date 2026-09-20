@@ -4,9 +4,9 @@ test("S5-G22 production-readiness journey remains fail-closed for unauthorised c
   await page.goto("/prototype");
   await expect(page.getByText("MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY")).toBeVisible();
   await page.getByRole("button",{name:"Start synthetic profile"}).click();
-  await expect(page).toHaveURL(/\\/profile\\/[^/]+\\/section\\/identity$/);
+  await expect(page).toHaveURL(new RegExp("/profile/[^/]+/section/identity$"));
 
-  const profileId=page.url().match(/\\/profile\\/([^/]+)\\//)![1];
+  const profileId=page.url().split("/profile/")[1]!.split("/")[0]!;
   await page.getByLabel("Main driver ID").fill("DRV-SYN-SP5-G22");
   await page.getByLabel("Annual mileage").fill("8000");
   await page.getByLabel("Licence held since").fill("2018-04-16");
