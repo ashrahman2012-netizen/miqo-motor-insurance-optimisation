@@ -347,3 +347,82 @@ export interface ApiErrorDTO {
   readonly signals?: ReadonlyArray<unknown>;
   readonly selectionId?: string;
 }
+
+
+// BUILD-001B — customer dashboard application read model.
+export type DashboardJourneyStageId =
+  | "PROFILE_CAPTURE"
+  | "VALIDATION"
+  | "PROFILE_LOCK"
+  | "OBJECTIVE"
+  | "SCENARIOS"
+  | "QUOTES"
+  | "RESULTS"
+  | "HANDOFF";
+
+export type DashboardJourneyState =
+  | "COMPLETE"
+  | "CURRENT"
+  | "PENDING"
+  | "BLOCKED"
+  | "NOT_AUTHORISED";
+
+export interface DashboardJourneyStepVM {
+  readonly id: DashboardJourneyStageId;
+  readonly label: string;
+  readonly state: DashboardJourneyState;
+  readonly detail: string | null;
+}
+
+export interface DashboardObjectiveSummaryVM {
+  readonly customerObjectiveId: string;
+  readonly objectiveId: CustomerObjectiveId;
+  readonly label: string;
+  readonly selectedAt: IsoDateTime | null;
+}
+
+export interface DashboardScenarioSummaryVM {
+  readonly explorationFingerprint: string | null;
+  readonly generatedScenarioCount: number;
+  readonly rejectedCombinationCount: number;
+  readonly explorationCount: number;
+}
+
+export interface DashboardQuoteDistributionBucketVM {
+  readonly bucketId: string;
+  readonly label: string;
+  readonly count: number;
+}
+
+export interface DashboardQuoteSummaryVM {
+  readonly quoteCount: number;
+  readonly minimumAnnualPremiumPence: Pence | null;
+  readonly maximumAnnualPremiumPence: Pence | null;
+  readonly distribution: ReadonlyArray<DashboardQuoteDistributionBucketVM>;
+}
+
+export interface DashboardResultSummaryVM {
+  readonly recommendationSetId: string;
+  readonly recommendationFingerprint: string;
+  readonly surfacedResult: NormalisedQuoteVM;
+}
+
+export interface DashboardQuickActionVM {
+  readonly actionId: "REVIEW_PROFILE" | "SET_OBJECTIVE" | "VIEW_SCENARIOS" | "COMPARE_QUOTES" | "OPEN_RESULTS";
+  readonly label: string;
+  readonly href: string | null;
+  readonly availability: ActionAvailabilityVM;
+}
+
+export interface CustomerDashboardVM {
+  readonly pageState: PageStateVM;
+  readonly profileId: string | null;
+  readonly profileVersion: ProfileVersionVM | null;
+  readonly objective: DashboardObjectiveSummaryVM | null;
+  readonly scenarios: DashboardScenarioSummaryVM;
+  readonly quotes: DashboardQuoteSummaryVM;
+  readonly result: DashboardResultSummaryVM | null;
+  readonly journey: ReadonlyArray<DashboardJourneyStepVM>;
+  readonly quickActions: ReadonlyArray<DashboardQuickActionVM>;
+  readonly latestUpdatedAt: IsoDateTime | null;
+}
