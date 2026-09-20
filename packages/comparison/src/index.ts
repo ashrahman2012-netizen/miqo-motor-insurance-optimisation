@@ -386,3 +386,38 @@ export function buildSprint4RecommendationExplanation(args:Readonly<{
   });
 }
 
+
+
+export const SP4_OBJECTIVE_COMPARISON_RULE_VERSION="sp4-objective-comparison-v1";
+
+export function analyseSprint4ObjectiveComparison(args:Readonly<{
+  objectiveId:Sprint4ObjectiveId;
+  objectiveVersion:string;
+  catalogueVersion:string;
+  policyFingerprint:string;
+  explorationFingerprint:string;
+  quotes:ReadonlyArray<Sprint4RecommendationQuote>;
+}>) {
+  const analysed=analyseSprint4Recommendations(args);
+  const comparisonFingerprint=recommendationHash({
+    comparisonRuleVersion:SP4_OBJECTIVE_COMPARISON_RULE_VERSION,
+    objectiveId:analysed.objectiveId,
+    objectiveVersion:analysed.objectiveVersion,
+    catalogueVersion:analysed.catalogueVersion,
+    policyFingerprint:analysed.policyFingerprint,
+    explorationFingerprint:analysed.explorationFingerprint,
+    eligible:analysed.eligible,
+    excluded:analysed.excluded,
+  });
+  return Object.freeze({
+    comparisonRuleVersion:SP4_OBJECTIVE_COMPARISON_RULE_VERSION,
+    comparisonFingerprint,
+    objectiveId:analysed.objectiveId,
+    objectiveVersion:analysed.objectiveVersion,
+    catalogueVersion:analysed.catalogueVersion,
+    policyFingerprint:analysed.policyFingerprint,
+    explorationFingerprint:analysed.explorationFingerprint,
+    eligible:analysed.eligible,
+    excluded:analysed.excluded,
+  });
+}
