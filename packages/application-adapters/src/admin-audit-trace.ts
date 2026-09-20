@@ -207,6 +207,18 @@ function withinDate(value:string,from:string|null,to:string|null){
 function filteredTimeline(profileId:string,events:ReadonlyArray<AdminAuditEventApi>,filters:AdminAuditTraceFiltersVM):AuditTimelineVM{
   const selected=events.filter(event=>{
     if(filters.eventType&&event.eventType!==filters.eventType)return false;
+    if(filters.profileVersionId){
+      const metadata=event.metadataJson??{};
+      if(event.entityId!==filters.profileVersionId
+        && metadata.riskProfileVersionId!==filters.profileVersionId
+        && metadata.versionId!==filters.profileVersionId
+        && metadata.sourceVersionId!==filters.profileVersionId)return false;
+    }
+    if(filters.recommendationSetId){
+      const metadata=event.metadataJson??{};
+      if(event.entityId!==filters.recommendationSetId
+        && metadata.recommendationSetId!==filters.recommendationSetId)return false;
+    }
     if(filters.scenarioId){
       const scenarioId=event.metadataJson?.scenarioId;
       if(event.entityId!==filters.scenarioId&&scenarioId!==filters.scenarioId)return false;
@@ -349,6 +361,7 @@ function currentArtefact(trace:AdminSprint4TraceApi):AdminCurrentArtefactVM{
     scenarioId:surfacedScenario,
     explorationFingerprint:trace.exploration.explorationFingerprint,
     marketRouteId:selected?.marketRoute.marketRouteId??null,
+    routeFingerprint:selected?.marketRoute.routeFingerprint??null,
     quoteRequestId:selected?.quoteRequest.quoteRequestId??null,
     rawProviderResponseId:selected?.rawProviderResponse.rawProviderResponseId??null,
     normalisedQuoteId:selected?.normalisedQuote.normalisedQuoteId??null,
