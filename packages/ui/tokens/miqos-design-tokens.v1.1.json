@@ -1,0 +1,69 @@
+{
+  "$schemaVersion": "miqos-design-tokens-v1.1",
+  "status": "FROZEN_FOR_APPLICATION_BUILD",
+  "visualAuthority": "MIQOS - UX Design Sample",
+  "principle": "Blue communicates interaction. Green communicates success. Amber communicates attention. Red communicates failure. Purple is reserved for specialised/system semantics.",
+  "color": {
+    "bg": {
+      "canvas": "#041428",
+      "navigation": "#06162B"
+    },
+    "surface": {
+      "primary": "#0F1F3A",
+      "secondary": "#122746",
+      "tertiary": "#173052"
+    },
+    "border": {
+      "subtle": "#284567",
+      "active": "#3574FF"
+    },
+    "grid": {
+      "subtle": "#203A59"
+    },
+    "brand": {
+      "primary": "#3574FF",
+      "primaryHover": "#4B83FF",
+      "primaryPressed": "#2B5FD1",
+      "secondaryAccent": "#7000FF"
+    },
+    "text": {
+      "primary": "#F7F9FC",
+      "secondary": "#C2CEDE",
+      "tertiary": "#8FA3BD",
+      "disabled": "#657A95",
+      "inverse": "#041428",
+      "onPrimary": "#FFFFFF"
+    },
+    "state": {
+      "success": "#10B981",
+      "successText": "#6EE7B7",
+      "warning": "#F59E0B",
+      "warningText": "#FCD34D",
+      "danger": "#EF4444",
+      "dangerText": "#FCA5A5",
+      "info": "#3574FF",
+      "infoText": "#93B4FF",
+      "certification": "#7000FF",
+      "certificationText": "#D8C6FF",
+      "neutral": "#94A3B8"
+    }
+  },
+  "radius": {
+    "sm": 6,
+    "md": 10,
+    "lg": 14,
+    "xl": 18,
+    "pill": 999
+  },
+  "motion": {
+    "fastMs": 120,
+    "standardMs": 180,
+    "easing": "ease-out",
+    "reducedMotion": "disable_nonessential"
+  },
+  "shadow": {
+    "card": "0 8px 22px rgba(0,0,0,0.22)",
+    "selected": "0 0 0 1px rgba(53,116,255,0.28), 0 0 14px rgba(53,116,255,0.10)",
+    "rule": "Glow is selective emphasis, never a default panel treatment."
+  }
+}
