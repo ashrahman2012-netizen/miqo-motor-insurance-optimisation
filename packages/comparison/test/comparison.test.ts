@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {analyseSprint4Recommendations,buildSprint4RecommendationExplanation,compareNormalisedQuotes} from "../src/index.ts";
+import {analyseSprint4ObjectiveComparison,analyseSprint4Recommendations,buildSprint4RecommendationExplanation,compareNormalisedQuotes} from "../src/index.ts";
 
 const quotes=[
   {normalisedQuoteId:"Q-003",comparisonState:"NOT_COMPARABLE" as const,annualCashPremiumPence:64200,compulsoryExcessPence:null,voluntaryExcessPence:null},
@@ -214,4 +214,26 @@ test("S4-G12 synthetic remuneration metadata cannot influence eligibility, metri
       noCommercial.excluded.map(item=>[item.normalisedQuoteId,item.exclusionReason]),
     );
   }
+});
+
+
+test("BUILD-001E neutral comparison ranks only eligible objective evidence without creating a surfaced decision",()=>{
+  const result=analyseSprint4ObjectiveComparison({
+    objectiveId:"LOWEST_ANNUAL_PREMIUM",
+    objectiveVersion:"sp4-objectives-v1",
+    catalogueVersion:"sp4-catalogue-v2.1",
+    policyFingerprint:"9".repeat(64),
+    explorationFingerprint:"8".repeat(64),
+    quotes:[
+      {normalisedQuoteId:"NOR-B",quoteRequestId:"REQ-B",scenarioId:"SCN-B",marketRouteId:"MR-B",routeKey:"PCW",comparisonState:"DIRECTLY_COMPARABLE",annualCashPremiumPence:70000,financeCostPence:0,compulsoryExcessPence:25000,voluntaryExcessPence:25000,paymentStructure:"ANNUAL"},
+      {normalisedQuoteId:"NOR-A",quoteRequestId:"REQ-A",scenarioId:"SCN-A",marketRouteId:"MR-A",routeKey:"DIRECT",comparisonState:"DIRECTLY_COMPARABLE",annualCashPremiumPence:65000,financeCostPence:0,compulsoryExcessPence:30000,voluntaryExcessPence:50000,paymentStructure:"ANNUAL"},
+      {normalisedQuoteId:"NOR-X",quoteRequestId:"REQ-X",scenarioId:"SCN-X",marketRouteId:"MR-X",routeKey:"OTHER",comparisonState:"ADJUSTED_COMPARABLE",annualCashPremiumPence:1,financeCostPence:0,compulsoryExcessPence:1,voluntaryExcessPence:1,paymentStructure:"ANNUAL"},
+    ],
+  });
+  assert.equal(result.comparisonRuleVersion,"sp4-objective-comparison-v1");
+  assert.deepEqual(result.eligible.map(item=>[item.normalisedQuoteId,item.ordinal]),[["NOR-A",1],["NOR-B",2]]);
+  assert.equal(result.excluded[0].normalisedQuoteId,"NOR-X");
+  assert.equal(result.excluded[0].exclusionReason,"COMPARISON_STATE_ADJUSTED_NOT_ELIGIBLE");
+  assert.equal((result as any).surfacedNormalisedQuoteId,undefined);
+  assert.equal((result as any).effectiveCostPence,undefined);
 });
