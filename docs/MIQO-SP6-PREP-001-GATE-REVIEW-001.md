@@ -129,4 +129,16 @@ Batch A — S6-G0 → S6-G2
 
 Provider-neutral Batch A may proceed without further external input. The first mandatory external stop is S6-G3 unless a real ProviderCandidateRecord is supplied before that point.
 
+## 9. Baseline CI certification
+
+Definitive PREP baseline run: **35509157036** at gateway head `a05845db1b6e7fb6ce4aa506c4a836ef2982a809`.
+
+| Job | Outcome |
+|---|---|
+| `locked-dependencies` | PASS |
+| `postgres-contract` | PASS |
+| `target-stack-sprint1` | PASS |
+
+The run confirms inherited boundary tests, invariants, API/Postgres tests, Playwright target-stack journeys and the final build remain clean at the Sprint 6 PREP gateway.
+
 **End of MIQO-SP6-PREP-001-GATE-REVIEW-001**
