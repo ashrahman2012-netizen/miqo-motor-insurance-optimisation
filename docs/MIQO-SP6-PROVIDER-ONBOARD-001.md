@@ -2,7 +2,7 @@
 
 **Document ID:** MIQO-SP6-PROVIDER-ONBOARD-001  
 **Version:** 1.0  
-**Status:** ACTIVE — EXTERNAL OUTREACH REQUIRED  
+**Status:** ACTIVE — EXTERNAL OUTREACH SENT / PROVIDER RESPONSE PENDING  
 **Sprint:** MIQO-SP6-EXEC-001  
 **Parent gate:** S6-G3 — Named Provider Candidate  
 **Candidate record:** MIQO-SP6-PROVIDER-CANDIDATE-001  
@@ -187,10 +187,22 @@ S6-G3 assessment
 provider-specific S6-G4 → G6 certification
 ```
 
-## 10. Current decision
+## 10. Contact initiation evidence
+
+The controlled enquiry `MIQO-SP6-SEOPA-ENQUIRY-001` was sent on **20 September 2026** to Seopa's public contact address `info@seopa.com`.
+
+Evidence:
+- Gmail message ID: `1a0beeda458d4ac4`
+- Gmail thread ID: `1a0bee474467a27d`
+- Contact state: `SENT / AWAITING_PROVIDER_RESPONSE`
+
+The enquiry requested certification access and technical discovery only. It did not request production credentials, transmit real customer data, or claim any production authority.
+
+## 11. Current decision
 
 **Provider discovery:** PASS — genuine candidate identified.  
 **Provider-candidate record:** CREATED / INCOMPLETE.  
+**External enquiry:** SENT 20 September 2026 to `info@seopa.com`; Gmail message `1a0beeda458d4ac4`, thread `1a0bee474467a27d`.  
 **S6-G3:** BLOCKED — legitimate certification environment/access and provider technical pack not yet evidenced.  
 **S6-G4–G6:** provider-neutral framework ready; provider-specific certification blocked by S6-G3.
 
