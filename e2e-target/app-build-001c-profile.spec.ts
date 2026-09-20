@@ -47,7 +47,7 @@ test("BUILD-001C renders persisted blocking discrepancy and creates correction v
   await client.connect();
   await client.query(
     "INSERT INTO discrepancy(discrepancy_id,risk_profile_version_id,field_id,declared_value_json,verified_value_json,state,blocking) VALUES($1,$2,$3,$4::jsonb,$5::jsonb,$6,$7)",
-    ["DIS-001C-"+Date.now(),profile.versionId,"annual_mileage",JSON.stringify(8000),JSON.stringify(9000),"OPEN",true]
+    ["DIS-001C-"+Date.now(),profile.versionId,"annual_mileage",JSON.stringify(8000),JSON.stringify(9000),"REVIEW_REQUIRED",true]
   );
   await client.end();
 
