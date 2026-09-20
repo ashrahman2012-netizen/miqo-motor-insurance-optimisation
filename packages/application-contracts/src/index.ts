@@ -609,6 +609,17 @@ export interface AdminIntegrityQueueItemVM {
   readonly detail: string;
 }
 
+export interface AdminDiscrepancyQueueItemVM {
+  readonly discrepancyId: string;
+  readonly riskProfileVersionId: string;
+  readonly fieldId: string;
+  readonly declaredValue: unknown;
+  readonly verifiedValue: unknown;
+  readonly state: string;
+  readonly blocking: boolean;
+  readonly createdAt: IsoDateTime;
+}
+
 export interface AdminGovernanceSummaryVM {
   readonly auditTrail: StatusVM;
   readonly appendOnly: StatusVM;
@@ -625,6 +636,7 @@ export interface AdminAuditTracePageVM {
   readonly rawProviderResponse: AdminRawProviderResponseVM | null;
   readonly normalisedEvidence: AdminNormalisedEvidenceVM | null;
   readonly integrityQueue: ReadonlyArray<AdminIntegrityQueueItemVM>;
+  readonly discrepancies: ReadonlyArray<AdminDiscrepancyQueueItemVM>;
   readonly governance: AdminGovernanceSummaryVM;
   readonly pageState: PageStateVM;
 }
