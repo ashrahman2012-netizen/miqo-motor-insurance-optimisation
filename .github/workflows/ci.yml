@@ -58,6 +58,7 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0011_sp4_occupation_vehicle_integrity.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0012_sp4_recommendation.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0013_sp4_explainability_commercial_independence.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0014_sp6_provider_certification_framework.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-foundation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-scenario-contract.sql
@@ -71,6 +72,7 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-occupation-vehicle-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-recommendation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-explainability-commercial-independence-contract.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint6-provider-certification-contract.sql
 
   target-stack-sprint1:
     runs-on: ubuntu-latest
