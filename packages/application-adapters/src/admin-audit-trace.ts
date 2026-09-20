@@ -25,6 +25,17 @@ export interface AdminAuditEventApi {
   readonly metadataJson:Readonly<Record<string,unknown>>|null;
 }
 
+export interface AdminDiscrepancyApi {
+  readonly discrepancyId:string;
+  readonly riskProfileVersionId:string;
+  readonly fieldId:string;
+  readonly declaredValueJson:unknown;
+  readonly verifiedValueJson:unknown;
+  readonly state:string;
+  readonly blocking:boolean;
+  readonly createdAt:string;
+}
+
 export interface AdminRawProviderResponseApi {
   readonly rawProviderResponseId:string;
   readonly quoteRequestId:string;
@@ -449,6 +460,7 @@ export function composeAdminAuditTracePageVM(args:{
   trace:AdminSprint4TraceApi|null;
   auditEvents:ReadonlyArray<AdminAuditEventApi>;
   rawProviderResponse:AdminRawProviderResponseApi|null;
+  discrepancies:ReadonlyArray<AdminDiscrepancyApi>;
 }):AdminAuditTracePageVM{
   const profileId=args.trace?.profile.profileId??args.filters.profileId;
   const timeline=profileId?filteredTimeline(profileId,args.auditEvents,args.filters):null;
@@ -506,6 +518,16 @@ export function composeAdminAuditTracePageVM(args:{
     rawProviderResponse:raw,
     normalisedEvidence:normalised,
     integrityQueue:integrityQueue(args.trace),
+    discrepancies:args.discrepancies.map(item=>({
+      discrepancyId:item.discrepancyId,
+      riskProfileVersionId:item.riskProfileVersionId,
+      fieldId:item.fieldId,
+      declaredValue:item.declaredValueJson,
+      verifiedValue:item.verifiedValueJson,
+      state:item.state,
+      blocking:item.blocking,
+      createdAt:item.createdAt,
+    })),
     governance:governance(args.environment,args.trace),
     pageState:state,
   };
