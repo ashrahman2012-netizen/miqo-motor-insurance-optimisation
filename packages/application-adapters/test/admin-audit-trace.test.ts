@@ -51,7 +51,7 @@ describe("BUILD-001G admin audit and trace adapter",()=>{
   it("preserves raw and normalised evidence as distinct lineage nodes",()=>{
     const vm=composeAdminAuditTracePageVM({
       filters:{profileId:null,profileVersionId:null,recommendationSetId:null,selectionId:"SEL-001G",scenarioId:null,eventType:null,dateFrom:null,dateTo:null},
-      environment:"SYNTHETIC",trace,auditEvents:events,rawProviderResponse:raw,
+      environment:"SYNTHETIC",trace,auditEvents:events,rawProviderResponse:raw,discrepancies:[],
     });
     expect(vm.pageState.state).toBe("SUCCESS");
     expect(vm.lineage?.nodes.map(item=>item.kind)).toEqual([
@@ -67,7 +67,7 @@ describe("BUILD-001G admin audit and trace adapter",()=>{
   it("filters the append-only timeline without mutating or reinterpreting events",()=>{
     const vm=composeAdminAuditTracePageVM({
       filters:{profileId:"PRO-001G",profileVersionId:null,recommendationSetId:null,selectionId:null,scenarioId:"SCN-001G",eventType:"final_integrity_passed",dateFrom:"2026-09-20",dateTo:"2026-09-20"},
-      environment:"SYNTHETIC",trace:null,auditEvents:events,rawProviderResponse:null,
+      environment:"SYNTHETIC",trace:null,auditEvents:events,rawProviderResponse:null,discrepancies:[],
     });
     expect(vm.timeline?.events).toHaveLength(1);
     expect(vm.timeline?.events[0]?.auditEventId).toBe("AUD-3");
@@ -78,7 +78,7 @@ describe("BUILD-001G admin audit and trace adapter",()=>{
   it("derives governance state only from persisted evidence",()=>{
     const vm=composeAdminAuditTracePageVM({
       filters:{profileId:null,profileVersionId:null,recommendationSetId:null,selectionId:"SEL-001G",scenarioId:null,eventType:null,dateFrom:null,dateTo:null},
-      environment:"SYNTHETIC",trace,auditEvents:events,rawProviderResponse:raw,
+      environment:"SYNTHETIC",trace,auditEvents:events,rawProviderResponse:raw,discrepancies:[],
     });
     expect(vm.governance.commercialIndependence.code).toBe("VERIFIED");
     expect(vm.integrityQueue.find(item=>item.category==="FINAL_INTEGRITY")?.status.code).toBe("PASS");
@@ -89,7 +89,7 @@ describe("BUILD-001G admin audit and trace adapter",()=>{
     };
     const second=composeAdminAuditTracePageVM({
       filters:{profileId:null,profileVersionId:null,recommendationSetId:null,selectionId:"SEL-001G",scenarioId:null,eventType:null,dateFrom:null,dateTo:null},
-      environment:"SYNTHETIC",trace:withoutCommercial,auditEvents:events,rawProviderResponse:raw,
+      environment:"SYNTHETIC",trace:withoutCommercial,auditEvents:events,rawProviderResponse:raw,discrepancies:[],
     });
     expect(second.governance.commercialIndependence.code).toBe("INFORMATIONAL");
   });
