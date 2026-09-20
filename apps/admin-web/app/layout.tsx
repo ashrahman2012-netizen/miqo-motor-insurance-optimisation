@@ -1,12 +1,8 @@
-export default function RootLayout({children}: {children: React.ReactNode}) {
-  return (
-    <html lang="en">
-      <body>
-        <div role="status" style={{padding: 12, borderBottom: "2px solid currentColor", fontWeight: 700}}>
-          ADMIN — NON-PRODUCTION / SYNTHETIC DATA
-        </div>
-        {children}
-      </body>
-    </html>
-  );
+import "@miqo/ui/styles.css";
+import {AdminShell} from "./admin-shell";
+import {resolveApplicationEnvironment} from "./environment";
+export const dynamic="force-dynamic";
+export default function RootLayout({children}:{children:React.ReactNode}) {
+  const environment=resolveApplicationEnvironment();
+  return <html lang="en"><body><AdminShell environment={environment}>{children}</AdminShell></body></html>;
 }

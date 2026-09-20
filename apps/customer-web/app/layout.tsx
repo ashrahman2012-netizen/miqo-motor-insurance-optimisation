@@ -1,12 +1,10 @@
-export default function RootLayout({children}: {children: React.ReactNode}) {
-  return (
-    <html lang="en">
-      <body>
-        <div role="status" style={{padding: 12, borderBottom: "2px solid currentColor", fontWeight: 700}}>
-          MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY
-        </div>
-        {children}
-      </body>
-    </html>
-  );
+import "@miqo/ui/styles.css";
+import {CustomerShell} from "./customer-shell";
+import {resolveApplicationEnvironment} from "./environment";
+
+export const dynamic="force-dynamic";
+
+export default function RootLayout({children}:{children:React.ReactNode}) {
+  const environment=resolveApplicationEnvironment();
+  return <html lang="en"><body><CustomerShell environment={environment}>{children}</CustomerShell></body></html>;
 }
