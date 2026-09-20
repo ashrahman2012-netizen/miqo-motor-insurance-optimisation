@@ -549,6 +549,8 @@ export interface ResultsPageVM {
 // BUILD-001G — Admin Audit & Trace Console.
 export interface AdminAuditTraceFiltersVM {
   readonly profileId: string | null;
+  readonly profileVersionId: string | null;
+  readonly recommendationSetId: string | null;
   readonly selectionId: string | null;
   readonly scenarioId: string | null;
   readonly eventType: string | null;
@@ -566,6 +568,7 @@ export interface AdminCurrentArtefactVM {
   readonly scenarioId: string | null;
   readonly explorationFingerprint: string | null;
   readonly marketRouteId: string | null;
+  readonly routeFingerprint: string | null;
   readonly quoteRequestId: string | null;
   readonly rawProviderResponseId: string | null;
   readonly normalisedQuoteId: string | null;
