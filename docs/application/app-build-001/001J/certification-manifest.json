@@ -2,7 +2,7 @@
   "schemaVersion": "miqos-app-build-certification-v1",
   "programme": "MIQOS-APP-BUILD-001",
   "increment": "BUILD-001J",
-  "status": "CANDIDATE_PENDING_FINAL_CI",
+  "status": "CERTIFIED",
   "certificationClass": "INTERNAL_ENGINEERING_SYNTHETIC_TARGET_STACK",
   "designAuthority": "MIQOS-DS-001 v1.1",
   "dataClassification": "SYNTHETIC",
@@ -42,5 +42,8 @@
     "adjusted-comparable methodology",
     "external accessibility/legal certification",
     "penetration/load/regulatory certification"
-  ]
+  ],
+  "programmeStatus": "COMPLETE",
+  "certificationDecision": "PASS",
+  "closureRule": "Certification is operationally valid only on a branch head where all required CI jobs pass."
 }
