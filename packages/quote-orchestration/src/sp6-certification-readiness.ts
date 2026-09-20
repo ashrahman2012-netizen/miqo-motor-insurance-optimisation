@@ -42,7 +42,7 @@ function nonBlank(value:string,error:string){
 export function assertCredentialReferenceFormat(ref:string){
   nonBlank(ref,"CREDENTIAL_REFERENCE_REQUIRED");
   if(!ref.startsWith("secret://"))throw new Error("CREDENTIAL_REFERENCE_MUST_BE_EXTERNAL");
-  if(/(password|token|api[_-]?key|secret)s*[:=]/i.test(ref))throw new Error("CREDENTIAL_VALUE_FORBIDDEN");
+  if(/(password|token|api[_-]?key)[ \\t]*[:=]/i.test(ref))throw new Error("CREDENTIAL_VALUE_FORBIDDEN");
 }
 
 export function bindEnvironment(args:Readonly<{
