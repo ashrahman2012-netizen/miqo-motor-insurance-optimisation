@@ -1,0 +1,54 @@
+{
+  "$schemaVersion": "miqos-semantic-mappings-v1.1",
+  "status": "FROZEN_FOR_APPLICATION_BUILD",
+  "controlClasses": {
+    "F": {
+      "label": "Fact",
+      "accent": "#94A3B8",
+      "interactive": false
+    },
+    "V": {
+      "label": "Verified / Enriched",
+      "accent": "#93B4FF",
+      "interactive": false
+    },
+    "D": {
+      "label": "Derived",
+      "accent": "#7000FF",
+      "interactive": false
+    },
+    "O": {
+      "label": "Customer choice",
+      "accent": "#3574FF",
+      "interactive": true
+    },
+    "I": {
+      "label": "Integrity signal",
+      "accent": "#94A3B8",
+      "interactive": false,
+      "severityIndependent": true
+    }
+  },
+  "statuses": {
+    "PASS": "success",
+    "READY": "success",
+    "LOCKED": "info",
+    "DRAFT": "neutral",
+    "PENDING": "warning",
+    "BLOCKED": "danger",
+    "EXCLUDED": "neutral",
+    "NOT_COMPARABLE": "neutral-attention",
+    "DIRECTLY_COMPARABLE": "success",
+    "ADJUSTED_COMPARABLE": "dormant",
+    "CERTIFICATION": "certification",
+    "SYNTHETIC": "info",
+    "PRODUCTION": "neutral",
+    "NOT_AUTHORISED": "danger",
+    "SUPERSEDED": "neutral",
+    "ELIGIBLE": "success",
+    "RESOLVED": "success",
+    "INFORMATIONAL": "info"
+  },
+  "visualRule": "Interaction=blue; success=green; attention=amber; failure=red; specialised/system=purple. Generic integrity signals do not inherit green unless their evaluated outcome is successful.",
+  "glowRule": "Only selected interactive controls, primary CTA focus/hover, and exceptional result emphasis may use restrained glow."
+}
