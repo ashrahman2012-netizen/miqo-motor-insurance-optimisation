@@ -383,14 +383,15 @@ export function composeCustomerDashboardVM(input:DashboardCompositionInput):Cust
   const locked=current.status==="LOCKED";
   const legacyProfileBase=`/profile/${encodeURIComponent(input.profileId)}`;
   const profileQuery=`?profileId=${encodeURIComponent(input.profileId)}`;
-  const optimisationHref=`${legacyProfileBase}/recommendations`;
+  const optimisationHref=`/optimise${profileQuery}`;
+  const legacyResultsHref=`${legacyProfileBase}/recommendations`;
 
   const quickActions=[
     {actionId:"REVIEW_PROFILE" as const,label:"Review profile",href:`/profile/review${profileQuery}`,availability:available()},
     {actionId:"SET_OBJECTIVE" as const,label:"Set objective",href:locked?optimisationHref:null,availability:locked?available():blocked("Lock the applicable profile version first.")},
-    {actionId:"VIEW_SCENARIOS" as const,label:"View scenarios",href:objective?optimisationHref+"#sp4-scenarios":null,availability:objective?available():blocked("Select an objective first.")},
-    {actionId:"COMPARE_QUOTES" as const,label:"Compare quotes",href:quotes.quoteCount?optimisationHref+"#sp4-route-summary":null,availability:quotes.quoteCount?available():blocked("No quotation evidence is available yet.")},
-    {actionId:"OPEN_RESULTS" as const,label:"Open Your Results",href:result?optimisationHref+"#sp4-explanation":null,availability:result?available():blocked("No surfaced result is available yet.")},
+    {actionId:"VIEW_SCENARIOS" as const,label:"View scenarios",href:objective?optimisationHref+"#generated-scenarios":null,availability:objective?available():blocked("Select an objective first.")},
+    {actionId:"COMPARE_QUOTES" as const,label:"Compare quotes",href:quotes.quoteCount?legacyResultsHref+"#sp4-route-summary":null,availability:quotes.quoteCount?available():blocked("No quotation evidence is available yet.")},
+    {actionId:"OPEN_RESULTS" as const,label:"Open Your Results",href:result?legacyResultsHref+"#sp4-explanation":null,availability:result?available():blocked("No surfaced result is available yet.")},
   ];
 
   return {
