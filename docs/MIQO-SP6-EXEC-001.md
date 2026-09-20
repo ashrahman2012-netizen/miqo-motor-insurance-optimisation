@@ -1,6 +1,6 @@
 # MIQO-SP6-EXEC-001 — Controlled Sprint 6 Execution Programme
 
-**Status:** ACTIVE — STOPPED AT S6-G3 EXTERNAL INPUT  
+**Status:** ACTIVE — BATCH B PROVIDER-NEUTRAL PREPARATION COMPLETE / STOPPED AT S6-G3  
 **Date:** 20 September 2026  
 **Branch:** `miqo/sp6-exec-001`  
 **PREP authority:** `MIQO-SP6-PREP-001 v1.0`  
@@ -37,7 +37,7 @@ S6-G3 — NAMED PROVIDER CANDIDATE
 | Batch | Gates | Domain | State |
 |---|---|---|---|
 | A | S6-G0–G2 | Sprint 5 inheritance, dependency freeze, provider-neutral control baseline | CERTIFIED PASS — 3/3 |
-| B | S6-G3–G6 | named provider candidate, adapter/mapping, schemas, provenance | BLOCKED AT G3 / PROVIDER-NEUTRAL PRIMITIVES MAY PROCEED |
+| B | S6-G3–G6 | named provider candidate, adapter/mapping, schemas, provenance | PROVIDER-NEUTRAL FRAMEWORK CERTIFIED / BLOCKED AT G3 |
 | C | S6-G7–G10 | endpoints/credentials, resilience, certification-route execution | QUEUED |
 | D | S6-G11–G13 | reconciliation, LIVE fail-closed gate, independent activation | QUEUED |
 | E | S6-G14–G16 | pilot bounds, kill switch/rollback, operational evidence | QUEUED |
@@ -80,7 +80,53 @@ The definitive run includes the new Sprint 6 Batch A tests plus inherited invari
 
 No remediation was required.
 
-## 7. External dependency state after Batch A
+## 7. Batch B provider-neutral preparation
+
+Batch B was advanced to the maximum point permitted without a genuine provider candidate.
+
+Provider-neutral engineering completed:
+
+- `sp6-provider-certification-v1` certification contract model;
+- explicit field provenance with CUSTOMER_FACT / CUSTOMER_OPTION / PROTOCOL_CONSTANT semantics;
+- negative controls preventing factual values from being invented as constants;
+- versioned request/response schema policy with explicit unknown-field semantics;
+- deterministic mapping/schema/contract/evidence fingerprints;
+- external ProviderCandidate approval guard before any provider-ready contract can be bound;
+- PostgreSQL provider-candidate, certification-contract and certification-evidence controls;
+- database guards preventing TEST_FIXTURE candidates from promotion to `APPROVED_FOR_CERTIFICATION`;
+- database guards preventing TEST_FIXTURE contracts from promotion to `READY_FOR_PROVIDER_CERTIFICATION`;
+- append-only/immutable certification evidence;
+- reconnect persistence verification of certification evidence;
+- CI integration of Sprint 6 migration and PostgreSQL contract.
+
+Implementation lineage:
+
+- `dbe0ed5a5f08c581df78af9837387cb8105567fa` — provider-neutral certification framework;
+- `0d6cfb7c0e4adce5f3541592b61df1478a6fbe1d` — G4–G6 framework tests;
+- `7ce3cbe14d189ccd68323e03857765faba6ba6d4` — certification persistence migration;
+- `9a439d3561fd9c661a94a77170e3563f00e554db` — PostgreSQL contract;
+- `3442293cdee65b76c179524fd3a999a279af0b6a` — reconnect/immutability API/Postgres test;
+- `822f6fb9b15d68fa6355885a3d3b7fd285b277f2` — CI integration;
+- `f710b3519bb6e7f246856b2b322d2704397839a2` — SQL trigger variable disambiguation remediation.
+
+Remediation history:
+
+- CI run `35510464132` identified an ambiguous PL/pgSQL variable reference in the new certification-contract guard;
+- the defect was corrected in `f710b35` without changing the control design;
+- definitive remediated CI run `35510510071` completed SUCCESS across `locked-dependencies`, `postgres-contract`, and `target-stack-sprint1`.
+
+### Batch B gate state
+
+| Gate | State | Reason |
+|---|---|---|
+| **S6-G3** | **BLOCKED** | genuine named ProviderCandidateRecord not supplied |
+| **S6-G4** | **BLOCKED — FRAMEWORK READY** | provider-neutral mapping/provenance controls are green, but provider-specific adapter/mapping certification requires S6-G3 |
+| **S6-G5** | **BLOCKED — FRAMEWORK READY** | schema/version/unknown-field controls are green, but actual provider schemas require S6-G3/provider documentation |
+| **S6-G6** | **BLOCKED — FRAMEWORK READY** | immutable persistence/reconnect primitives are green, but provider-specific DB/API reconstruction requires actual provider certification evidence after S6-G3 |
+
+No provider-specific PASS is inferred from TEST_FIXTURE or provider-neutral evidence.
+
+## 8. External dependency state after Batch B
 
 | Dependency | State |
 |---|---|
@@ -93,7 +139,7 @@ No remediation was required.
 | DISTRIBUTION | NOT_AUTHORISED |
 | BIND_PAY | NOT_AUTHORISED / OUT OF SCOPE |
 
-## 8. S6-G3 stop condition
+## 9. S6-G3 stop condition
 
 The next provider-specific gate requires a genuine `ProviderCandidateRecord`. The record must identify at minimum:
 
@@ -111,7 +157,7 @@ Synthetic placeholders or example provider identities cannot satisfy S6-G3.
 
 Canonical intake record: `MIQO-SP6-PROVIDER-CANDIDATE-001`. It remains DRAFT / non-satisfying until populated with genuine provider-specific external evidence.
 
-## 9. Current execution position
+## 10. Current execution position
 
 ```text
 S6-G0   PASS
@@ -121,6 +167,9 @@ S6-G2   PASS
 BATCH A CERTIFIED PASS — 3/3
 
 S6-G3   BLOCKED — GENUINE PROVIDER CANDIDATE REQUIRED
+S6-G4   BLOCKED — FRAMEWORK READY / PROVIDER-SPECIFIC EVIDENCE REQUIRED
+S6-G5   BLOCKED — FRAMEWORK READY / PROVIDER-SPECIFIC SCHEMAS REQUIRED
+S6-G6   BLOCKED — FRAMEWORK READY / PROVIDER-SPECIFIC RECONSTRUCTION REQUIRED
 ```
 
 The execution pointer is stopped at S6-G3 in accordance with the frozen acceptance matrix and PREP gateway.
