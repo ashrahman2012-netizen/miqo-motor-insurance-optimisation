@@ -1,19 +1,29 @@
 # @miqo/ui
 
-Shared MIQOS presentation boundary.
+Shared MIQOS presentation boundary for the customer and admin applications.
 
-## APP-PREP status
+## Application Build status
 
-The package currently contains application-preparation artefacts only:
+The package is active under **MIQOS-APP-BUILD-001** and provides:
 
-- `tokens/` — frozen design and semantic token contracts;
-- `ux/` — frozen route, copy and UI-state contracts;
-- `components/` — frozen component catalogue.
+- runtime shared application shell and responsive navigation;
+- MIQOS-DS-001 v1.1 design tokens and semantic mappings;
+- environment banner/badge semantics;
+- accessible buttons, cards, panels, page states and layout primitives;
+- status, integrity, comparison, governance, version, lineage, fingerprint and money presentation primitives.
 
-Production React component implementation is **not yet authorised**. It begins only under the later controlled application build after APP-PREP build-readiness certification.
+**Primary visual authority:** `MIQOS-DS-001 v1.1 — Visual Baseline Refinement`.
+
+The original v1 token files remain historical preparation artefacts. Runtime styles and subsequent application work use v1.1.
+
+## Visual semantic rule
+
+Blue communicates interaction. Green communicates success. Amber communicates attention. Red communicates failure. Purple is reserved for specialised/system semantics.
+
+Glow is selective emphasis, not a default decoration. Dense forms, tables, audit data and provenance surfaces remain visually calm.
 
 ## Ownership rule
 
-`@miqo/ui` owns accessible visual primitives and presentation-only MIQOS semantics. It does not own API fetching, persistence, quote ranking, comparison eligibility, integrity evaluation, provider activation or environment authorisation.
+`@miqo/ui` owns accessible visual primitives and presentation-only MIQOS semantics. It does **not** own API fetching, persistence, pricing, quote ranking, comparison eligibility, optimisation rules, integrity evaluation, provider activation or environment authorisation.
 
-See `docs/application/app-prep-001/03-components/` for APP-G5 architecture.
+Application data must continue through the typed API/ViewModel boundary before rendering.
