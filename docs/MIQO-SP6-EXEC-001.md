@@ -1,6 +1,6 @@
 # MIQO-SP6-EXEC-001 — Controlled Sprint 6 Execution Programme
 
-**Status:** ACTIVE — BATCH A  
+**Status:** ACTIVE — STOPPED AT S6-G3 EXTERNAL INPUT  
 **Date:** 20 September 2026  
 **Branch:** `miqo/sp6-exec-001`  
 **PREP authority:** `MIQO-SP6-PREP-001 v1.0`  
@@ -26,43 +26,101 @@ MIQO-SP6-PREP-001
 MIQO-SP6-EXEC-001
           ↓
 Batch A — S6-G0 → S6-G2
-        ACTIVE
+        CERTIFIED PASS — 3/3
+          ↓
+S6-G3 — NAMED PROVIDER CANDIDATE
+        BLOCKED — EXTERNAL INPUT REQUIRED
 ```
 
 ## 3. Batch plan
 
 | Batch | Gates | Domain | State |
 |---|---|---|---|
-| A | S6-G0–G2 | Sprint 5 inheritance, dependency freeze, provider-neutral control baseline | ACTIVE |
-| B | S6-G3–G6 | named provider candidate, adapter/mapping, schemas, provenance | QUEUED / G3 EXTERNAL INPUT |
+| A | S6-G0–G2 | Sprint 5 inheritance, dependency freeze, provider-neutral control baseline | CERTIFIED PASS — 3/3 |
+| B | S6-G3–G6 | named provider candidate, adapter/mapping, schemas, provenance | BLOCKED AT G3 / PROVIDER-NEUTRAL PRIMITIVES MAY PROCEED |
 | C | S6-G7–G10 | endpoints/credentials, resilience, certification-route execution | QUEUED |
 | D | S6-G11–G13 | reconciliation, LIVE fail-closed gate, independent activation | QUEUED |
 | E | S6-G14–G16 | pilot bounds, kill switch/rollback, operational evidence | QUEUED |
 | F | S6-G17 | explicit pilot exit decision | QUEUED / EXTERNAL GOVERNANCE |
 
-## 4. Batch A acceptance
+## 4. Batch A certification
 
-- **S6-G0:** Sprint 5 closure and inherited invariants remain intact.
-- **S6-G1:** unresolved S5-G20/S5-G21 cannot activate downstream capabilities.
-- **S6-G2:** provider-neutral Sprint 6 control model is versioned and activation decisions remain independent.
+| Gate | Result | Evidence |
+|---|---|---|
+| **S6-G0** | PASS | `MIQO-SP5-CLOSE-001` inheritance asserted exactly; 22 inherited PASS gates and S5-G20/S5-G21 BLOCKED state preserved; inherited CI/invariant regression remained green |
+| **S6-G1** | PASS | executable negative tests prove unresolved S5-G20/S5-G21 block REAL_DATA, LIVE_PROVIDER and DISTRIBUTION even if a downstream capability record is artificially flipped to AUTHORISED; BIND_PAY remains out of Sprint 6 scope |
+| **S6-G2** | PASS | `sp6-control-model-v1` provides versioned provider-neutral control state; activation decisions preserve one-record-per-capability independence; ProviderCandidate schema exists without fabricating an S6-G3 approval |
 
-No provider-specific certification claim is permitted in Batch A.
+No provider-specific certification claim is made by Batch A.
 
-## 5. External dependency state at execution start
+## 5. Batch A implementation evidence
+
+- `90088772ca8beb4005b9fc578c5584a1caa7c722` — initiate `MIQO-SP6-EXEC-001`;
+- `3576e2520d8000554f070e2f1a98af0763a4c199` — provider-neutral Batch A control baseline;
+- `0b42416ab755b6d51fec99684e6a4ae54145e63e` — S6-G0–G2 executable certification tests.
+
+Primary implementation:
+- `packages/quote-orchestration/src/sp6-control-baseline.ts`
+
+Primary executable evidence:
+- `packages/quote-orchestration/test/sp6-batch-a.test.ts`
+
+## 6. Definitive CI certification
+
+Definitive Batch A CI run: **35509674085**  
+Certified code/test head: `0b42416ab755b6d51fec99684e6a4ae54145e63e`
+
+| Job | Outcome |
+|---|---|
+| `locked-dependencies` | PASS |
+| `postgres-contract` | PASS |
+| `target-stack-sprint1` | PASS |
+
+The definitive run includes the new Sprint 6 Batch A tests plus inherited invariant/boundary tests, PostgreSQL contracts, API/Postgres integration tests, Playwright target-stack journeys and final workspace build.
+
+No remediation was required.
+
+## 7. External dependency state after Batch A
 
 | Dependency | State |
 |---|---|
 | S5-G20 production legal/regulatory operating-model approval | BLOCKED |
 | S5-G21 provider contractual authority | BLOCKED |
-| Named ProviderCandidateRecord | NOT SUPPLIED |
-| Production credentials | NOT SUPPLIED |
+| **S6-G3 named ProviderCandidateRecord** | **BLOCKED — NOT SUPPLIED** |
+| Production credentials | NOT SUPPLIED / NOT YET APPLICABLE |
 | REAL_DATA | NOT_AUTHORISED |
 | LIVE_PROVIDER | NOT_AUTHORISED |
 | DISTRIBUTION | NOT_AUTHORISED |
 | BIND_PAY | NOT_AUTHORISED / OUT OF SCOPE |
 
-## 6. Stop rule after Batch A
+## 8. S6-G3 stop condition
 
-Batch A may certify S6-G0–G2 from executable evidence. The execution pointer must stop at **S6-G3** unless a genuine named ProviderCandidateRecord exists.
+The next provider-specific gate requires a genuine `ProviderCandidateRecord`. The record must identify at minimum:
+
+- provider/counterparty;
+- intended channel;
+- target certification environment;
+- proposed MarketRoute;
+- technical documentation/reference available for implementation;
+- adapter/certification owner;
+- credential reference names, never secret values;
+- contractual-authority status;
+- permitted certification/test-data classification.
+
+Synthetic placeholders or example provider identities cannot satisfy S6-G3.
+
+## 9. Current execution position
+
+```text
+S6-G0   PASS
+S6-G1   PASS
+S6-G2   PASS
+────────────────────────
+BATCH A CERTIFIED PASS — 3/3
+
+S6-G3   BLOCKED — GENUINE PROVIDER CANDIDATE REQUIRED
+```
+
+The execution pointer is stopped at S6-G3 in accordance with the frozen acceptance matrix and PREP gateway.
 
 **End of MIQO-SP6-EXEC-001**
