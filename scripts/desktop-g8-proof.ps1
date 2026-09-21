@@ -21,7 +21,10 @@ function Assert-True {
 
 function Get-ProductEntry {
   $path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
-  return @(Get-ItemProperty $path -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $ProductName }) | Select-Object -First 1
+  return @(Get-ItemProperty $path -ErrorAction SilentlyContinue | Where-Object {
+    $displayName = $_.PSObject.Properties["DisplayName"]
+    $null -ne $displayName -and [string]$displayName.Value -eq $ProductName
+  }) | Select-Object -First 1
 }
 
 function Get-MachineProductEntry {
@@ -30,7 +33,10 @@ function Get-MachineProductEntry {
     "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
   )
   $items = foreach ($path in $paths) {
-    Get-ItemProperty $path -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $ProductName }
+    Get-ItemProperty $path -ErrorAction SilentlyContinue | Where-Object {
+      $displayName = $_.PSObject.Properties["DisplayName"]
+      $null -ne $displayName -and [string]$displayName.Value -eq $ProductName
+    }
   }
   return @($items)
 }
