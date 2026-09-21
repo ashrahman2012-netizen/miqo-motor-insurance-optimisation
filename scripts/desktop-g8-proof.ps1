@@ -415,7 +415,7 @@ try {
     Select-Object -First 1
   if (-not $upgradeInstaller) { throw "Ephemeral 0.1.1 NSIS installer was not produced." }
   $upgradeInstallerPath = Join-Path $ProofDir $upgradeInstaller.Name
-  Copy-Item $upgradeInstaller.FullName $upgradeInstallerPath -Force
+  Copy-Item -LiteralPath $upgradeInstaller.FullName -Destination $upgradeInstallerPath -Force
 } finally {
   git checkout -- $packagePath $tauriConfigPath $cargoPath $cargoLockPath
 }
