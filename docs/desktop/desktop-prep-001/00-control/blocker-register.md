@@ -2,7 +2,7 @@
 
 ## Active blockers
 
-None for G5 closure.
+None for G6 closure.
 
 ## Known external dependencies — not currently blocking
 
