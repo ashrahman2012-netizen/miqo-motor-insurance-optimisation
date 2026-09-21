@@ -1,23 +1,30 @@
 # MIQOS-DESKTOP-PREP-001 — Execution Status
 
 **Programme:** MIQOS-DESKTOP-PREP-001  
-**Gateway:** G1 — Desktop Architecture Decision  
+**Gateway:** G2 — Admin Application Boundary  
 **Status:** PASS  
 **Execution branch:** `miqos/desktop-prep-001`  
 **Upstream certified branch:** `miqos/app-build-001`  
 **Upstream certified SHA:** `ce211bf4e23643f1eab75e865210f4de121841fb`  
 **Selected Desktop architecture:** Tauri 2 + React/TypeScript  
-**ADR:** `01-architecture/adr/ADR-001-tauri-react-windows-admin.md`  
+**Boundary mode:** Read/inspect authoritative evidence by default; no implicit domain mutation authority  
 **Date:** 2026-09-21
 
 ## Current control position
 
-G0 and G1 are complete.
+G0, G1 and G2 are complete.
 
-Desktop PREP remains anchored to the certified application-build head. G1 made architecture/documentation changes only; no certified application source or domain behaviour was modified.
+The Desktop Admin application boundary is now frozen:
+
+- Desktop owns presentation, navigation, local non-authoritative state and approved OS-host functions.
+- Fastify/API/domain/PostgreSQL remain authoritative for MIQOS state.
+- Current Admin domain access is read-only.
+- Existing general/customer mutation endpoints are not automatically Desktop Admin capabilities.
+- Future Admin mutations require an explicit server-authorised, permissioned and audited command contract.
+- Direct DB access, audit mutation, ranking/integrity override and provider activation remain prohibited.
 
 The next controlled gateway is:
 
-`G2 — Admin Application Boundary`
+`G3 — Security & Identity Architecture`
 
-G2 must freeze Desktop capability ownership, interface dependencies, trust boundaries and mutation authority before security/identity and packaging implementation proceed.
+G3 must now define authentication, authorisation, token/session handling, secure local storage, secrets and privilege boundaries against the frozen G2 contract.
