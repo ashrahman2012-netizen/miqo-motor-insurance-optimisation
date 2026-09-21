@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "scaffold",
+  "description": "WP-G8.1 main-window capability. No renderer IPC or native command permission is granted.",
+  "windows": ["main"],
+  "platforms": ["windows"],
+  "permissions": []
+}
