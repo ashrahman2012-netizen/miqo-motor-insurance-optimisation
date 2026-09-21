@@ -9,37 +9,37 @@
 | G4 | Windows Runtime & Packaging | PASS — DESIGN/READINESS | 08-evidence/G4/windows-runtime-and-packaging.md; ADR-003 |
 | G5 | Environment & Configuration Model | PASS | 08-evidence/G5/environment-and-configuration-model.md; ADR-004 |
 | G6 | Observability & Supportability | PASS | 08-evidence/G6/observability-and-supportability.md; ADR-005 |
-| G7 | Build & CI/CD Preparation | **PARTIAL PASS — G7-A PASS / G7-B BLOCKED** | 08-evidence/G7/build-ci-preparation.md; 08-evidence/G7/windows-preflight-run.md |
-| G8 | Desktop Skeleton Proof | WP-G8.1 CREATED — REMAINDER NOT AUTHORISED | 07-ci-cd/gateway-sequencing.md |
+| G7 | Build & CI/CD Preparation | **PASS** | 08-evidence/G7/build-ci-preparation.md; 08-evidence/G7/windows-preflight-run.md; 08-evidence/G7/full-package-ci.md |
+| G8 | Desktop Skeleton Proof | **IN EXECUTION — WP-G8.1 CREATED / REMAINING PROOF AUTHORISED** | 07-skeleton-proof/proof-scope.md |
 | G9 | PREP Certification | NOT STARTED | — |
 
-## G7 build/CI baseline
+## G7 closure evidence
 
-- canonical entry point: scripts/desktop-ci.ps1
-- workflow: .github/workflows/desktop-prep-g7.yml
-- runner: windows-2025 x64
+- canonical entry point: `scripts/desktop-ci.ps1`
+- workflow: `.github/workflows/desktop-prep-g7.yml`
+- runner: `windows-2025` x64
 - Node/npm: 22.16.0 / 10.9.2
 - Rust/Cargo: 1.98.1
-- ordinary CI permissions: contents: read
-- GitHub Actions pinned to full commit SHAs
+- Tauri CLI: 2.11.4
 - cache mode: none
 - environment: SYNTHETIC / liveProviders=false
-- full mode output: NSIS + SHA-256 + build-manifest.json
-- CI artefact retention: 14 days
-- production signing: protected downstream stage via UI-SIGN
-- validated Windows preflight: run 35601094369 SUCCESS
-- same-head certified CI: run 35601094316 SUCCESS
-- WP-G8.1 scaffold: created
-- Tauri CLI version probe: corrected and passed beyond prior failure point
-- latest G7-B run: 35609979477 FAILURE at Tauri config parsing during Rust clippy
-- package artefact: NOT PRODUCED
+- G7-A preflight: run `35601094369` SUCCESS
+- G7-B full package: run `35615450461` SUCCESS
+- same-head certified CI: run `35615450454` SUCCESS
+- package artefact ID: `10646138442`
+- installer SHA-256: `a5e40412b3b9814c4d68d5e93c779f54cade1cd5ff4f4dec3d79e81c01e3c102`
+- Cargo.lock SHA-256: `b2f3cdeeef282c1fecc7c477066822fec0574163222f4bbafcb34c116be83e07`
+- Actions artefact digest: `sha256:795cd43a99da0d80311a1a87f1659d445eeb2fe31c8d05d5f54f3a61ebd58457`
+- production signing: still external via UI-SIGN; mechanical package is explicitly unsigned.
 
 ## Sequencing rule
 
-WP-G8.1 may create only the approved Desktop scaffold needed to unlock G7-B.
+G7-B has passed.
 
-The remainder of G8 must not proceed until G7-B full package CI has passed.
+The remainder of G8 is now authorised.
+
+G9 remains gated on completion of G8 and final PREP evidence review.
 
 ## Gateway rule
 
-No gateway may be marked PASS without evidence tied to the controlled branch/revision. PARTIAL PASS and blockers remain explicit.
+No gateway may be marked PASS without executable evidence tied to a controlled source revision.
