@@ -84,7 +84,7 @@ $packageJson = Get-Content $desktopPackage -Raw | ConvertFrom-Json
 $version = [string]$packageJson.version
 if ([string]::IsNullOrWhiteSpace($version)) { throw "Desktop package version is missing." }
 
-$nsis = Get-ChildItem "apps/admin-desktop/src-tauri/target/release/bundle/nsis" -Filter "*.exe" -File
+$nsis = @(Get-ChildItem "apps/admin-desktop/src-tauri/target/release/bundle/nsis" -Filter "*.exe" -File)
 if ($nsis.Count -ne 1) {
   throw "Expected exactly one NSIS setup executable, found $($nsis.Count)."
 }
