@@ -53,13 +53,15 @@ class FastifyProofTransport implements DesktopApiTransport {
 }
 
 describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fastify API", () => {
+  const baseUrl = apiUrl as string;
+
   it("attests SYNTHETIC and composes the existing Admin Audit ViewModel", async () => {
-    const created = await fetch(apiUrl + "/profiles", {method: "POST"});
+    const created = await fetch(baseUrl + "/profiles", {method: "POST"});
     expect(created.status).toBe(201);
     const profile = await created.json() as {profileId: string};
 
     const proof = await loadDesktopAuditProof(
-      new FastifyProofTransport(apiUrl),
+      new FastifyProofTransport(baseUrl),
       profile.profileId,
     );
 
@@ -78,7 +80,7 @@ describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fasti
 
   it("fails closed when server environment attestation contradicts TEST/SYNTHETIC", async () => {
     const transport: DesktopApiTransport = {
-      getRuntimeProfile: () => new FastifyProofTransport(apiUrl).getRuntimeProfile(),
+      getRuntimeProfile: () => new FastifyProofTransport(baseUrl).getRuntimeProfile(),
       getHealth: async () => ({
         status: "ok",
         dataClassification: "PRODUCTION",
