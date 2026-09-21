@@ -2,7 +2,7 @@
 
 **Programme:** MIQOS-DESKTOP-PREP-001
 **Gateway:** G7 — Build & CI/CD Preparation
-**Status:** PARTIAL PASS — G7-A COMPLETE / G7-B PENDING G8.1
+**Status:** PARTIAL PASS — G7-A PASS / G7-B PENDING G8.1
 **Execution branch:** miqos/desktop-prep-001
 **Upstream certified branch:** miqos/app-build-001
 **Upstream certified SHA:** ce211bf4e23643f1eab75e865210f4de121841fb
@@ -13,7 +13,7 @@
 
 G0 through G6 are PASS.
 
-G7-A is complete:
+G7-A is complete and live Windows CI-proven:
 
 - canonical Windows build entry point exists;
 - actual GitHub Actions Windows workflow exists;
@@ -25,7 +25,9 @@ G7-A is complete:
 - caches disabled for the initial controlled path;
 - NSIS artefact naming/checksum/manifest contract defined;
 - Authenticode signing insertion point defined;
-- release pipeline defined.
+- release pipeline defined;
+- Windows Desktop preflight run `35601094369` passed;
+- existing certified CI run `35601094316` passed all three required jobs on the same validated head.
 
 G7 cannot honestly close as PASS until Full mode produces a real NSIS artefact and a full CI run passes.
 
