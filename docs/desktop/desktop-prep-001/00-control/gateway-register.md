@@ -9,7 +9,7 @@
 | G4 | Windows Runtime & Packaging | PASS — DESIGN/READINESS | 08-evidence/G4/windows-runtime-and-packaging.md; ADR-003 |
 | G5 | Environment & Configuration Model | PASS | 08-evidence/G5/environment-and-configuration-model.md; ADR-004 |
 | G6 | Observability & Supportability | PASS | 08-evidence/G6/observability-and-supportability.md; ADR-005 |
-| G7 | Build & CI/CD Preparation | **PARTIAL PASS — G7-A COMPLETE / G7-B PENDING G8.1** | 08-evidence/G7/build-ci-preparation.md |
+| G7 | Build & CI/CD Preparation | **PARTIAL PASS — G7-A PASS / G7-B PENDING G8.1** | 08-evidence/G7/build-ci-preparation.md; 08-evidence/G7/windows-preflight-run.md |
 | G8 | Desktop Skeleton Proof | NOT STARTED — WP-G8.1 AUTHORISED AS G7 DEPENDENCY UNLOCK | 07-ci-cd/gateway-sequencing.md |
 | G9 | PREP Certification | NOT STARTED | — |
 
@@ -27,6 +27,8 @@
 - full mode output: NSIS + SHA-256 + build-manifest.json
 - CI artefact retention: 14 days
 - production signing: protected downstream stage via UI-SIGN
+- validated Windows preflight: run 35601094369 SUCCESS
+- same-head certified CI: run 35601094316 SUCCESS
 
 ## Sequencing rule
 
