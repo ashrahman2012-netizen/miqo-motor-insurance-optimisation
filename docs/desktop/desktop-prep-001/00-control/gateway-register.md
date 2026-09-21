@@ -7,13 +7,13 @@
 | G2 | Admin Application Boundary | PASS | 08-evidence/G2/admin-application-boundary.md |
 | G3 | Security & Identity Architecture | PASS | 08-evidence/G3/security-and-identity-architecture.md; ADR-002 |
 | G4 | Windows Runtime & Packaging | **PASS — DESIGN/READINESS** | 08-evidence/G4/windows-runtime-and-packaging.md; ADR-003 |
-| G5 | Environment & Configuration Model | NOT STARTED | — |
+| G5 | Environment & Configuration Model | **PASS** | 08-evidence/G5/environment-and-configuration-model.md; ADR-004 |
 | G6 | Observability & Supportability | NOT STARTED | — |
 | G7 | Build & CI/CD Preparation | NOT STARTED | — |
 | G8 | Desktop Skeleton Proof | NOT STARTED | — |
 | G9 | PREP Certification | NOT STARTED | — |
 
-## Frozen Desktop baseline through G4
+## Frozen Desktop baseline through G5
 
 - Host: Tauri 2 + React/TypeScript.
 - Domain authority: Fastify/API/domain/PostgreSQL.
@@ -28,6 +28,10 @@
 - Initial updates: controlled installer replacement.
 - Production signing: external organisation-controlled Authenticode identity.
 - Actual package execution remains mandatory at G8.
+- Deployment profiles: immutable/bundled and native-validated; no user environment switcher.
+- Canonical stage mapping: DEV/TEST→SYNTHETIC, STAGING→CERTIFICATION, PRODUCTION→PRODUCTION.
+- Production/non-production packages use isolated Tauri identifiers/state namespaces.
+- Server environment evidence must match the packaged expectation or the application fails closed.
 
 ## Gateway rule
 
