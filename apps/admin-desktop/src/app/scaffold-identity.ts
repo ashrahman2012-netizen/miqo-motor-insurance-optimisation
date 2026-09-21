@@ -1,6 +1,7 @@
 export const SCAFFOLD_IDENTITY = Object.freeze({
   productName: "MIQOS Admin",
   packageEnvironment: "TEST",
-  workPackage: "WP-G8.1",
-  status: "SCAFFOLD_ONLY"
+  applicationEnvironment: "SYNTHETIC",
+  workPackage: "G8",
+  status: "SKELETON_PROOF"
 } as const);
