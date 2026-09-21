@@ -104,3 +104,36 @@ Changing the identifier after packaging certification requires change control.
 
 ## D-G4-008 — G4 versus G8 proof boundary
 **Decision:** G4 certifies a reproducible packaging design/readiness contract. Real package generation, installation, upgrade, downgrade rejection and uninstall evidence remain mandatory in G8.
+
+
+## D-G5-001 — Separate deployment stage from application environment
+**Decision:** Use DEVELOPMENT, TEST, STAGING and PRODUCTION as deployment stages while retaining certified ApplicationEnvironment values SYNTHETIC, CERTIFICATION and PRODUCTION.
+
+Canonical mapping is DEVELOPMENT→SYNTHETIC, TEST→SYNTHETIC, STAGING→CERTIFICATION and PRODUCTION→PRODUCTION.
+
+## D-G5-002 — Immutable bundled deployment profile
+**Decision:** Each installed Desktop package contains one validated non-secret deployment profile loaded by the Tauri native core.
+
+Installed security-relevant endpoint/environment configuration is not user/process overrideable.
+
+**Authority:** ADR-004.
+
+## D-G5-003 — Environment-specific package identity
+**Decision:** Retain com.miqos.admin.desktop for PRODUCTION and use suffix identifiers for non-production:
+- .dev
+- .test
+- .certification
+
+This extends the G4 packaging identity convention before G8 proof and prevents WebView/config/credential-state crossover.
+
+## D-G5-004 — No renderer/Vite configuration authority
+**Decision:** Vite/client-visible environment variables are not secret storage or protected runtime configuration authority. Renderer receives a sanitised typed configuration ViewModel from native validated configuration.
+
+## D-G5-005 — Server environment attestation
+**Decision:** Before protected Admin evidence is shown, Desktop compares its expected application environment with server-reported environment/health evidence and fails closed on mismatch.
+
+## D-G5-006 — Feature flags are non-authoritative
+**Decision:** Feature flags may control approved presentation/deployment behaviour only. They cannot activate production/live providers, create mutation authority, bypass security or change certified domain methodology.
+
+## D-G5-007 — Current backend supports only synthetic Desktop profiles
+**Decision:** G8 against the frozen certified backend uses DEVELOPMENT/TEST SYNTHETIC configuration. STAGING/CERTIFICATION and PRODUCTION/PRODUCTION require separately authorised platform capability; G5 does not weaken the existing prototype boundary.
