@@ -1,0 +1,187 @@
+name: desktop-prep-g8
+
+on:
+  push:
+    branches:
+      - miqos/desktop-prep-001
+    paths:
+      - ".github/workflows/desktop-prep-g8.yml"
+      - "scripts/desktop-ci.ps1"
+      - "scripts/desktop-g8-proof.ps1"
+      - "apps/admin-desktop/**"
+      - "packages/application-contracts/**"
+      - "packages/application-adapters/**"
+      - "packages/ui/**"
+      - "apps/api/**"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    paths:
+      - ".github/workflows/desktop-prep-g8.yml"
+      - "scripts/desktop-ci.ps1"
+      - "scripts/desktop-g8-proof.ps1"
+      - "apps/admin-desktop/**"
+      - "packages/application-contracts/**"
+      - "packages/application-adapters/**"
+      - "packages/ui/**"
+      - "apps/api/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-prep-g8-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-integration:
+    name: Desktop service / certified API integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: miqo
+          POSTGRES_USER: miqo
+          POSTGRES_PASSWORD: miqo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U miqo -d miqo"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://miqo:miqo@127.0.0.1:5432/miqo
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      PORT: "4000"
+      MIQO_G8_API_URL: http://127.0.0.1:4000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.16.0
+          package-manager-cache: false
+
+      - name: Restore locked dependencies
+        run: npm ci
+
+      - name: Migrate synthetic PostgreSQL
+        run: npm run db:migrate
+
+      - name: Start certified Fastify API
+        run: |
+          mkdir -p dist/g8-proof
+          npm run start -w @miqo/api > dist/g8-proof/g8-api.log 2>&1 &
+          echo $! > dist/g8-proof/g8-api.pid
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4000/health > dist/g8-proof/g8-health.json; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          cat dist/g8-proof/g8-api.log
+          exit 1
+
+      - name: Execute Desktop application-service proof
+        run: npm run test:g8-api -w @miqo/admin-desktop
+
+      - name: Record API integration evidence
+        run: |
+          node --input-type=module - <<'NODE'
+          import {mkdir, writeFile} from "node:fs/promises";
+          await mkdir("dist/g8-proof",{recursive:true});
+          await writeFile("dist/g8-proof/g8-api-proof.json", JSON.stringify({
+            schemaVersion:"miqos-desktop-g8-api-proof-v1",
+            sourceCommit:process.env.GITHUB_SHA,
+            buildId:process.env.GITHUB_RUN_ID,
+            dataClassification:"SYNTHETIC",
+            liveProvidersEnabled:false,
+            database:"PostgreSQL 16",
+            api:"Fastify",
+            desktopApplicationService:"PASS",
+            existingAdminAuditAdapter:"PASS",
+            environmentAttestationNegativeTest:"PASS"
+          },null,2));
+          NODE
+
+      - name: Upload API proof
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: miqos-desktop-g8-api-${{ github.sha }}
+          path: |
+            dist/g8-proof/g8-api-proof.json
+            dist/g8-proof/g8-health.json
+            dist/g8-proof/g8-api.log
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-installed-proof:
+    name: Windows installed Desktop skeleton proof
+    runs-on: windows-2025
+    timeout-minutes: 60
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.16.0
+          package-manager-cache: false
+
+      - name: Select exact Rust toolchain
+        shell: pwsh
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+
+      - name: Verify MSVC C++ toolchain
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (!(Test-Path $vswhere)) { throw "vswhere not found" }
+          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ([string]::IsNullOrWhiteSpace($installation)) { throw "MSVC C++ build tools not found" }
+          Write-Host "MSVC installation: $installation"
+
+      - name: Build controlled Windows package
+        shell: pwsh
+        run: ./scripts/desktop-ci.ps1 -Mode Full
+
+      - name: Execute installed skeleton proof
+        shell: pwsh
+        run: ./scripts/desktop-g8-proof.ps1
+
+      - name: Upload installed proof
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: miqos-desktop-g8-windows-${{ github.sha }}
+          path: |
+            dist/g8-proof/**
+            dist/desktop/build-manifest.json
+            dist/desktop/*.sha256
+            dist/desktop/Cargo.lock
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
