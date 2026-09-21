@@ -1,6 +1,6 @@
 # G8 Skeleton Proof — Architecture Scope Defined at G1
 
-**Status:** DESIGN ONLY — NOT YET EXECUTED
+**Status:** IN EXECUTION — API/PACKAGE PROOF PASS / INSTALLED PROOF BLOCKED
 
 The G8 skeleton must prove ADR-001 rather than grow into feature implementation.
 
@@ -45,3 +45,22 @@ Tauri host
 ```
 
 without altering certified application/domain semantics.
+
+
+## Execution evidence — current
+
+Run `35624013907` has proved:
+
+1. controlled monorepo Desktop build — PASS;
+2. shared MIQOS UI/contracts/adapters integration — PASS;
+3. G5 TEST/SYNTHETIC profile path — PASS;
+4. certified Fastify/PostgreSQL application-service integration — PASS;
+5. representative read-only Admin Audit ViewModel composition — PASS;
+6. restrictive native command/capability/CSP build contract — PASS;
+7. Rust fmt/clippy/test — PASS;
+8. Tauri release compilation — PASS;
+9. NSIS installer generation — PASS.
+
+The installed package lifecycle proof has not yet passed because the proof harness failed while enumerating Windows uninstall registry entries under strict mode.
+
+No installed-runtime conclusion may be inferred until that harness defect is corrected and the permanent workflow reruns successfully.
