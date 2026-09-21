@@ -1,0 +1,11 @@
+body {
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.miqos-card p {
+  line-height: 1.6;
+}
