@@ -172,3 +172,38 @@ No automatic email/upload/ticket integration is created by G6.
 
 ## D-G6-008 — Observability evidence hierarchy
 **Decision:** Desktop operational logs and support bundles remain subordinate diagnostic evidence. They do not override server security audit or immutable MIQOS domain/audit evidence.
+
+
+## D-G7-001 — Canonical Desktop CI entry point
+**Decision:** Use `scripts/desktop-ci.ps1 -Mode Auto` as the canonical Windows Desktop build/CI entry point.
+
+Auto mode executes Preflight until `apps/admin-desktop` exists, then automatically executes Full mode.
+
+## D-G7-002 — Windows hosted runner
+**Decision:** Use GitHub `windows-2025` x64 for the controlled Desktop CI baseline.
+
+The workflow actively selects/verifies exact application toolchains rather than trusting moving runner defaults.
+
+## D-G7-003 — Exact CI toolchains
+**Decision:** Retain Node 22.16.0 / npm 10.9.2 and select Rust/Cargo 1.98.1 for initial Desktop CI.
+
+G8 must lock Rust dependencies in Cargo.lock.
+
+## D-G7-004 — Initial cache-free CI
+**Decision:** Disable Actions/npm/Rust dependency caches in the first controlled Desktop pipeline.
+
+Reason: maximise reproducibility and avoid untrusted-cache complexity on the public repository. Performance tuning may be revisited later.
+
+## D-G7-005 — Immutable workflow dependencies
+**Decision:** Pin all external GitHub Actions in the Desktop workflow to full commit SHAs and keep ordinary CI at `contents: read`.
+
+## D-G7-006 — Artefact contract
+**Decision:** Full mode produces a canonical NSIS executable, SHA-256 sidecar and build-manifest.json, uploaded as an immutable 14-day CI artefact.
+
+## D-G7-007 — Release/signing separation
+**Decision:** Ordinary CI produces unsigned/test-signed package evidence only. Production Authenticode signing occurs in a protected downstream release stage using UI-SIGN provisioned identity.
+
+## D-G7-008 — Controlled G7/G8 sequencing adjustment
+**Decision:** G7 is PARTIAL PASS after CI architecture/preflight preparation. WP-G8.1 is the next minimal authorised operation solely to create the Desktop scaffold; G7-B full package CI must then close before the remainder of G8.
+
+Reason: the original blueprint requires package CI at G7 but assigns scaffold creation to G8. This treatment preserves both controls without fabricating execution evidence.
