@@ -1,0 +1,22 @@
+{
+  "name": "@miqo/admin-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "tauri": "cargo tauri"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.2",
+    "vitest": "5.0.1"
+  }
+}
