@@ -32,8 +32,10 @@ Write-Host "MIQOS Desktop CI mode: $Mode"
 
 Assert-Exact (node --version) "v22.16.0" "Node"
 Assert-Exact (npm --version) "10.9.2" "npm"
-Assert-Exact (rustc --version) "rustc 1.98.1 (4a4ef493e 2026-08-01)" "Rust"
-Assert-Exact (cargo --version) "cargo 1.98.1 (b0dc24d0d 2026-07-23)" "Cargo"
+$rustVersion = (rustc --version).Trim()
+$cargoVersion = (cargo --version).Trim()
+if (-not $rustVersion.StartsWith("rustc 1.98.1 ")) { throw "Rust mismatch. Expected 1.98.1, got '$rustVersion'." }
+if (-not $cargoVersion.StartsWith("cargo 1.98.1 ")) { throw "Cargo mismatch. Expected 1.98.1, got '$cargoVersion'." }
 
 if (($env:MIQO_DATA_CLASSIFICATION ?? "") -ne "SYNTHETIC") {
   throw "MIQO_DATA_CLASSIFICATION must be SYNTHETIC for Desktop PREP CI."
