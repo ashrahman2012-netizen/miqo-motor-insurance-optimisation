@@ -101,9 +101,12 @@ $cargoLockHash = (Get-FileHash $cargoLock -Algorithm SHA256).Hash.ToLowerInvaria
 
 $artifactName = ("miqos-admin_{0}_windows-x64_nsis.exe" -f $version)
 $artifactPath = Join-Path $outDir $artifactName
-Copy-Item $nsis[0].FullName $artifactPath -Force
+Copy-Item -LiteralPath $nsis[0].FullName -Destination $artifactPath -Force
+if (-not (Test-Path -LiteralPath $artifactPath)) {
+  throw "Canonical NSIS artifact was not staged at '$artifactPath'."
+}
 
-$hash = (Get-FileHash $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$hash = (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash  $artifactName" | Set-Content (Join-Path $outDir "$artifactName.sha256") -NoNewline
 
 $signature = Get-AuthenticodeSignature $artifactPath
