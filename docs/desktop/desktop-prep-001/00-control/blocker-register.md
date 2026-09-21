@@ -2,9 +2,37 @@
 
 ## Active blockers
 
-None for G7 closure or remaining TEST/SYNTHETIC G8 mechanical proof.
+### B-G8-PROOF-001 — Strict-mode uninstall-registry enumeration
+
+**Type:** Internal G8 proof-harness robustness defect.  
+**State:** ACTIVE.  
+**Run:** `35624013907`.  
+**Job:** `106414115119`.
+
+The Windows package build completed successfully, including formatting, Clippy, tests, release compilation and NSIS generation.
+
+The installed proof then failed at `scripts/desktop-g8-proof.ps1:33` because strict-mode registry enumeration dereferences `DisplayName` on registry objects where that property is absent.
+
+**Required correction:** Make product filtering safely test for a `DisplayName` property before comparing it.
+
+**Control boundary:** Do not change Tauri capabilities, command permissions, CSP, deployment profile, API transport, logging semantics, packaging configuration, native command set or application logic to resolve this blocker.
+
+**Resume point:** Rerun permanent G8 workflow from the installed proof sequence after the narrow harness correction.
 
 ## Resolved blockers
+
+### B-G8-CLIPPY-001 — G8 native proof source failed cargo clippy
+
+Resolved with the three Clippy-prescribed semantics-preserving rewrites in `src/lib.rs`:
+
+- two `map_err` logging transformations to `inspect_err`;
+- descending timestamp sort rewritten to `sort_by_key(Reverse(...))`.
+
+Formatting was reapplied with Rust 1.98.1. Current G7 regression run `35624013728` is SUCCESS and G8 package build progressed through Clippy/NSIS.
+
+### B-G8-RUSTFMT-001 — G8 native proof source failed cargo fmt
+
+Resolved by applying Rust 1.98.1 rustfmt only to `build.rs` and `src/lib.rs`.
 
 ### B-G7-002 — Tauri build schema rejected explicit Windows build field
 
