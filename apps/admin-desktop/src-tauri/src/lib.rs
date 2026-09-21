@@ -242,7 +242,15 @@ fn get_runtime_profile() -> Result<RuntimeProfile, String> {
 
 #[tauri::command]
 fn get_health() -> Result<Health, String> {
-    attest_health()
+    match attest_health() {
+        Ok(health) => Ok(health),
+        Err(reason) => {
+            if reason != "DESKTOP_ENVIRONMENT_ATTESTATION_FAILED" {
+                emit_error("API_REQUEST_FAILURE", "get_health", &reason);
+            }
+            Err(reason)
+        }
+    }
 }
 
 #[tauri::command]
