@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "miqos-desktop-config-v1",
+  "profileId": "test-synthetic",
+  "deploymentStage": "TEST",
+  "applicationEnvironment": "SYNTHETIC",
+  "api": {
+    "baseUrl": "http://127.0.0.1:4000",
+    "audience": "miqos-api-test"
+  },
+  "oidc": {
+    "issuer": "https://identity.test.invalid",
+    "clientId": "miqos-admin-test-public",
+    "scopes": ["openid", "profile"]
+  },
+  "features": {}
+}
