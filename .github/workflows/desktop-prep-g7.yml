@@ -79,7 +79,7 @@ jobs:
         if: ${{ hashFiles('apps/admin-desktop/src-tauri/Cargo.toml') != '' }}
         shell: pwsh
         run: |
-          cargo install tauri-cli --version 2.11.5 --locked
+          cargo install tauri-cli --version 2.11.4 --locked
           cargo tauri --version
 
       - name: Execute canonical Desktop CI contract
