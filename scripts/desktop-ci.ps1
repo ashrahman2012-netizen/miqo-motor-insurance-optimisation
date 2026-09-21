@@ -1,0 +1,118 @@
+param(
+  [ValidateSet("Auto","Preflight","Full")]
+  [string]$Mode = "Auto"
+)
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+function Invoke-Step {
+  param([string]$Label,[scriptblock]$Command)
+  Write-Host "::group::$Label"
+  try {
+    & $Command
+    if ($LASTEXITCODE -ne 0) { throw "$Label failed with exit code $LASTEXITCODE" }
+  } finally {
+    Write-Host "::endgroup::"
+  }
+}
+
+function Assert-Exact {
+  param([string]$Actual,[string]$Expected,[string]$Name)
+  if ($Actual.Trim() -ne $Expected) {
+    throw "$Name mismatch. Expected '$Expected', got '$Actual'."
+  }
+}
+
+if ($Mode -eq "Auto") {
+  $Mode = if (Test-Path "apps/admin-desktop/package.json") { "Full" } else { "Preflight" }
+}
+
+Write-Host "MIQOS Desktop CI mode: $Mode"
+
+Assert-Exact (node --version) "v22.16.0" "Node"
+Assert-Exact (npm --version) "10.9.2" "npm"
+Assert-Exact (rustc --version) "rustc 1.98.1 (4a4ef493e 2026-08-01)" "Rust"
+Assert-Exact (cargo --version) "cargo 1.98.1 (b0dc24d0d 2026-07-23)" "Cargo"
+
+if (($env:MIQO_DATA_CLASSIFICATION ?? "") -ne "SYNTHETIC") {
+  throw "MIQO_DATA_CLASSIFICATION must be SYNTHETIC for Desktop PREP CI."
+}
+if (($env:MIQO_LIVE_PROVIDERS_ENABLED ?? "").ToLowerInvariant() -ne "false") {
+  throw "MIQO_LIVE_PROVIDERS_ENABLED must be false for Desktop PREP CI."
+}
+
+Invoke-Step "npm ci" { npm ci }
+Invoke-Step "dependency pin verification" { npm run verify:pins }
+Invoke-Step "synthetic boundary verification" { npm run verify:boundary }
+Invoke-Step "application adapters typecheck" { npm run typecheck -w @miqo/application-adapters }
+Invoke-Step "application adapters tests" { npm run test -w @miqo/application-adapters }
+Invoke-Step "shared UI typecheck" { npm run typecheck -w @miqo/ui }
+Invoke-Step "shared UI tests" { npm run test -w @miqo/ui }
+Invoke-Step "certified application build" { npm run build }
+
+if ($Mode -eq "Preflight") {
+  Write-Host "DESKTOP_G7_PREFLIGHT_PASS"
+  exit 0
+}
+
+$desktopPackage = "apps/admin-desktop/package.json"
+$cargoManifest = "apps/admin-desktop/src-tauri/Cargo.toml"
+
+if (-not (Test-Path $desktopPackage)) { throw "Full mode requires $desktopPackage." }
+if (-not (Test-Path $cargoManifest)) { throw "Full mode requires $cargoManifest." }
+
+Invoke-Step "Desktop typecheck" { npm run typecheck -w @miqo/admin-desktop }
+Invoke-Step "Desktop tests" { npm run test -w @miqo/admin-desktop }
+Invoke-Step "Desktop frontend build" { npm run build -w @miqo/admin-desktop }
+Invoke-Step "Rust formatting" { cargo fmt --check --manifest-path $cargoManifest }
+Invoke-Step "Rust clippy" { cargo clippy --manifest-path $cargoManifest --all-targets -- -D warnings }
+Invoke-Step "Rust tests" { cargo test --manifest-path $cargoManifest }
+Invoke-Step "Tauri NSIS build" { npm run tauri -w @miqo/admin-desktop -- build --bundles nsis }
+
+$packageJson = Get-Content $desktopPackage -Raw | ConvertFrom-Json
+$version = [string]$packageJson.version
+if ([string]::IsNullOrWhiteSpace($version)) { throw "Desktop package version is missing." }
+
+$nsis = Get-ChildItem "apps/admin-desktop/src-tauri/target/release/bundle/nsis" -Filter "*.exe" -File
+if ($nsis.Count -ne 1) {
+  throw "Expected exactly one NSIS setup executable, found $($nsis.Count)."
+}
+
+$outDir = "dist/desktop"
+New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+$artifactName = ("miqos-admin_{0}_windows-x64_nsis.exe" -f $version)
+$artifactPath = Join-Path $outDir $artifactName
+Copy-Item $nsis[0].FullName $artifactPath -Force
+
+$hash = (Get-FileHash $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
+"$hash  $artifactName" | Set-Content (Join-Path $outDir "$artifactName.sha256") -NoNewline
+
+$signature = Get-AuthenticodeSignature $artifactPath
+$sourceCommit = if ($env:GITHUB_SHA) { $env:GITHUB_SHA } else { (git rev-parse HEAD).Trim() }
+$buildId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { "local" }
+
+$manifest = [ordered]@{
+  schemaVersion = "miqos-desktop-artifact-v1"
+  product = "MIQOS Admin"
+  version = $version
+  artifact = $artifactName
+  sha256 = $hash
+  bytes = (Get-Item $artifactPath).Length
+  architecture = "x64"
+  installer = "NSIS"
+  sourceCommit = $sourceCommit
+  buildId = $buildId
+  node = (node --version).Trim()
+  npm = (npm --version).Trim()
+  rustc = (rustc --version).Trim()
+  cargo = (cargo --version).Trim()
+  dataClassification = $env:MIQO_DATA_CLASSIFICATION
+  liveProvidersEnabled = $env:MIQO_LIVE_PROVIDERS_ENABLED
+  authentiCodeStatus = [string]$signature.Status
+  producedAtUtc = [DateTime]::UtcNow.ToString("o")
+}
+
+$manifest | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $outDir "build-manifest.json")
+Write-Host "DESKTOP_G7_FULL_PASS"
