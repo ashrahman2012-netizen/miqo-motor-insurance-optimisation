@@ -2,7 +2,7 @@
 
 ## Active blockers
 
-None for G4 closure.
+None for G5 closure.
 
 ## Known external dependencies — not currently blocking
 
@@ -27,6 +27,19 @@ None for G4 closure.
 **Security rule:** private signing keys/secrets must not be pasted into chat, committed to Git or placed in ordinary build artefacts.
 
 **Resume rule:** resume at G7 signing integration/verification; do not repeat G0-G4.
+
+
+### D-G5-ENV-001 — Real environment deployment profile values
+
+**Need:** When STAGING/PRODUCTION execution is attempted, provide approved API base URL, API audience, OIDC issuer, native client ID/scopes and environment/package profile values.
+
+**Current state:** Not required for G5 architecture closure. TEST/SYNTHETIC G8 proof can use the controlled synthetic environment.
+
+**Checkpoint:** UI-ENV, coordinated with UI-IDP where identity registration is also required.
+
+**Security rule:** supply identifiers/endpoints through controlled deployment configuration; do not place secrets in the bundled profile or renderer variables.
+
+**Resume rule:** resume at profile generation/environment attestation proof; do not repeat G0-G5.
 
 ## Resolved blockers
 
