@@ -26,3 +26,8 @@
 | R-G4-003 | Missing WebView2 on a disconnected device could prevent bootstrapper remediation. | CONTROLLED | G4/G8 | Windows 11 baseline; alternate offline Evergreen installer profile for disconnected deployments. |
 | R-G4-004 | Windows 11 x64 baseline excludes ARM64 and legacy Windows. | ACCEPTED | DEPLOY | Add target only from explicit deployment requirement and evidence. |
 | R-G4-005 | Packaging design has not yet been executed against the real Desktop scaffold. | OPEN / EXPECTED | G8 | G8 must produce/install/upgrade/uninstall the real NSIS package before PREP certification. |
+| R-G5-001 | Production/certification API and IdP endpoint/profile values are not yet provisioned. | OPEN / NON-BLOCKING FOR G5 | G7/G8/DEPLOY | UI-ENV / UI-IDP when real environment values are required; bundled profile architecture already frozen. |
+| R-G5-002 | Environment packages could share WebView/credential/local-state namespace. | CLOSED BY G5 | G5 | Distinct Tauri identifiers for DEV/TEST/CERTIFICATION/PRODUCTION. |
+| R-G5-003 | Frozen certified API only permits SYNTHETIC and liveProviders=false, so STAGING/PRODUCTION profiles cannot currently attest successfully. | OPEN / EXPECTED PLATFORM EXTENSION | BUILD/DEPLOY | CC-G5-001; never bypass prototype boundary with local config. |
+| R-G5-004 | Immutable endpoint binding means routine API/IdP endpoint changes require a new package. | ACCEPTED | G5/G7 | Controlled release cadence; consider authenticated managed configuration only through a future ADR. |
+| R-G5-005 | Build environment variables could leak secrets into the renderer bundle. | CONTROLLED | G5/G7 | No secrets in VITE_*/renderer configuration; profile is non-secret and native-loaded; CI scanning in G7. |
