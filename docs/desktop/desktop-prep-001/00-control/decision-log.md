@@ -4,13 +4,9 @@
 
 **Decision:** Base Desktop PREP on `miqos/app-build-001` at `ce211bf4e23643f1eab75e865210f4de121841fb`.
 
-**Reason:** The repository certification record identifies MIQOS-APP-BUILD-001 as CERTIFIED/COMPLETE. The branch is 166 commits ahead of `main`; therefore `main` is not an acceptable substitute for the certified application baseline.
-
 ## D-G0-002 — Execution branch
 
 **Decision:** Create `miqos/desktop-prep-001` directly from the certified SHA.
-
-**Reason:** This preserves exact provenance and isolates Desktop preparation from both `main` and the frozen upstream branch.
 
 ## D-G0-003 — Package-management baseline
 
@@ -28,27 +24,23 @@
 
 ## D-G1-003 — Domain authority remains remote
 
-**Decision:** Keep Fastify/API/domain/PostgreSQL as the authoritative application/domain path. Tauri core shall not duplicate MIQOS business rules or persistence.
+**Decision:** Keep Fastify/API/domain/PostgreSQL as the authoritative application/domain path.
 
 ## D-G1-004 — Native capabilities are app-local and least privilege
 
-**Decision:** Tauri/Rust commands and plugins must remain app-local and capability-scoped. Shared `@miqo/ui` and application-adapter packages must remain free from Desktop privileges.
+**Decision:** Tauri/Rust commands and plugins must remain app-local and capability-scoped.
 
 ## D-G1-005 — Packaging details deferred to G4
 
-**Decision:** G1 selects the Tauri Windows packaging family but does not pre-select MSI versus NSIS, WebView2 provisioning mode, signing identity or updater configuration.
+**Decision:** G1 selects the Tauri Windows packaging family but leaves installer/signing/WebView2 choices to G4.
 
 ## D-G2-001 — Admin visibility is not Admin mutation authority
 
-**Decision:** The current Desktop Admin capability boundary is read/inspect for authoritative MIQOS domain state.
-
-**Reason:** The certified API's current `/admin/*` resources are GET-only and the frozen Admin IA does not grant locked-profile mutation, audit rewriting, ranking override or provider activation.
+**Decision:** Current Desktop Admin domain access is read/inspect.
 
 ## D-G2-002 — No endpoint privilege escalation
 
 **Decision:** Existing general/customer POST/PUT endpoints are not Desktop Admin commands merely because they are reachable.
-
-A future Admin mutation requires an explicit server-authorised command contract with authentication, authorisation, audit, validation and retry/idempotency semantics.
 
 ## D-G2-003 — Direct database access prohibited
 
@@ -56,12 +48,56 @@ A future Admin mutation requires an explicit server-authorised command contract 
 
 ## D-G2-004 — Online authority
 
-**Decision:** Desktop is online-required for authoritative MIQOS state. Offline mode may show shell/build identity/disconnected states but may not calculate or mutate authoritative domain outcomes.
+**Decision:** Desktop is online-required for authoritative MIQOS state.
 
 ## D-G2-005 — Sensitive technical evidence remains Admin-only
 
-**Decision:** Raw provider-response and detailed lineage evidence may be surfaced to authorised Admin users but must not leak into customer contracts, logs or uncontrolled local files.
+**Decision:** Raw provider-response and detailed lineage evidence require an Admin-sensitive boundary.
 
 ## D-G2-006 — Native privilege does not confer domain privilege
 
-**Decision:** Tauri core may later provide authorised OS functions only. It does not gain MIQOS business authority by virtue of running natively.
+**Decision:** Tauri core provides OS/security infrastructure only.
+
+## D-G3-001 — Standards-based native authentication
+
+**Decision:** Use OIDC/OAuth 2.0 Authorization Code + PKCE `S256` as a native public client through the system browser.
+
+**Reason:** Native-app security BCP requires an external user-agent and PKCE; a distributed Desktop app cannot safely rely on an embedded client secret.
+
+## D-G3-002 — Loopback redirect
+
+**Decision:** Use `http://127.0.0.1:{ephemeral-port}/oauth/callback` as the primary Desktop redirect pattern, with loopback-only/exclusive listener controls.
+
+## D-G3-003 — Native token broker
+
+**Decision:** Keep access/refresh credential material outside WebView JavaScript. A native Tauri auth broker owns the OAuth transaction and token lifecycle.
+
+**Authority:** `03-security/adr/ADR-002-native-auth-and-secure-transport.md`.
+
+## D-G3-004 — Allow-listed native API transport
+
+**Decision:** Authenticated API calls cross a native transport constrained to the configured MIQOS API origin and approved method/route templates.
+
+A generic arbitrary-URL native HTTP proxy is prohibited.
+
+## D-G3-005 — Windows user credential storage
+
+**Decision:** If refresh credentials are issued and persistent sign-in is approved, store them through Windows Credential Manager under the current user. Per-user DPAPI is fallback only if a documented implementation constraint requires it.
+
+## D-G3-006 — Server-side permission enforcement
+
+**Decision:** The API validates tokens and maps trusted identity to MIQOS permissions. UI visibility is not authorisation.
+
+Initial Desktop permissions remain read-only and include a distinct permission for raw provider evidence.
+
+## D-G3-007 — Provider-neutral identity architecture
+
+**Decision:** Do not bind PREP to a specific IdP vendor. Issuer/client/audience/role configuration remains environment/deployment configuration behind the OIDC/OAuth standards contract.
+
+## D-G3-008 — No persistent business cache
+
+**Decision:** Do not persist authoritative profiles, recommendations, audit evidence, raw provider payloads or integrity state locally by default.
+
+## D-G3-009 — Platform security extension under change control
+
+**Decision:** Production API token validation, permission enforcement, session descriptor and sensitive-read access audit are required platform extensions. They must be implemented under explicit downstream change control/revalidation, not silently added to the frozen certified upstream baseline during PREP.
