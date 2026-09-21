@@ -137,3 +137,38 @@ This extends the G4 packaging identity convention before G8 proof and prevents W
 
 ## D-G5-007 — Current backend supports only synthetic Desktop profiles
 **Decision:** G8 against the frozen certified backend uses DEVELOPMENT/TEST SYNTHETIC configuration. STAGING/CERTIFICATION and PRODUCTION/PRODUCTION require separately authorised platform capability; G5 does not weaken the existing prototype boundary.
+
+
+## D-G6-001 — Local-first observability baseline
+**Decision:** Use a vendor-neutral local-first observability model for the initial Desktop line.
+
+Production support does not depend on an automatic third-party telemetry/crash SaaS.
+
+**Authority:** ADR-005.
+
+## D-G6-002 — Structured local logging
+**Decision:** Use structured one-record-per-line Desktop logs under the Tauri application log directory, with INFO default production level and bounded retention.
+
+Initial retention: 5 MiB maximum per file, maximum 5 files, maximum 7 days.
+
+## D-G6-003 — Sensitive-data exclusion
+**Decision:** Tokens, credentials, raw provider payloads, full customer/profile payloads and arbitrary HTTP bodies are prohibited from operational logs/support bundles.
+
+## D-G6-004 — Distributed correlation
+**Decision:** Use W3C traceparent for Desktop→API correlation while preserving a separate server-generated request ID.
+
+Do not configure caller-controlled trace/request data as the server's unvalidated canonical request ID.
+
+## D-G6-005 — Crash handling
+**Decision:** Capture renderer/native crash metadata, error references and unclean-run markers. Do not automatically capture/process memory dumps or upload crashes to a third party.
+
+## D-G6-006 — Diagnostic identity
+**Decision:** System/Diagnostics exposes app version, build ID, source commit, deployment profile/environment, OS/WebView/runtime information and safe API health/correlation status.
+
+## D-G6-007 — Explicit redacted support bundle
+**Decision:** Support bundles are user/operator-initiated native diagnostic artefacts, redacted before packaging, target maximum 25 MiB, and accompanied by SHA-256.
+
+No automatic email/upload/ticket integration is created by G6.
+
+## D-G6-008 — Observability evidence hierarchy
+**Decision:** Desktop operational logs and support bundles remain subordinate diagnostic evidence. They do not override server security audit or immutable MIQOS domain/audit evidence.
