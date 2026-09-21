@@ -2,10 +2,10 @@
 
 | ID | Risk | State | Gateway | Control |
 |---|---|---|---|---|
-| R-G0-001 | GitHub connector commit-run visibility is limited for historic push runs. | OPEN / NON-BLOCKING | G7 | Obtain run-level Desktop CI evidence in G7; do not invent evidence. |
+| R-G0-001 | GitHub connector commit-run visibility is limited for historic push runs. | CLOSED FOR DESKTOP G7 | G7 | Draft PR #5 provided PR-triggered run-level evidence; Desktop run 35601094369 and certified CI run 35601094316 are recorded. |
 | R-G0-002 | Desktop could modify certified application semantics for convenience. | CONTROLLED | All | Frozen-upstream rule; explicit change control. |
 | R-G0-003 | Existing Admin web host could be mistaken for Desktop architecture. | CLOSED BY G1 | G1 | Dedicated Tauri/React host selected. |
-| R-G1-001 | Tauri introduces Rust/MSVC into a Node/npm repository. | CONTROLLED / EXECUTION PROOF PENDING | G4/G7 | Build-time prerequisites frozen; prove deterministic Windows runner in G7. |
+| R-G1-001 | Tauri introduces Rust/MSVC into a Node/npm repository. | CONTROLLED / PACKAGE PROOF PENDING | G4/G7/G8 | Windows run proved Rust 1.98.1 and MSVC discovery; actual Tauri compilation/package remains G7-B/G8. |
 | R-G1-002 | WebView2 provisioning policy was unresolved. | CLOSED AS DESIGN / PROOF PENDING | G4/G8 | Evergreen + embedded bootstrapper selected; prove clean-machine behaviour in G8. |
 | R-G1-003 | Production authentication was not in certified baseline. | CLOSED AS ARCHITECTURE / IMPLEMENTATION PENDING | G3/BUILD | OIDC/PKCE/native broker frozen; CC-G3-001. |
 | R-G1-004 | Renderer networking could tempt wildcard CORS/generic proxy. | CLOSED BY G3 | G3/G5 | Allow-listed native MIQOS transport. |
@@ -42,3 +42,5 @@
 | R-G7-004 | Full-SHA action pins age and require controlled maintenance. | ACCEPTED / CONTROLLED | G7 | Review and deliberately update pins; no floating major tags in certified workflow. |
 | R-G7-005 | Cache-free CI may be slower. | ACCEPTED | G7 | Reliability/security takes precedence for initial certification; introduce trusted caching only with evidence. |
 | R-G7-006 | Production signing remains unexecutable until organisation signing identity exists. | OPEN / NON-BLOCKING FOR G7-A/G8 MECHANICAL PROOF | G7/G9 | UI-SIGN; package evidence must remain labelled unsigned/test-signed. |
+| R-G7-007 | Frozen workspace test scripts use shell globs that are not Windows-cmd portable. | CONTROLLED | G7 | Desktop CI uses workspace-local npm exec Vitest invocation; no certified package manifest changed. Consider upstream script portability cleanup only under separate change control. |
+| R-G7-008 | npm ci reported four moderate-severity vulnerabilities in the inherited locked dependency set. | OPEN / NON-BLOCKING PREP RISK | G7/BUILD | Do not silently update the certified lockfile in PREP. Assess/remediate under controlled dependency maintenance before production release as appropriate. |
