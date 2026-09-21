@@ -7,7 +7,7 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "tauri": "cargo tauri"
+    "tauri": "tauri"
   },
   "dependencies": {
     "react": "19.3.0",
@@ -17,6 +17,7 @@
     "@types/react": "19.3.0",
     "esbuild": "0.28.2",
     "typescript": "5.9.2",
-    "vitest": "5.0.1"
+    "vitest": "5.0.1",
+    "@tauri-apps/cli": "2.11.4"
   }
 }
