@@ -2,50 +2,45 @@
 
 ## Active blockers
 
-### B-G7-002 — Released Tauri build schema rejects scaffold Windows build field
-
-**Type:** Internal configuration/toolchain compatibility blocker.  
-**State:** ACTIVE for G7-B.  
-**Validated run:** `35609979477` / Desktop workflow #109.  
-**Validated head:** `377fee7f2a0df2bbe2a035974cf8c42686a427ef`.
-
-**What is closed:** The prior Tauri CLI version-probe defect is closed. The CI now invokes the locked workspace binary directly and progressed beyond that check.
-
-**Failure:** `tauri-build 2.6.3` rejected:
-
-```text
-build.windows.staticVCRuntime
-```
-
-with:
-
-```text
-unknown field 'windows'
-```
-
-during the Rust/Tauri build path.
-
-**Impact:** `cargo clippy` fails before Tauri NSIS packaging. No NSIS installer, checksum, build-manifest or GitHub package artefact was produced.
-
-**Control constraint:** Do not modify the Desktop scaffold, architecture, Tauri/Rust versions or packaging model merely to clear the gate without an explicit controlled correction decision.
-
-**Required action:** Authorise the narrow scaffold-configuration compatibility correction, then rerun G7-B.
-
-**User action:** A decision is required before modifying the scaffold configuration.
+None for G7 closure or remaining TEST/SYNTHETIC G8 mechanical proof.
 
 ## Resolved blockers
 
+### B-G7-002 — Tauri build schema rejected explicit Windows build field
+
+Resolved by authorised removal of the incompatible explicit `build.windows.staticVCRuntime` field.
+
+Subsequent Windows CI progressed through Rust/Tauri compilation.
+
+### B-G7-RESOURCE-001 — Windows resource icon missing
+
+Resolved by adding the required scaffold-only `src-tauri/icons/icon.ico`.
+
+### B-G7-CMD-001 — NSIS CLI argument forwarding
+
+Resolved by invoking the locked Tauri binary directly:
+
+```text
+tauri.cmd build --bundles nsis
+```
+
+### B-G7-EVIDENCE-001 — Single NSIS result PowerShell collection handling
+
+Resolved by coercing the `Get-ChildItem` result to an array before enforcing exactly-one-package evidence.
+
+Successful full package run: `35615450461`.
+
 ### B-G7-001 — Desktop scaffold required for full package CI
 
-WP-G8.1 created `apps/admin-desktop`; this planned sequencing dependency is resolved.
+Resolved by WP-G8.1.
 
 ### B-G7-PROBE-001 — Tauri CLI version probe returned npm version
 
-Resolved by commit `377fee7f2a0df2bbe2a035974cf8c42686a427ef`, which invokes `node_modules/.bin/tauri.cmd --version` directly.
+Resolved by invoking `node_modules/.bin/tauri.cmd --version` directly.
 
 ### B-G0-001 — GitHub repository integration access
 
-Previous 403 integration condition is resolved. Repository read/write access and branch creation are available.
+Previous 403 integration condition is resolved.
 
 ## Known external dependencies — not currently blocking
 
