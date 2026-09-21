@@ -2,7 +2,7 @@
 
 ## Active blockers
 
-None for G6 closure.
+### B-G7-001 — Desktop scaffold required for full package CI\n\n**Type:** Planned internal sequencing dependency.  \n**State:** ACTIVE for G7 final closure.  \n**Condition:** `apps/admin-desktop` does not yet exist because WP-G8.1 owns scaffold creation.  \n**Impact:** Preflight CI can execute; NSIS package/full G7-B CI cannot.  \n**Required action:** Execute only `G8 / WP-G8.1 — Desktop Scaffold`, then return immediately to G7-B.  \n**User action:** None currently required.\n
 
 ## Known external dependencies — not currently blocking
 
