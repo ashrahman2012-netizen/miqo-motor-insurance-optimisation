@@ -263,13 +263,11 @@ fn load_admin_profile_audit(profile_id: String) -> Result<AdminProfileAuditEvide
     let audit_path = format!("/admin/audit?profileId={profile_id}");
     let discrepancy_path = format!("/profiles/{profile_id}/discrepancies");
 
-    let audit: ItemsEnvelope = get_json(&audit_path).map_err(|reason| {
-        emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", &reason);
-        reason
+    let audit: ItemsEnvelope = get_json(&audit_path).inspect_err(|reason| {
+        emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
     })?;
-    let discrepancies: ItemsEnvelope = get_json(&discrepancy_path).map_err(|reason| {
-        emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", &reason);
-        reason
+    let discrepancies: ItemsEnvelope = get_json(&discrepancy_path).inspect_err(|reason| {
+        emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
     })?;
 
     emit_info(
@@ -302,7 +300,7 @@ fn prune_logs(log_dir: &Path) {
         Err(_) => return,
     };
 
-    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    entries.sort_by_key(|a| std::cmp::Reverse(a.1));
 
     for (index, (path, modified)) in entries.into_iter().enumerate() {
         let expired = now
