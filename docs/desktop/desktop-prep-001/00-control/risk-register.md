@@ -36,3 +36,9 @@
 | R-G6-003 | Support-bundle scanner could miss secrets/PII in unexpected log text. | CONTROLLED / PROOF PENDING | G6/G8 | Prohibited logging-by-design plus deterministic redaction/secret-pattern tests; fail bundle creation on unsafe file-processing failure. |
 | R-G6-004 | No central crash/telemetry service means fleet-wide incident detection is limited initially. | ACCEPTED | OPERATIONS | Local-first supportability is sufficient for initial controlled deployment; future central telemetry requires separate privacy/security decision. |
 | R-G6-005 | Full memory dumps may contain credentials/decrypted sensitive evidence. | CONTROLLED | SUPPORT | Do not collect/package dumps by default; separate authorised diagnostic procedure only. |
+| R-G7-001 | Full Desktop package CI cannot execute until WP-G8.1 creates apps/admin-desktop. | OPEN / PLANNED DEPENDENCY | G7/G8 | G7 PARTIAL PASS; execute G8.1 scaffold only, then immediately run G7-B full CI before remaining G8. |
+| R-G7-002 | GitHub hosted runner image changes over time. | CONTROLLED | G7 | Explicit windows-2025 label plus exact Node/Rust selection; record runner/tool versions in CI evidence. |
+| R-G7-003 | Public-repository PRs execute contributor-controlled build scripts. | CONTROLLED | G7 | contents:read, no production secrets, no pull_request_target, checkout credentials disabled, caches disabled. |
+| R-G7-004 | Full-SHA action pins age and require controlled maintenance. | ACCEPTED / CONTROLLED | G7 | Review and deliberately update pins; no floating major tags in certified workflow. |
+| R-G7-005 | Cache-free CI may be slower. | ACCEPTED | G7 | Reliability/security takes precedence for initial certification; introduce trusted caching only with evidence. |
+| R-G7-006 | Production signing remains unexecutable until organisation signing identity exists. | OPEN / NON-BLOCKING FOR G7-A/G8 MECHANICAL PROOF | G7/G9 | UI-SIGN; package evidence must remain labelled unsigned/test-signed. |
