@@ -112,3 +112,51 @@ The later platform programme must prove the new environment without invalidating
 ### Approval requirement
 
 Actual environment values may require UI-ENV and UI-IDP. Live-provider or production activation remains separately governed.
+
+
+---
+
+## CC-G6-001 — API Observability Correlation & Build Identity Extension
+
+**Discovered in:** G6 — Observability & Supportability
+**Classification:** required downstream platform observability extension; not an upstream defect
+**Affected component:** apps/api request logging/health/support metadata
+**Certified business/domain semantics affected:** none intended
+**Status:** OPEN / CONTROLLED
+
+### Reason
+
+The certified Fastify API already logs requests and creates server request IDs, but it does not currently define:
+
+1. validated W3C traceparent handling from the Desktop client;
+2. explicit Desktop trace ID ↔ server request ID correlation;
+3. server build/version/source identity in safe diagnostics/health metadata.
+
+These are required for dependable cross-component incident support.
+
+### Required extension
+
+Implement under authorised downstream scope:
+
+1. parse/validate incoming W3C traceparent;
+2. ignore/restart invalid trace context;
+3. retain an independent server-generated request ID;
+4. include safe trace ID and request ID in structured API logs;
+5. return a safe correlation/reference identifier for errors where appropriate;
+6. add safe API build/service identity to a diagnostic/health contract;
+7. preserve redaction/no-token logging;
+8. test malformed/adversarial trace headers and correlation behaviour.
+
+### Prohibited shortcut
+
+Do not trust an arbitrary caller-provided request-ID value as the server's canonical request ID without strict validation.
+
+Do not put personal/customer data into trace identifiers.
+
+### Revalidation impact
+
+Prove that observability changes do not modify API domain results, security authorisation, audit semantics or the synthetic/live-provider boundary.
+
+### Approval requirement
+
+No user checkpoint is required for the architecture. Implementation is part of downstream platform/BUILD/G8 work.
