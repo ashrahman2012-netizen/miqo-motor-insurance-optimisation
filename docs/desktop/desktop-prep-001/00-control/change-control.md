@@ -160,3 +160,33 @@ Prove that observability changes do not modify API domain results, security auth
 ### Approval requirement
 
 No user checkpoint is required for the architecture. Implementation is part of downstream platform/BUILD/G8 work.
+
+
+---
+
+## CC-G7-001 — Desktop CI Infrastructure Addition
+
+**Discovered/authorised in:** G7 — Build & CI/CD Preparation
+**Classification:** Desktop build/release infrastructure; not an upstream business-behaviour change
+**Files outside Desktop PREP documentation:** `.github/workflows/desktop-prep-g7.yml`, `scripts/desktop-ci.ps1`
+**Certified business/domain semantics affected:** none
+**Status:** AUTHORISED / ACTIVE
+
+### Purpose
+
+G7 requires an executable Windows CI definition and canonical build entry point.
+
+These files:
+
+- verify the certified shared baseline;
+- preserve SYNTHETIC/liveProviders=false;
+- add no application/domain API behaviour;
+- introduce no DB/provider mutation;
+- contain no production credentials;
+- automatically move from preflight to full Desktop package validation only after G8 creates the authorised scaffold.
+
+### Revalidation
+
+The final PREP comparison must distinguish these two authorised CI-infrastructure files from application/API source changes.
+
+Any future workflow/script change that relaxes tests, environment boundary, action pinning, secret controls or artefact verification requires review.
