@@ -64,7 +64,8 @@ $cargoManifest = "apps/admin-desktop/src-tauri/Cargo.toml"
 if (-not (Test-Path $desktopPackage)) { throw "Full mode requires $desktopPackage." }
 if (-not (Test-Path $cargoManifest)) { throw "Full mode requires $cargoManifest." }
 
-$tauriVersion = (npm exec -w @miqo/admin-desktop -- tauri --version).Trim()
+$tauriVersionOutput = npm run tauri -w @miqo/admin-desktop -- --version
+$tauriVersion = ($tauriVersionOutput | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Last 1).Trim()
 if (-not $tauriVersion.Contains("2.11.4")) {
   throw "Tauri CLI mismatch. Expected 2.11.4, got '$tauriVersion'."
 }
