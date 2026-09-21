@@ -8,29 +8,32 @@
 | G3 | Security & Identity Architecture | PASS | 08-evidence/G3/security-and-identity-architecture.md; ADR-002 |
 | G4 | Windows Runtime & Packaging | PASS — DESIGN/READINESS | 08-evidence/G4/windows-runtime-and-packaging.md; ADR-003 |
 | G5 | Environment & Configuration Model | PASS | 08-evidence/G5/environment-and-configuration-model.md; ADR-004 |
-| G6 | Observability & Supportability | **PASS** | 08-evidence/G6/observability-and-supportability.md; ADR-005 |
-| G7 | Build & CI/CD Preparation | NOT STARTED | — |
-| G8 | Desktop Skeleton Proof | NOT STARTED | — |
+| G6 | Observability & Supportability | PASS | 08-evidence/G6/observability-and-supportability.md; ADR-005 |
+| G7 | Build & CI/CD Preparation | **PARTIAL PASS — G7-A COMPLETE / G7-B PENDING G8.1** | 08-evidence/G7/build-ci-preparation.md |
+| G8 | Desktop Skeleton Proof | NOT STARTED — WP-G8.1 AUTHORISED AS G7 DEPENDENCY UNLOCK | 07-ci-cd/gateway-sequencing.md |
 | G9 | PREP Certification | NOT STARTED | — |
 
-## Frozen Desktop baseline through G6
+## G7 build/CI baseline
 
-- Host: Tauri 2 + React/TypeScript.
-- Domain authority: Fastify/API/domain/PostgreSQL.
-- Admin business-state access: read-only.
-- Authentication: native public client; external browser; Authorization Code + PKCE.
-- Token boundary: native broker; no WebView credential persistence.
-- Package: Tauri NSIS, current-user, Windows 11 x64.
-- WebView2: Evergreen with embedded bootstrapper fallback.
-- Production signing: external organisation-controlled Authenticode identity.
-- Deployment configuration: immutable bundled profile + server attestation.
-- Environment/package state isolated across DEV/TEST/CERTIFICATION/PRODUCTION.
-- Observability: structured local logs, bounded retention, W3C trace correlation.
-- Crash model: sanitised metadata only by default; no automatic memory dumps/upload.
-- Support bundle: explicit, redacted, checksum-producing diagnostic artefact.
-- Operational logs do not replace security audit or immutable MIQOS domain evidence.
-- Actual package, capability, logging and support-bundle execution proof remains mandatory at G8.
+- canonical entry point: scripts/desktop-ci.ps1
+- workflow: .github/workflows/desktop-prep-g7.yml
+- runner: windows-2025 x64
+- Node/npm: 22.16.0 / 10.9.2
+- Rust/Cargo: 1.98.1
+- ordinary CI permissions: contents: read
+- GitHub Actions pinned to full commit SHAs
+- cache mode: none
+- environment: SYNTHETIC / liveProviders=false
+- full mode output: NSIS + SHA-256 + build-manifest.json
+- CI artefact retention: 14 days
+- production signing: protected downstream stage via UI-SIGN
+
+## Sequencing rule
+
+WP-G8.1 may create only the approved Desktop scaffold needed to unlock G7-B.
+
+The remainder of G8 must not proceed until G7-B full package CI has passed.
 
 ## Gateway rule
 
-No gateway may be marked PASS without evidence tied to the controlled branch/revision. Design/readiness controls must not be misrepresented as executable proof.
+No gateway may be marked PASS without evidence tied to the controlled branch/revision. PARTIAL PASS and blockers remain explicit.
