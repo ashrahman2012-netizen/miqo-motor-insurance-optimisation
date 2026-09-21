@@ -138,7 +138,7 @@ fn deployment_profile() -> Result<DeploymentProfile, String> {
         && profile.api.audience == "miqos-api-test"
         && profile.oidc.issuer == "https://identity.test.invalid"
         && profile.oidc.client_id == "miqos-admin-test-public"
-        && profile.oidc.scopes == ["openid", "profile"]
+        && profile.oidc.scopes == vec!["openid".to_string(), "profile".to_string()]
         && profile.features.as_object().is_some();
 
     if !coherent {
