@@ -1,7 +1,7 @@
 # G7 Evidence — Build & CI/CD Preparation
 
 **Gateway:** G7  
-**Current result:** PARTIAL PASS — G7-A PASS / G7-B PENDING  
+**Current result:** PARTIAL PASS — G7-A PASS / G7-B BLOCKED  
 **Date:** 2026-09-21
 
 ## Evidence implemented
@@ -76,25 +76,44 @@ Detailed Windows evidence: `08-evidence/G7/windows-preflight-run.md`.
 | signing insertion point defined | PASS |
 | release pipeline defined | PASS |
 | package CI can execute before scaffold | NOT APPLICABLE — planned dependency |
-| actual NSIS artefact generated | PENDING G8.1 |
-| full package CI run passed | PENDING G8.1 |
+| actual NSIS artefact generated | BLOCKED — Tauri config schema |
+| full package CI run passed | BLOCKED — run 35609979477 failed before packaging |
 
-## Why not full PASS
+## G7-B execution after WP-G8.1
 
-The controlled blueprint creates the Desktop application scaffold at G8 WP-G8.1 but requires a successful package CI run to close G7.
+WP-G8.1 exists and Full mode executes.
 
-No `apps/admin-desktop` currently exists.
+The prior CLI-probe defect was corrected by invoking the locked workspace binary directly.
 
-G7 must therefore remain PARTIAL PASS until the minimal G8.1 scaffold is created and the same workflow automatically executes Full mode.
+Run `35609979477` / #109 then progressed through the certified shared checks and into Rust/Tauri compilation.
+
+Observed terminal blocker:
+
+```text
+unknown field 'windows'
+```
+
+for:
+
+```text
+build.windows.staticVCRuntime
+```
+
+from released `tauri-build 2.6.3`.
+
+The run failed at the Rust clippy stage before package generation.
+
+Therefore:
+
+- NSIS artefact: not produced;
+- SHA-256: not produced;
+- build-manifest.json: not produced;
+- GitHub package artefact: not uploaded.
+
+G7 remains PARTIAL PASS.
 
 ## Next controlled operation
 
-Execute only:
+Resolve the narrow Tauri configuration compatibility blocker under explicit controlled authority, then rerun G7-B.
 
-`G8 / WP-G8.1 — Desktop Scaffold`
-
-Then immediately return to:
-
-`G7-B — Full Package CI Closure`
-
-before proceeding with the rest of the G8 integration/proof scope.
+The remainder of G8 remains unauthorised until an actual NSIS package and required provenance evidence exist.
