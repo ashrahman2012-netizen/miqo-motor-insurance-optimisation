@@ -72,6 +72,17 @@ if (-not $tauriVersion.Contains("2.11.4")) {
   throw "Tauri CLI mismatch. Expected 2.11.4, got '$tauriVersion'."
 }
 
+$sourceCommit = if ($env:GITHUB_SHA) { $env:GITHUB_SHA } else { (git rev-parse HEAD).Trim() }
+$buildId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { "local" }
+$env:MIQO_SOURCE_COMMIT = $sourceCommit
+$env:MIQO_BUILD_ID = $buildId
+
+$deploymentProfile = "apps/admin-desktop/src-tauri/resources/deployment-profile.test.json"
+if (-not (Test-Path $deploymentProfile)) {
+  throw "Desktop deployment profile is missing."
+}
+$deploymentProfileHash = (Get-FileHash $deploymentProfile -Algorithm SHA256).Hash.ToLowerInvariant()
+
 Invoke-Step "Desktop typecheck" { npm run typecheck -w @miqo/admin-desktop }
 Invoke-Step "Desktop tests" { npm run test -w @miqo/admin-desktop }
 Invoke-Step "Desktop frontend build" { npm run build -w @miqo/admin-desktop }
@@ -110,8 +121,6 @@ $hash = (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLower
 "$hash  $artifactName" | Set-Content (Join-Path $outDir "$artifactName.sha256") -NoNewline
 
 $signature = Get-AuthenticodeSignature $artifactPath
-$sourceCommit = if ($env:GITHUB_SHA) { $env:GITHUB_SHA } else { (git rev-parse HEAD).Trim() }
-$buildId = if ($env:GITHUB_RUN_ID) { $env:GITHUB_RUN_ID } else { "local" }
 
 $manifest = [ordered]@{
   schemaVersion = "miqos-desktop-artifact-v1"
@@ -130,6 +139,7 @@ $manifest = [ordered]@{
   cargo = (cargo --version).Trim()
   tauriCli = $tauriVersion
   cargoLockSha256 = $cargoLockHash
+  deploymentProfileSha256 = $deploymentProfileHash
   dataClassification = $env:MIQO_DATA_CLASSIFICATION
   liveProvidersEnabled = $env:MIQO_LIVE_PROVIDERS_ENABLED
   authentiCodeStatus = [string]$signature.Status
