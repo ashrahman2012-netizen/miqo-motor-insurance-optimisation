@@ -1,0 +1,85 @@
+name: desktop-icon-g7b
+
+on:
+  push:
+    branches:
+      - miqos/desktop-prep-001
+    paths:
+      - ".github/workflows/desktop-icon-g7b.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-icon:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - name: Checkout controlled branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: miqos/desktop-prep-001
+          persist-credentials: true
+
+      - name: Generate neutral Windows scaffold icon
+        shell: pwsh
+        run: |
+          @'
+          import struct
+          from pathlib import Path
+
+          width = 32
+          height = 32
+          xor = bytearray()
+          for y in range(height):
+              for x in range(width):
+                  border = x < 3 or y < 3 or x >= width - 3 or y >= height - 3
+                  if border:
+                      b, g, r, a = (235, 235, 235, 255)
+                  else:
+                      b, g, r, a = (50, 42, 32, 255)
+                  xor.extend((b, g, r, a))
+
+          # DIB rows are bottom-up.
+          row = width * 4
+          flipped = bytearray()
+          for y in range(height - 1, -1, -1):
+              flipped.extend(xor[y * row:(y + 1) * row])
+
+          # 1-bit AND mask, rows padded to 4 bytes; all zero = fully opaque.
+          mask_row_bytes = ((width + 31) // 32) * 4
+          and_mask = bytes(mask_row_bytes * height)
+
+          dib = struct.pack(
+              "<IIIHHIIIIII",
+              40, width, height * 2, 1, 32, 0,
+              len(flipped), 0, 0, 0, 0
+          ) + bytes(flipped) + and_mask
+
+          header = struct.pack("<HHH", 0, 1, 1)
+          entry = struct.pack(
+              "<BBBBHHII",
+              width, height, 0, 0, 1, 32,
+              len(dib), 6 + 16
+          )
+
+          out = Path("apps/admin-desktop/src-tauri/icons/icon.ico")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_bytes(header + entry + dib)
+          print(f"wrote {out} ({out.stat().st_size} bytes)")
+          '@ | python -
+
+      - name: Commit icon only
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/admin-desktop/src-tauri/icons/icon.ico
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Icon already current."
+            exit 0
+          }
+          git commit -m "DESKTOP G7-B: add required Windows scaffold icon"
+          git push origin HEAD:miqos/desktop-prep-001
