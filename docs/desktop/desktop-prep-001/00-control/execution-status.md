@@ -1,36 +1,34 @@
 # MIQOS-DESKTOP-PREP-001 — Execution Status
 
-**Programme:** MIQOS-DESKTOP-PREP-001  
-**Gateway:** G3 — Security & Identity Architecture  
-**Status:** PASS  
-**Execution branch:** `miqos/desktop-prep-001`  
-**Upstream certified branch:** `miqos/app-build-001`  
-**Upstream certified SHA:** `ce211bf4e23643f1eab75e865210f4de121841fb`  
-**Desktop architecture:** Tauri 2 + React/TypeScript  
-**Security architecture:** Native public-client OIDC/OAuth; system-browser Authorization Code + PKCE; native token broker; server-side permission enforcement  
+**Programme:** MIQOS-DESKTOP-PREP-001
+**Gateway:** G4 — Windows Runtime & Packaging
+**Status:** PASS — DESIGN/READINESS
+**Execution branch:** miqos/desktop-prep-001
+**Upstream certified branch:** miqos/app-build-001
+**Upstream certified SHA:** ce211bf4e23643f1eab75e865210f4de121841fb
+**Desktop architecture:** Tauri 2 + React/TypeScript
+**Primary package:** NSIS, current-user, Windows 11 x64
+**WebView2:** Evergreen with embedded bootstrapper fallback
 **Date:** 2026-09-21
 
 ## Current control position
 
-G0 through G3 are complete.
+G0 through G4 are complete.
 
-Security is frozen as:
+G4 freezes:
 
-- public native OAuth/OIDC client; no embedded client secret;
-- external system browser for sign-in;
-- Authorization Code + PKCE S256;
-- loopback callback on 127.0.0.1 ephemeral port;
-- tokens retained outside the WebView by a native auth broker;
-- persistent refresh credentials, if issued, stored using Windows user-protected credential storage;
-- allow-listed native MIQOS API transport; no arbitrary URL proxy;
-- API validates identity and enforces permissions server-side;
-- current Desktop business capabilities remain read-only;
-- no persistent local authoritative MIQOS data cache;
-- restrictive CSP and least-privilege Tauri capabilities;
-- security access audit separate from, but correlated with, domain audit.
+- Windows 11 x64 as the normal target;
+- Tauri NSIS as the primary installer;
+- non-elevated current-user installation;
+- per-machine/MSI only as controlled enterprise variants;
+- WebView2 Evergreen with embedded bootstrapper fallback;
+- downgrade prevention;
+- controlled installer replacement as the initial update mechanism;
+- production Authenticode signing through an external organisation-controlled signing identity;
+- package/install/upgrade/uninstall proof requirements for G7/G8.
 
-A controlled platform security extension is required before production-capable identity enforcement because the frozen certified API baseline does not yet contain production authentication/RBAC middleware.
+No real installer is claimed yet because apps/admin-desktop does not exist by design until the skeleton phase.
 
 The next controlled gateway is:
 
-`G4 — Windows Runtime & Packaging`
+G5 — Environment & Configuration Model
