@@ -324,7 +324,7 @@ $installExit = Invoke-Executable (Resolve-Path $BaselineInstaller).Path @("/S")
 Assert-True ($installExit -eq 0) "Baseline NSIS installation failed with exit code $installExit."
 
 $entry = Wait-ProductEntry $BaselineVersion
-Assert-True ((Get-MachineProductEntry).Count -eq 0) "Current-user package unexpectedly registered in HKLM."
+Assert-True (@(Get-MachineProductEntry).Count -eq 0) "Current-user package unexpectedly registered in HKLM."
 $installedExe = Find-InstalledExecutable $entry
 Assert-True ($installedExe.StartsWith($env:LOCALAPPDATA, [System.StringComparison]::OrdinalIgnoreCase)) "Current-user package was not installed under LocalAppData."
 
