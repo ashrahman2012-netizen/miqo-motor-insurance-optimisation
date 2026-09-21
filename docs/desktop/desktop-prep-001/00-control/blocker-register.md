@@ -2,14 +2,50 @@
 
 ## Active blockers
 
+### B-G7-002 — Released Tauri build schema rejects scaffold Windows build field
+
+**Type:** Internal configuration/toolchain compatibility blocker.  
+**State:** ACTIVE for G7-B.  
+**Validated run:** `35609979477` / Desktop workflow #109.  
+**Validated head:** `377fee7f2a0df2bbe2a035974cf8c42686a427ef`.
+
+**What is closed:** The prior Tauri CLI version-probe defect is closed. The CI now invokes the locked workspace binary directly and progressed beyond that check.
+
+**Failure:** `tauri-build 2.6.3` rejected:
+
+```text
+build.windows.staticVCRuntime
+```
+
+with:
+
+```text
+unknown field 'windows'
+```
+
+during the Rust/Tauri build path.
+
+**Impact:** `cargo clippy` fails before Tauri NSIS packaging. No NSIS installer, checksum, build-manifest or GitHub package artefact was produced.
+
+**Control constraint:** Do not modify the Desktop scaffold, architecture, Tauri/Rust versions or packaging model merely to clear the gate without an explicit controlled correction decision.
+
+**Required action:** Authorise the narrow scaffold-configuration compatibility correction, then rerun G7-B.
+
+**User action:** A decision is required before modifying the scaffold configuration.
+
+## Resolved blockers
+
 ### B-G7-001 — Desktop scaffold required for full package CI
 
-**Type:** Planned internal sequencing dependency.  
-**State:** ACTIVE for G7 final closure.  
-**Condition:** `apps/admin-desktop` does not yet exist because WP-G8.1 owns scaffold creation.  
-**Impact:** G7-A Windows preflight has passed; NSIS package/full G7-B CI cannot execute yet.  
-**Required action:** Execute only `G8 / WP-G8.1 — Desktop Scaffold`, then return immediately to G7-B.  
-**User action:** None currently required.
+WP-G8.1 created `apps/admin-desktop`; this planned sequencing dependency is resolved.
+
+### B-G7-PROBE-001 — Tauri CLI version probe returned npm version
+
+Resolved by commit `377fee7f2a0df2bbe2a035974cf8c42686a427ef`, which invokes `node_modules/.bin/tauri.cmd --version` directly.
+
+### B-G0-001 — GitHub repository integration access
+
+Previous 403 integration condition is resolved. Repository read/write access and branch creation are available.
 
 ## Known external dependencies — not currently blocking
 
