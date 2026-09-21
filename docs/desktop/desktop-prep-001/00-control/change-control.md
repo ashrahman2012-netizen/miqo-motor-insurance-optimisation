@@ -70,3 +70,45 @@ Required tests must prove:
 ### Approval requirement
 
 Architecture is approved by G3. Actual IdP registration/environment configuration may require `UI-IDP` and security/tenant administration during G8/BUILD/deployment.
+
+
+---
+
+## CC-G5-001 — Certification/Production Environment Authority Extension
+
+**Discovered in:** G5 — Environment & Configuration Model  
+**Classification:** required downstream platform extension; not an upstream defect  
+**Affected component:** API/runtime environment boundary and future certified provider/production platform  
+**Certified business/domain semantics affected:** none intended  
+**Status:** OPEN / CONTROLLED
+
+### Reason
+
+The frozen certified API deliberately fails startup unless data classification is SYNTHETIC and live-provider activity is disabled. This is a certified safety boundary, not a configuration gap.
+
+STAGING/CERTIFICATION and PRODUCTION/PRODUCTION Desktop profiles therefore cannot be made operational merely by changing local environment variables.
+
+### Required extension
+
+Before a non-synthetic Desktop environment can operate, separately authorised platform work must define and prove:
+
+1. machine-readable certification/production environment identity;
+2. appropriate provider-activity authority and certification;
+3. G3 production authentication/authorisation controls;
+4. environment-specific API/IdP registrations;
+5. server-side fail-closed environment checks;
+6. CI/integration evidence for the target environment;
+7. preserved certified domain invariants;
+8. controlled activation/go-live decision.
+
+### Prohibited shortcut
+
+Do not remove or relax the SYNTHETIC/live-provider startup guard merely to make a Desktop STAGING or PRODUCTION profile connect.
+
+### Revalidation impact
+
+The later platform programme must prove the new environment without invalidating factual immutability, scenario/comparison/recommendation/integrity authority or synthetic/certification labelling controls.
+
+### Approval requirement
+
+Actual environment values may require UI-ENV and UI-IDP. Live-provider or production activation remains separately governed.
