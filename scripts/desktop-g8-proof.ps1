@@ -71,7 +71,10 @@ function Find-InstalledExecutable {
   $candidates = @()
 
   if ($Entry.InstallLocation) {
-    $candidates += Join-Path ([string]$Entry.InstallLocation) $ProductExe
+    $installLocation = ([string]$Entry.InstallLocation).Trim().Trim('"')
+    if (-not [string]::IsNullOrWhiteSpace($installLocation)) {
+      $candidates += Join-Path $installLocation $ProductExe
+    }
   }
 
   if ($Entry.DisplayIcon) {
