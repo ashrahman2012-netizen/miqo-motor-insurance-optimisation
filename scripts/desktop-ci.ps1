@@ -78,7 +78,7 @@ Invoke-Step "Desktop frontend build" { npm run build -w @miqo/admin-desktop }
 Invoke-Step "Rust formatting" { cargo fmt --check --manifest-path $cargoManifest }
 Invoke-Step "Rust clippy" { cargo clippy --manifest-path $cargoManifest --all-targets -- -D warnings }
 Invoke-Step "Rust tests" { cargo test --manifest-path $cargoManifest }
-Invoke-Step "Tauri NSIS build" { npm run tauri -w @miqo/admin-desktop -- build --bundles nsis }
+Invoke-Step "Tauri NSIS build" { & $tauriCli build --bundles nsis }
 
 $packageJson = Get-Content $desktopPackage -Raw | ConvertFrom-Json
 $version = [string]$packageJson.version
