@@ -220,3 +220,30 @@ This is a CI invocation adaptation only. No certified shared package manifest/te
 **Decision:** Accept G7-A as PASS based on Desktop workflow run `35601094369` and same-head certified CI run `35601094316`.
 
 G7 overall remains PARTIAL PASS because no NSIS artefact can exist before G8.1.
+
+
+## D-G7-011 — Accept G7-B full package evidence
+**Decision:** Accept Desktop workflow run `35615450461` / #130 as the executable G7-B package proof.
+
+The job completed the canonical Full contract, package detection and Actions artefact upload successfully.
+
+## D-G7-012 — Package evidence identity
+**Decision:** G7 package evidence is the unsigned TEST/SYNTHETIC NSIS artefact:
+
+```text
+miqos-admin_0.1.0_windows-x64_nsis.exe
+SHA-256:
+a5e40412b3b9814c4d68d5e93c779f54cade1cd5ff4f4dec3d79e81c01e3c102
+```
+
+The package is not production-signed and cannot be represented as a production release.
+
+## D-G7-013 — PR merge provenance
+**Decision:** Accept GitHub PR merge revision `5c29a38aed48495ecf5e1c089da2ae7a8a52ee32` as the build revision because it explicitly represents Desktop head `65d1b7b04a09aab787baaafd8addabacb0662265` merged into frozen upstream `ce211bf4e23643f1eab75e865210f4de121841fb`.
+
+Both the branch head and merge revision are retained in G7 evidence.
+
+## D-G7-014 — G7 closure
+**Decision:** G7 is PASS.
+
+The remainder of G8 Desktop Skeleton Proof is authorised. G9 remains gated.
