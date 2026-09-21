@@ -6,10 +6,7 @@
   "mainBinaryName": "miqos-admin",
   "build": {
     "beforeBuildCommand": "npm run build",
-    "frontendDist": "../dist",
-    "windows": {
-      "staticVCRuntime": true
-    }
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
@@ -27,12 +24,16 @@
     ],
     "security": {
       "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
-      "capabilities": ["scaffold"]
+      "capabilities": [
+        "scaffold"
+      ]
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "windows": {
       "allowDowngrades": false,
       "webviewInstallMode": {
