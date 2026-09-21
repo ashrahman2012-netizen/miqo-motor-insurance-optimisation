@@ -1,36 +1,42 @@
 # MIQOS-DESKTOP-PREP-001 — Execution Status
 
 **Programme:** MIQOS-DESKTOP-PREP-001
-**Gateway:** G6 — Observability & Supportability
-**Status:** PASS
+**Gateway:** G7 — Build & CI/CD Preparation
+**Status:** PARTIAL PASS — G7-A COMPLETE / G7-B PENDING G8.1
 **Execution branch:** miqos/desktop-prep-001
 **Upstream certified branch:** miqos/app-build-001
 **Upstream certified SHA:** ce211bf4e23643f1eab75e865210f4de121841fb
-**Desktop architecture:** Tauri 2 + React/TypeScript
-**Observability architecture:** local-first structured logs + W3C trace correlation + redacted explicit support bundles
+**Desktop CI:** Windows 2025 x64; canonical scripts/desktop-ci.ps1; exact Node/Rust toolchains
 **Date:** 2026-09-21
 
 ## Current control position
 
-G0 through G6 are complete.
+G0 through G6 are PASS.
 
-G6 freezes:
+G7-A is complete:
 
-- local-first vendor-neutral operational observability;
-- production INFO/WARN/ERROR structured local logs;
-- bounded rotation/retention: 5 MiB per file, max 5 files, max 7 days;
-- prohibition on token/raw-provider/customer-payload logging;
-- W3C traceparent for Desktop→API distributed correlation;
-- separate server-generated request ID;
-- renderer error-boundary/unhandled failure capture;
-- native panic and unclean-run metadata;
-- no automatic memory dumps or third-party crash upload;
-- version/build/environment/runtime diagnostics;
-- explicit redacted support bundles with a 25 MiB target maximum and SHA-256;
-- a support runbook separating operational evidence from security/domain audit authority.
+- canonical Windows build entry point exists;
+- actual GitHub Actions Windows workflow exists;
+- Windows 2025 x64 runner selected;
+- Node 22.16.0 / npm 10.9.2 retained;
+- Rust/Cargo 1.98.1 selected;
+- MSVC toolchain verification included;
+- full-SHA action pinning and least-privilege workflow permissions frozen;
+- caches disabled for the initial controlled path;
+- NSIS artefact naming/checksum/manifest contract defined;
+- Authenticode signing insertion point defined;
+- release pipeline defined.
 
-The current API requires a controlled downstream observability extension for validated trace-context correlation and server build/version metadata.
+G7 cannot honestly close as PASS until Full mode produces a real NSIS artefact and a full CI run passes.
 
-The next controlled gateway is:
+That evidence depends on WP-G8.1 creating apps/admin-desktop, which the original blueprint deliberately assigns to G8.
 
-G7 — Build & CI/CD Preparation
+## Next controlled operation
+
+G8 / WP-G8.1 — Desktop Scaffold ONLY
+
+Immediately after that scaffold exists:
+
+G7-B — Full Package CI Closure
+
+must execute before the remainder of G8.
