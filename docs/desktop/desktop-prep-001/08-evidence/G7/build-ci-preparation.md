@@ -1,7 +1,7 @@
 # G7 Evidence — Build & CI/CD Preparation
 
 **Gateway:** G7  
-**Current result:** PARTIAL PASS — G7-A COMPLETE / G7-B PENDING  
+**Current result:** PARTIAL PASS — G7-A PASS / G7-B PENDING  
 **Date:** 2026-09-21
 
 ## Evidence implemented
@@ -52,6 +52,16 @@ GitHub cache guidance warns against secrets in caches and recommends restricted 
 
 Rust 1.98.1 is the current stable point release selected for the G7 controlled toolchain.
 
+## Live CI evidence
+
+Draft validation PR #5 produced:
+
+- Desktop workflow run `35601094369` — **SUCCESS**
+- Existing certified CI run `35601094316` — **SUCCESS**
+- certified CI jobs `locked-dependencies`, `postgres-contract`, and `target-stack-sprint1` — all **SUCCESS**
+
+Detailed Windows evidence: `08-evidence/G7/windows-preflight-run.md`.
+
 ## G7-A exit results
 
 | Criterion | Result |
@@ -59,6 +69,8 @@ Rust 1.98.1 is the current stable point release selected for the G7 controlled t
 | canonical Desktop build entry point exists | PASS |
 | Windows runner/toolchain selected | PASS |
 | workflow definition exists | PASS |
+| Windows preflight workflow executed successfully | PASS |
+| existing certified CI remained green on validation head | PASS |
 | workflow security/secret boundary defined | PASS |
 | package artefact contract defined | PASS |
 | signing insertion point defined | PASS |
