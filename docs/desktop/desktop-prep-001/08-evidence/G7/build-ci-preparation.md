@@ -1,7 +1,7 @@
 # G7 Evidence — Build & CI/CD Preparation
 
 **Gateway:** G7  
-**Current result:** PARTIAL PASS — G7-A PASS / G7-B BLOCKED  
+**Current result:** PASS — G7-A PASS / G7-B PASS  
 **Date:** 2026-09-21
 
 ## Evidence implemented
@@ -76,8 +76,8 @@ Detailed Windows evidence: `08-evidence/G7/windows-preflight-run.md`.
 | signing insertion point defined | PASS |
 | release pipeline defined | PASS |
 | package CI can execute before scaffold | NOT APPLICABLE — planned dependency |
-| actual NSIS artefact generated | BLOCKED — Tauri config schema |
-| full package CI run passed | BLOCKED — run 35609979477 failed before packaging |
+| actual NSIS artefact generated | PASS — artefact 10646138442 |
+| full package CI run passed | PASS — run 35615450461 |
 
 ## G7-B execution after WP-G8.1
 
@@ -117,3 +117,30 @@ G7 remains PARTIAL PASS.
 Resolve the narrow Tauri configuration compatibility blocker under explicit controlled authority, then rerun G7-B.
 
 The remainder of G8 remains unauthorised until an actual NSIS package and required provenance evidence exist.
+
+
+## G7-B final closure
+
+Successful Desktop Full workflow:
+
+- run `35615450461` / #130 — **SUCCESS**;
+- job `106384830231` — **SUCCESS**;
+- package detection — **SUCCESS**;
+- artefact upload — **SUCCESS**.
+
+Same-head certified CI:
+
+- run `35615450454` / #570 — **SUCCESS**;
+- `locked-dependencies` — **SUCCESS**;
+- `postgres-contract` — **SUCCESS**;
+- `target-stack-sprint1` — **SUCCESS**.
+
+Detailed package evidence:
+
+`08-evidence/G7/full-package-ci.md`
+
+## Gateway decision
+
+**G7 = PASS**
+
+The remainder of G8 Desktop Skeleton Proof is authorised.
