@@ -207,3 +207,16 @@ Reason: maximise reproducibility and avoid untrusted-cache complexity on the pub
 **Decision:** G7 is PARTIAL PASS after CI architecture/preflight preparation. WP-G8.1 is the next minimal authorised operation solely to create the Desktop scaffold; G7-B full package CI must then close before the remainder of G8.
 
 Reason: the original blueprint requires package CI at G7 but assigns scaffold creation to G8. This treatment preserves both controls without fabricating execution evidence.
+
+
+## D-G7-009 — Windows test invocation adapter
+**Decision:** The Desktop Windows CI entry point invokes the existing application-adapter and UI Vitest suites through workspace-local `npm exec ... vitest run` rather than the frozen package.json test scripts.
+
+**Reason:** The certified package scripts contain shell glob syntax (`test/*.test.ts`) that is expanded by Linux shells but passed literally by Windows cmd.exe. The first Windows execution proved this portability issue.
+
+This is a CI invocation adaptation only. No certified shared package manifest/test source was changed, and the successful Windows run proved all 7 application-adapter test files and both UI test files execute.
+
+## D-G7-010 — Live G7-A evidence
+**Decision:** Accept G7-A as PASS based on Desktop workflow run `35601094369` and same-head certified CI run `35601094316`.
+
+G7 overall remains PARTIAL PASS because no NSIS artefact can exist before G8.1.
