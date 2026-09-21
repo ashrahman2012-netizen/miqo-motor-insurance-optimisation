@@ -48,9 +48,9 @@ Invoke-Step "npm ci" { npm ci }
 Invoke-Step "dependency pin verification" { npm run verify:pins }
 Invoke-Step "synthetic boundary verification" { npm run verify:boundary }
 Invoke-Step "application adapters typecheck" { npm run typecheck -w @miqo/application-adapters }
-Invoke-Step "application adapters tests" { npm run test -w @miqo/application-adapters }
+Invoke-Step "application adapters tests" { npm exec -w @miqo/application-adapters -- vitest run }
 Invoke-Step "shared UI typecheck" { npm run typecheck -w @miqo/ui }
-Invoke-Step "shared UI tests" { npm run test -w @miqo/ui }
+Invoke-Step "shared UI tests" { npm exec -w @miqo/ui -- vitest run }
 Invoke-Step "certified application build" { npm run build }
 
 if ($Mode -eq "Preflight") {
