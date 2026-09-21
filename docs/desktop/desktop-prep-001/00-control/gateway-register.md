@@ -2,30 +2,33 @@
 
 | Gateway | Title | Status | Evidence |
 |---|---|---|---|
-| G0 | Baseline & Dependency Freeze | PASS | `08-evidence/G0/baseline-and-dependency-freeze.md` |
-| G1 | Desktop Architecture Decision | PASS | `08-evidence/G1/architecture-decision.md`; ADR-001 |
-| G2 | Admin Application Boundary | PASS | `08-evidence/G2/admin-application-boundary.md` |
-| G3 | Security & Identity Architecture | **PASS** | `08-evidence/G3/security-and-identity-architecture.md`; ADR-002 |
-| G4 | Windows Runtime & Packaging | NOT STARTED | — |
+| G0 | Baseline & Dependency Freeze | PASS | 08-evidence/G0/baseline-and-dependency-freeze.md |
+| G1 | Desktop Architecture Decision | PASS | 08-evidence/G1/architecture-decision.md; ADR-001 |
+| G2 | Admin Application Boundary | PASS | 08-evidence/G2/admin-application-boundary.md |
+| G3 | Security & Identity Architecture | PASS | 08-evidence/G3/security-and-identity-architecture.md; ADR-002 |
+| G4 | Windows Runtime & Packaging | **PASS — DESIGN/READINESS** | 08-evidence/G4/windows-runtime-and-packaging.md; ADR-003 |
 | G5 | Environment & Configuration Model | NOT STARTED | — |
 | G6 | Observability & Supportability | NOT STARTED | — |
 | G7 | Build & CI/CD Preparation | NOT STARTED | — |
 | G8 | Desktop Skeleton Proof | NOT STARTED | — |
 | G9 | PREP Certification | NOT STARTED | — |
 
-## Frozen architecture/security baseline
+## Frozen Desktop baseline through G4
 
 - Host: Tauri 2 + React/TypeScript.
 - Domain authority: Fastify/API/domain/PostgreSQL.
-- Admin domain access at current boundary: read-only.
+- Admin business-state access: read-only.
 - Authentication: native public client; external browser; Authorization Code + PKCE.
-- Token boundary: native broker; no WebView token persistence.
-- Native API transport: configured MIQOS origin + allow-listed operations only.
-- Authorisation: server-enforced permissions; UI is not security authority.
-- Local data: no persistent authoritative MIQOS business cache.
-- Tauri permissions/CSP: least privilege / fail closed.
-- Platform security middleware is a controlled downstream extension, not a PREP-side modification of the frozen baseline.
+- Token boundary: native broker; no WebView credential persistence.
+- Package: Tauri NSIS.
+- Install scope: current user by default; non-elevated.
+- Supported target: Windows 11 x64.
+- WebView2: Evergreen with embedded bootstrapper fallback.
+- Downgrades: blocked.
+- Initial updates: controlled installer replacement.
+- Production signing: external organisation-controlled Authenticode identity.
+- Actual package execution remains mandatory at G8.
 
 ## Gateway rule
 
-No gateway may be marked PASS without evidence tied to the controlled branch/revision. PARTIAL PASS and blockers must remain explicit.
+No gateway may be marked PASS without evidence tied to the controlled branch/revision. Design/readiness PASS must not be misrepresented as installed-package proof.
