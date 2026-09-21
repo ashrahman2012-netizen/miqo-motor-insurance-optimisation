@@ -18,4 +18,28 @@
 
 **Evidence:** Root `package.json` declares npm 10.9.2, Node 22.16.0 and workspaces `apps/*`, `packages/*`; `package-lock.json` is present.
 
-No Desktop framework or packaging technology is selected in G0. That decision belongs to G1/G4.
+## D-G1-001 — Desktop host architecture
+
+**Decision:** Select **Tauri 2 + React/TypeScript** for the Windows Admin Application.
+
+**Reason:** It preserves the certified React/ViewModel investment while providing an explicit capability-controlled native boundary and Windows installer path without bundling a Node/Chromium privileged runtime.
+
+**Authority:** `01-architecture/adr/ADR-001-tauri-react-windows-admin.md`.
+
+## D-G1-002 — Dedicated Desktop workspace
+
+**Decision:** Create the Desktop application as a new `apps/admin-desktop` workspace during the authorised scaffold/proof phase.
+
+**Reason:** The certified `apps/admin-web` host contains Next.js routing/server assumptions and must remain independently valid.
+
+## D-G1-003 — Domain authority remains remote
+
+**Decision:** Keep Fastify/API/domain/PostgreSQL as the authoritative application/domain path. Tauri core shall not duplicate MIQOS business rules or persistence.
+
+## D-G1-004 — Native capabilities are app-local and least privilege
+
+**Decision:** Tauri/Rust commands and plugins must remain app-local and capability-scoped. Shared `@miqo/ui` and application-adapter packages must remain free from Desktop privileges.
+
+## D-G1-005 — Packaging details deferred to G4
+
+**Decision:** G1 selects the Tauri Windows packaging family but does not pre-select MSI versus NSIS, WebView2 provisioning mode, signing identity or updater configuration. Those are controlled G4 decisions backed by executable packaging evidence.
