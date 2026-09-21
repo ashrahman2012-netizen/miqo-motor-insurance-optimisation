@@ -12,7 +12,7 @@
 | R-G1-005 | Next-specific route/server code is not directly reusable. | ACCEPTED | G8/BUILD | Reuse ViewModels/adapters/UI; Desktop-local orchestration. |
 | R-G1-006 | Native bridge could become broad privilege surface. | CONTROLLED / PROOF PENDING | G3/G8 | Default deny; narrow capabilities; CSP. |
 | R-G2-001 | Reachable general mutation endpoints could be mistaken for Admin permission. | CONTROLLED | G2/G3/BUILD | Read-only permission model and native route allow-list. |
-| R-G2-002 | Raw provider/audit evidence could leak through logs/cache/export. | CONTROLLED / G6 DETAIL PENDING | G3/G6 | Separate permission, no persistent cache, redaction/access audit. |
+| R-G2-002 | Raw provider/audit evidence could leak through logs/cache/export. | CONTROLLED BY G6 / EXECUTION PROOF PENDING | G3/G6/G8 | Separate permission, no persistent cache, prohibited log fields, redacted support bundles, access audit. |
 | R-G2-003 | Offline cache could be mistaken for authoritative state. | CONTROLLED | G2/G5 | No persistent authoritative cache. |
 | R-G2-004 | Some canonical Admin routes lack dedicated backend resources. | OPEN / NON-BLOCKING | BUILD | Evidence-backed/deferred UI only. |
 | R-G3-001 | Real IdP registration is not provisioned. | OPEN / NON-BLOCKING FOR PREP | G8/BUILD/DEPLOY | Trigger UI-IDP only when real environment registration is needed. |
@@ -20,7 +20,7 @@
 | R-G3-003 | Renderer compromise could invoke broad native commands. | CONTROLLED / PROOF PENDING | G8 | Capability negative tests. |
 | R-G3-004 | Persistent refresh credential could be stolen/replayed. | CONTROLLED | BUILD | OS credential store + rotation/sender-constraining. |
 | R-G3-005 | Loopback OAuth callback could be intercepted/confused. | CONTROLLED | G8 | Loopback-only, ephemeral, exclusive bind, PKCE/state/nonce. |
-| R-G3-006 | Security logging could leak tokens/raw evidence. | CONTROLLED / G6 DETAIL PENDING | G6 | Redaction and support-bundle filtering. |
+| R-G3-006 | Security logging could leak tokens/raw evidence. | CONTROLLED BY G6 / EXECUTION PROOF PENDING | G6/G8 | Explicit prohibited fields, structured safe schema, deterministic support-bundle redaction. |
 | R-G4-001 | Organisation-controlled production Windows signing identity is not provisioned. | OPEN / NON-BLOCKING FOR G4 | G7/G9 | UI-SIGN; unsigned/test-signed proof is explicitly non-production. |
 | R-G4-002 | Enterprise deployment may mandate MSI or per-machine installation. | OPEN / NON-BLOCKING | G7/DEPLOY | NSIS current-user is baseline; add a proven controlled variant only when required. |
 | R-G4-003 | Missing WebView2 on a disconnected device could prevent bootstrapper remediation. | CONTROLLED | G4/G8 | Windows 11 baseline; alternate offline Evergreen installer profile for disconnected deployments. |
@@ -31,3 +31,8 @@
 | R-G5-003 | Frozen certified API only permits SYNTHETIC and liveProviders=false, so STAGING/PRODUCTION profiles cannot currently attest successfully. | OPEN / EXPECTED PLATFORM EXTENSION | BUILD/DEPLOY | CC-G5-001; never bypass prototype boundary with local config. |
 | R-G5-004 | Immutable endpoint binding means routine API/IdP endpoint changes require a new package. | ACCEPTED | G5/G7 | Controlled release cadence; consider authenticated managed configuration only through a future ADR. |
 | R-G5-005 | Build environment variables could leak secrets into the renderer bundle. | CONTROLLED | G5/G7 | No secrets in VITE_*/renderer configuration; profile is non-secret and native-loaded; CI scanning in G7. |
+| R-G6-001 | API does not yet implement validated W3C trace-context correlation or expose server build/version metadata. | OPEN / CONTROLLED PLATFORM EXTENSION | BUILD/G8 | CC-G6-001; retain server-generated request ID and add validated trace context/build identity. |
+| R-G6-002 | Local logs could consume disk or retain sensitive operational metadata too long. | CONTROLLED / PROOF PENDING | G6/G8 | 5 MiB/file, max 5 files, max 7 days; startup pruning and redaction tests. |
+| R-G6-003 | Support-bundle scanner could miss secrets/PII in unexpected log text. | CONTROLLED / PROOF PENDING | G6/G8 | Prohibited logging-by-design plus deterministic redaction/secret-pattern tests; fail bundle creation on unsafe file-processing failure. |
+| R-G6-004 | No central crash/telemetry service means fleet-wide incident detection is limited initially. | ACCEPTED | OPERATIONS | Local-first supportability is sufficient for initial controlled deployment; future central telemetry requires separate privacy/security decision. |
+| R-G6-005 | Full memory dumps may contain credentials/decrypted sensitive evidence. | CONTROLLED | SUPPORT | Do not collect/package dumps by default; separate authorised diagnostic procedure only. |
