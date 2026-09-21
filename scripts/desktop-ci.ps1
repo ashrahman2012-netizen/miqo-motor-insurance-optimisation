@@ -65,8 +65,8 @@ if (-not (Test-Path $desktopPackage)) { throw "Full mode requires $desktopPackag
 if (-not (Test-Path $cargoManifest)) { throw "Full mode requires $cargoManifest." }
 
 $tauriVersion = (cargo tauri --version).Trim()
-if (-not $tauriVersion.Contains("2.11.5")) {
-  throw "Tauri CLI mismatch. Expected 2.11.5, got '$tauriVersion'."
+if (-not $tauriVersion.Contains("2.11.4")) {
+  throw "Tauri CLI mismatch. Expected 2.11.4, got '$tauriVersion'."
 }
 
 Invoke-Step "Desktop typecheck" { npm run typecheck -w @miqo/admin-desktop }
