@@ -1,103 +1,106 @@
 # Decision Log
 
 ## D-G0-001 — Desktop PREP upstream baseline
-
-**Decision:** Base Desktop PREP on `miqos/app-build-001` at `ce211bf4e23643f1eab75e865210f4de121841fb`.
+Base Desktop PREP on miqos/app-build-001 at ce211bf4e23643f1eab75e865210f4de121841fb.
 
 ## D-G0-002 — Execution branch
-
-**Decision:** Create `miqos/desktop-prep-001` directly from the certified SHA.
+Create miqos/desktop-prep-001 directly from the certified SHA.
 
 ## D-G0-003 — Package-management baseline
-
-**Decision:** Preserve the existing npm workspaces and lockfile model during G0.
+Preserve the existing npm workspaces and lockfile model.
 
 ## D-G1-001 — Desktop host architecture
-
-**Decision:** Select **Tauri 2 + React/TypeScript** for the Windows Admin Application.
-
-**Authority:** `01-architecture/adr/ADR-001-tauri-react-windows-admin.md`.
+Select Tauri 2 + React/TypeScript. Authority: ADR-001.
 
 ## D-G1-002 — Dedicated Desktop workspace
-
-**Decision:** Create the Desktop application as a new `apps/admin-desktop` workspace during the authorised scaffold/proof phase.
+Create apps/admin-desktop during the authorised scaffold/proof phase.
 
 ## D-G1-003 — Domain authority remains remote
-
-**Decision:** Keep Fastify/API/domain/PostgreSQL as the authoritative application/domain path.
+Keep Fastify/API/domain/PostgreSQL authoritative.
 
 ## D-G1-004 — Native capabilities are app-local and least privilege
-
-**Decision:** Tauri/Rust commands and plugins must remain app-local and capability-scoped.
+Tauri/Rust commands/plugins remain capability-scoped.
 
 ## D-G1-005 — Packaging details deferred to G4
-
-**Decision:** G1 selects the Tauri Windows packaging family but leaves installer/signing/WebView2 choices to G4.
+Installer/signing/WebView2 choices belong to G4.
 
 ## D-G2-001 — Admin visibility is not Admin mutation authority
-
-**Decision:** Current Desktop Admin domain access is read/inspect.
+Current Desktop Admin domain access is read/inspect.
 
 ## D-G2-002 — No endpoint privilege escalation
-
-**Decision:** Existing general/customer POST/PUT endpoints are not Desktop Admin commands merely because they are reachable.
+General/customer POST/PUT endpoints are not Desktop Admin commands merely because reachable.
 
 ## D-G2-003 — Direct database access prohibited
-
-**Decision:** `apps/admin-desktop` may not depend on `@miqo/db`, PostgreSQL drivers or direct database connectivity.
+apps/admin-desktop may not depend on @miqo/db or direct PostgreSQL connectivity.
 
 ## D-G2-004 — Online authority
-
-**Decision:** Desktop is online-required for authoritative MIQOS state.
+Desktop is online-required for authoritative MIQOS state.
 
 ## D-G2-005 — Sensitive technical evidence remains Admin-only
-
-**Decision:** Raw provider-response and detailed lineage evidence require an Admin-sensitive boundary.
+Raw provider-response and detailed lineage evidence require a higher-sensitivity Admin boundary.
 
 ## D-G2-006 — Native privilege does not confer domain privilege
-
-**Decision:** Tauri core provides OS/security infrastructure only.
+Tauri core provides OS/security infrastructure only.
 
 ## D-G3-001 — Standards-based native authentication
-
-**Decision:** Use OIDC/OAuth 2.0 Authorization Code + PKCE `S256` as a native public client through the system browser.
-
-**Reason:** Native-app security BCP requires an external user-agent and PKCE; a distributed Desktop app cannot safely rely on an embedded client secret.
+Use OIDC/OAuth Authorization Code + PKCE S256 through the system browser.
 
 ## D-G3-002 — Loopback redirect
-
-**Decision:** Use `http://127.0.0.1:{ephemeral-port}/oauth/callback` as the primary Desktop redirect pattern, with loopback-only/exclusive listener controls.
+Use 127.0.0.1 ephemeral-port loopback callback with transaction controls.
 
 ## D-G3-003 — Native token broker
-
-**Decision:** Keep access/refresh credential material outside WebView JavaScript. A native Tauri auth broker owns the OAuth transaction and token lifecycle.
-
-**Authority:** `03-security/adr/ADR-002-native-auth-and-secure-transport.md`.
+Keep token material outside WebView JavaScript. Authority: ADR-002.
 
 ## D-G3-004 — Allow-listed native API transport
-
-**Decision:** Authenticated API calls cross a native transport constrained to the configured MIQOS API origin and approved method/route templates.
-
-A generic arbitrary-URL native HTTP proxy is prohibited.
+Authenticated native transport is constrained to the configured MIQOS API and approved operations.
 
 ## D-G3-005 — Windows user credential storage
-
-**Decision:** If refresh credentials are issued and persistent sign-in is approved, store them through Windows Credential Manager under the current user. Per-user DPAPI is fallback only if a documented implementation constraint requires it.
+If issued/approved, persistent refresh credentials use Windows Credential Manager; per-user DPAPI is fallback only.
 
 ## D-G3-006 — Server-side permission enforcement
-
-**Decision:** The API validates tokens and maps trusted identity to MIQOS permissions. UI visibility is not authorisation.
-
-Initial Desktop permissions remain read-only and include a distinct permission for raw provider evidence.
+API validates tokens and enforces MIQOS permissions.
 
 ## D-G3-007 — Provider-neutral identity architecture
-
-**Decision:** Do not bind PREP to a specific IdP vendor. Issuer/client/audience/role configuration remains environment/deployment configuration behind the OIDC/OAuth standards contract.
+IdP-specific registration remains deployment configuration.
 
 ## D-G3-008 — No persistent business cache
-
-**Decision:** Do not persist authoritative profiles, recommendations, audit evidence, raw provider payloads or integrity state locally by default.
+Do not persist authoritative MIQOS business evidence locally by default.
 
 ## D-G3-009 — Platform security extension under change control
+Production API authn/authz/access-audit is CC-G3-001.
 
-**Decision:** Production API token validation, permission enforcement, session descriptor and sensitive-read access audit are required platform extensions. They must be implemented under explicit downstream change control/revalidation, not silently added to the frozen certified upstream baseline during PREP.
+## D-G4-001 — Windows support baseline
+**Decision:** Windows 11 x64 is the normal initial Desktop support target.
+
+**Reason:** Windows 10 standard support ended on 14 October 2025; unsupported OS operation is not an appropriate default for a security-sensitive Admin application.
+
+## D-G4-002 — Primary installer
+**Decision:** Use Tauri NSIS as the primary Windows installer.
+
+**Reason:** It supports user/machine deployment and silent installation without the current Tauri MSI dependency on WiX v3/VBSCRIPT.
+
+**Authority:** ADR-003.
+
+## D-G4-003 — Default install scope
+**Decision:** Use NSIS currentUser as the default.
+
+**Reason:** MIQOS Admin business permissions do not require Windows administrator privilege. Per-machine install remains a controlled enterprise variant.
+
+## D-G4-004 — WebView2 provisioning
+**Decision:** Use WebView2 Evergreen with embedded bootstrapper fallback.
+
+**Reason:** Evergreen is the security-serviced Microsoft-recommended default; Fixed Version would move browser-engine patch ownership into MIQOS.
+
+## D-G4-005 — Downgrade and update
+**Decision:** Block downgrades. Use controlled versioned installer replacement initially; do not enable the Tauri self-updater in the first skeleton.
+
+## D-G4-006 — Production signing boundary
+**Decision:** Production executables/installers require Authenticode signing with SHA-256 and trusted timestamping. Private signing key material remains external to source and ordinary build jobs.
+
+## D-G4-007 — Application packaging identity
+**Decision:** Freeze product name MIQOS Admin, binary miqos-admin, technical Tauri identifier com.miqos.admin.desktop and initial PREP version 0.1.0.
+
+Changing the identifier after packaging certification requires change control.
+
+## D-G4-008 — G4 versus G8 proof boundary
+**Decision:** G4 certifies a reproducible packaging design/readiness contract. Real package generation, installation, upgrade, downgrade rejection and uninstall evidence remain mandatory in G8.
