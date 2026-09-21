@@ -16,21 +16,15 @@
 
 **Decision:** Preserve the existing npm workspaces and lockfile model during G0.
 
-**Evidence:** Root `package.json` declares npm 10.9.2, Node 22.16.0 and workspaces `apps/*`, `packages/*`; `package-lock.json` is present.
-
 ## D-G1-001 — Desktop host architecture
 
 **Decision:** Select **Tauri 2 + React/TypeScript** for the Windows Admin Application.
-
-**Reason:** It preserves the certified React/ViewModel investment while providing an explicit capability-controlled native boundary and Windows installer path without bundling a Node/Chromium privileged runtime.
 
 **Authority:** `01-architecture/adr/ADR-001-tauri-react-windows-admin.md`.
 
 ## D-G1-002 — Dedicated Desktop workspace
 
 **Decision:** Create the Desktop application as a new `apps/admin-desktop` workspace during the authorised scaffold/proof phase.
-
-**Reason:** The certified `apps/admin-web` host contains Next.js routing/server assumptions and must remain independently valid.
 
 ## D-G1-003 — Domain authority remains remote
 
@@ -42,4 +36,32 @@
 
 ## D-G1-005 — Packaging details deferred to G4
 
-**Decision:** G1 selects the Tauri Windows packaging family but does not pre-select MSI versus NSIS, WebView2 provisioning mode, signing identity or updater configuration. Those are controlled G4 decisions backed by executable packaging evidence.
+**Decision:** G1 selects the Tauri Windows packaging family but does not pre-select MSI versus NSIS, WebView2 provisioning mode, signing identity or updater configuration.
+
+## D-G2-001 — Admin visibility is not Admin mutation authority
+
+**Decision:** The current Desktop Admin capability boundary is read/inspect for authoritative MIQOS domain state.
+
+**Reason:** The certified API's current `/admin/*` resources are GET-only and the frozen Admin IA does not grant locked-profile mutation, audit rewriting, ranking override or provider activation.
+
+## D-G2-002 — No endpoint privilege escalation
+
+**Decision:** Existing general/customer POST/PUT endpoints are not Desktop Admin commands merely because they are reachable.
+
+A future Admin mutation requires an explicit server-authorised command contract with authentication, authorisation, audit, validation and retry/idempotency semantics.
+
+## D-G2-003 — Direct database access prohibited
+
+**Decision:** `apps/admin-desktop` may not depend on `@miqo/db`, PostgreSQL drivers or direct database connectivity.
+
+## D-G2-004 — Online authority
+
+**Decision:** Desktop is online-required for authoritative MIQOS state. Offline mode may show shell/build identity/disconnected states but may not calculate or mutate authoritative domain outcomes.
+
+## D-G2-005 — Sensitive technical evidence remains Admin-only
+
+**Decision:** Raw provider-response and detailed lineage evidence may be surfaced to authorised Admin users but must not leak into customer contracts, logs or uncontrolled local files.
+
+## D-G2-006 — Native privilege does not confer domain privilege
+
+**Decision:** Tauri core may later provide authorised OS functions only. It does not gain MIQOS business authority by virtue of running natively.
