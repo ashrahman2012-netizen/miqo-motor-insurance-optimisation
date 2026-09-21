@@ -162,7 +162,9 @@ fn runtime_profile() -> Result<RuntimeProfile, String> {
         authentication_mode: "NON_PRODUCTION_STUB".to_string(),
         build_version: env!("CARGO_PKG_VERSION").to_string(),
         build_id: option_env!("MIQO_BUILD_ID").unwrap_or("local").to_string(),
-        source_commit: option_env!("MIQO_SOURCE_COMMIT").unwrap_or("local").to_string(),
+        source_commit: option_env!("MIQO_SOURCE_COMMIT")
+            .unwrap_or("local")
+            .to_string(),
         deployment_profile_sha256: profile_hash,
     })
 }
