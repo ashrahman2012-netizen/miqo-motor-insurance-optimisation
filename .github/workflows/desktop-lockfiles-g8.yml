@@ -6,25 +6,23 @@ on:
       - miqos/desktop-prep-001
     paths:
       - ".github/workflows/desktop-lockfiles-g8.yml"
-      - "apps/admin-desktop/**"
-  pull_request:
-    paths:
-      - ".github/workflows/desktop-lockfiles-g8.yml"
-      - "apps/admin-desktop/**"
+      - "apps/admin-desktop/package.json"
+      - "apps/admin-desktop/src-tauri/Cargo.toml"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lockfiles:
     runs-on: windows-2025
     timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Checkout controlled branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          persist-credentials: false
+          ref: miqos/desktop-prep-001
+          persist-credentials: true
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -38,26 +36,22 @@ jobs:
           rustup toolchain install 1.98.1 --profile minimal
           rustup default 1.98.1
 
-      - name: Generate npm lockfile
-        shell: pwsh
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-
-      - name: Generate Cargo lockfile
-        shell: pwsh
-        run: cargo generate-lockfile --manifest-path apps/admin-desktop/src-tauri/Cargo.toml
-
-      - name: Stage lockfiles
+      - name: Generate lockfiles
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force lockfiles/apps/admin-desktop/src-tauri | Out-Null
-          Copy-Item package-lock.json lockfiles/package-lock.json
-          Copy-Item apps/admin-desktop/src-tauri/Cargo.lock lockfiles/apps/admin-desktop/src-tauri/Cargo.lock
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          cargo generate-lockfile --manifest-path apps/admin-desktop/src-tauri/Cargo.toml
 
-      - name: Upload generated lockfiles
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: desktop-g8-lockfiles
-          path: lockfiles/**
-          if-no-files-found: error
-          retention-days: 1
-          compression-level: 0
+      - name: Commit only generated lockfiles
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json apps/admin-desktop/src-tauri/Cargo.lock
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Lockfiles already current."
+            exit 0
+          }
+          git commit -m "DESKTOP G8.1: lock desktop dependencies"
+          git push origin HEAD:miqos/desktop-prep-001
