@@ -1,15 +1,9 @@
 # DB-G2 evidence — Desktop Application Foundation
 
-**Status:** IN PROGRESS — source implementation committed; CI/G7/G8 validation pending.
+**Status:** PASS
 
-Required acceptance will record:
+- Accepted executable source: `34ab244b28e6f97f89bc823e18232986e31e1144`
+- [Acceptance](acceptance.md)
+- [Workflow and artifact evidence](workflow-evidence.md)
 
-- source delta and boundary review;
-- Desktop typecheck/tests/build;
-- repository push/PR CI;
-- Windows Desktop G7 package proof;
-- installed G8 regression proof;
-- exact executable source SHA;
-- no new native/API/database/mutation authority.
-
-DB-G2 must remain TEST/SYNTHETIC and preserve the inherited G8 installed-proof expectations.
+DB-G2 proves the real Desktop shell/routing foundation and preserves the inherited installed/package/native/API controls. Deep evidence surfaces remain later gateways.

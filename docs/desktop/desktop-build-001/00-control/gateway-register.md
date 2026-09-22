@@ -4,8 +4,8 @@
 |---|---|---|---|
 | DB-G0 | BUILD Entry & Branch Freeze | PASS | [DB-G0 acceptance](../08-evidence/DB-G0/acceptance.md) |
 | DB-G1 | BUILD Control System & UX/Capability Baseline | PASS | [DB-G1 acceptance](../08-evidence/DB-G1/acceptance.md) |
-| DB-G2 | Desktop Application Foundation | **IN PROGRESS** | real shell/routing foundation implementation; exact-SHA CI/G7/G8 evidence pending |
-| DB-G3 | Native Platform, Transport & Environment Boundary | NOT STARTED | separate execution block required |
+| DB-G2 | Desktop Application Foundation | **PASS** | executable source `34ab244b28e6f97f89bc823e18232986e31e1144`; [DB-G2 acceptance](../08-evidence/DB-G2/acceptance.md); CI #675/#676, G7 #213, G8 #33 SUCCESS |
+| DB-G3 | Native Platform, Transport & Environment Boundary | NOT STARTED | separate controlled execution required |
 | DB-G4 | Core Admin Evidence Surfaces | NOT STARTED | separate execution block required |
 | DB-G5 | Deep Audit, Trace & Decision-Evidence Surfaces | NOT STARTED | separate execution block required |
 | DB-G6 | Observability, Diagnostics & Supportability | NOT STARTED | separate execution block required |

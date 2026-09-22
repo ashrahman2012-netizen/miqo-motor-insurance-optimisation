@@ -1,14 +1,15 @@
 # BUILD blocker and dependency register
 
-## Active DB-G1 blockers
+## Active DB-G2 blockers
 
-None at DB-G1 control freeze. The verified UX archive matches the DB-G0 SHA-256 and all seven images were inspected directly. No visual requirement requires changing a frozen PREP architecture, security, environment or mutation boundary.
+None. DB-G2 source passed repository CI, Windows full package proof, API integration and installed Windows regression proof.
 
 ## Resolved execution conditions
 
 - B-DB-G0-001: required handover initially absent; resolved before DB-G0.
 - B-DB-G0-002: local Git helper/network acquisition issue; resolved during DB-G0 without repository changes.
-- B-DB-G1-001: Codex usage limit prevented agent execution; controller switched DB-G1 to direct ChatGPT + GitHub execution because DB-G1 is documentation/control-only. No partial Codex source change existed.
+- B-DB-G1-001: Codex usage limit prevented agent execution; DB-G1 completed directly through the controller/GitHub because it was documentation/control-only.
+- B-DB-G2-001: no separate Codex capacity was required to start the authorised foundation; implementation and executable evidence completed through the controlled GitHub path.
 
 ## Carried external dependencies
 

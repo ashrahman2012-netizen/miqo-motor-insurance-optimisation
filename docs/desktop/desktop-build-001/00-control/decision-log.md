@@ -28,4 +28,16 @@
 | D-DB-G1-009 | Demo search becomes local navigation/command or loaded-ViewModel filter only; global search is DEFERRED. | no approved global search resource |
 | D-DB-G1-010 | DB-G2 priority is shell/routing/shared primitives/page states; deep trace/viewer components are DB-G4/G5. | component inventory/gateway sequence |
 
-DB-G1 approves no architecture, domain methodology, environment, security or mutation-authority change.
+## DB-G2 decisions
+
+| ID | Decision | Authority / evidence |
+|---|---|---|
+| D-DB-G2-001 | Replace proof-only React entry with the real DesktopApp while preserving the G8 native proof contract. | DB-G2 scope + installed proof |
+| D-DB-G2-002 | Implement routing with browser history and internal-link interception; add no router dependency. | package/dependency freeze |
+| D-DB-G2-003 | Keep command/search local to navigation/loaded presentation state; no global business-data search. | DB-G1 D-DB-G1-009 |
+| D-DB-G2-004 | Expose all canonical top-level routes with honest READ-ONLY/TRACE-DERIVED/RESERVED states rather than fake records. | DB-G1 IA/capability freeze |
+| D-DB-G2-005 | Retain the representative `PRO-SYN-001` audit read only as inherited executable proof on Dashboard, not product case-list authority. | G8 regression requirement |
+| D-DB-G2-006 | Leave Tauri transport/capability source untouched; transport expansion/hardening belongs to DB-G3. | gateway separation |
+| D-DB-G2-007 | Treat Windows PR artifacts as synthetic-merge evidence paired with exact head/base provenance, not exact branch-SHA packages. | GitHub PR checkout provenance |
+
+No DB-G2 decision changes domain methodology, mutation authority, security identity model or environment authority.
