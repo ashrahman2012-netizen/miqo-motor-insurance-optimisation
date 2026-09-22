@@ -1,60 +1,62 @@
-# Initial Desktop capability register
+# Desktop capability register — DB-G1 frozen BUILD baseline
 
-Status: INITIAL G2 INHERITANCE — DB-G0 only. These are authority classifications, not implementation/completion claims. DB-G1 must later freeze the route/action acceptance baseline.
+**Status:** FROZEN AT DB-G1  
+**Authority:** inherited G2 boundary plus DB-G1 UX/action cross-check. This does not claim implementation completion.
 
-Sources: [capability boundary](../../desktop-prep-001/02-boundary/capability-boundary.md), [interface contract](../../desktop-prep-001/02-boundary/interface-contract.md), [mutation matrix](../../desktop-prep-001/02-boundary/mutation-authority.md).
-
-## Canonical areas
-
-| Area | Initial classification | Evidence / limit |
+| Area | DB-G1 classification | Authority / limit |
 |---|---|---|
-| Dashboard | DERIVED FROM AUTHORITATIVE EVIDENCE | Available approved evidence only; aggregate counts/KPIs/list resources absent from G2 remain DEFERRED. |
-| Cases | READ-ONLY | Exact profile/version inspection; global search/listing DEFERRED without an approved resource. |
-| Optimisation | DEFERRED | G2 catalogue READ CANDIDATE; existing selection trace may only present already-authorised evidence. No choice/save/compute authority. |
-| Scenarios | DEFERRED | G2 READ CANDIDATE; trace evidence may be inspected. No generation or new list resource. |
-| Market Routes | DEFERRED | G2 READ CANDIDATE; trace evidence only where supplied. No execution/activation. |
-| Quote Runs | DEFERRED | G2 READ CANDIDATE; approved raw/normalised trace evidence remains READ-ONLY. No quote execution. |
-| Recommendation Sets | READ-ONLY | Authoritative selection/recommendation lineage; no recomputation, acceptance, reordering or unsupported global listing. |
-| Integrity | READ-ONLY | Authoritative result/trace only; no decision/override. |
-| Discrepancies | READ-ONLY | Approved profile discrepancy resource; no factual correction. |
-| Audit & Trace | READ-ONLY | Approved audit and selection/SP4 trace; raw response remains distinct from normalised quote. |
-| Providers | RESERVED / STATUS-ONLY | G2 reserved; display only authoritative available evidence. No activation/deactivation. |
-| Certification | RESERVED / STATUS-ONLY | G2 reserved; no invented certification or production claim. |
-| System | IMPLEMENT | G2-authorised environment/build/runtime diagnostics, subject to G5/G6. New API build metadata remains CC-G6-001. |
+| Dashboard | DERIVED | approved evidence only; unsupported aggregates DEFERRED |
+| Cases | READ-ONLY / global listing-search DEFERRED | exact profile/version inspection only |
+| Optimisation | DEFERRED / TRACE-DERIVED | no objective/control mutation |
+| Scenarios | DEFERRED / TRACE-DERIVED | no generation |
+| Market Routes | DEFERRED / TRACE-DERIVED | no execution/provider activation |
+| Quote Runs | DEFERRED global list / READ-ONLY trace | no execution/selection |
+| Recommendation Sets | READ-ONLY / global list DEFERRED | no create/reorder/accept |
+| Integrity | READ-ONLY / DERIVED | no evaluation/override |
+| Discrepancies | READ-ONLY | no factual correction |
+| Audit & Trace | READ-ONLY | raw evidence distinct and sensitive |
+| Providers | RESERVED / STATUS-ONLY | no activation/deactivation |
+| Certification | RESERVED / STATUS-ONLY | no inferred certification |
+| System | IMPLEMENT | safe runtime/build/environment diagnostics; API build identity later CC-G6-001 |
 
-## Cross-cutting actions and evidence
+## Approved initial resource basis
 
-| Capability | Classification | Limit |
+`GET /health`; `GET /admin/profiles/:profileId`; `GET /admin/profile-versions/:versionId`; `GET /admin/audit?profileId=...`; `GET /admin/selections/:selectionId/trace`; `GET /admin/selections/:selectionId/sp4-trace`; `GET /quote-requests/:quoteRequestId/raw-response`; `GET /profiles/:profileId/discrepancies`.
+
+The two non-admin-prefixed resources remain authorised only for read-only evidence composition.
+
+## Action-level authority
+
+| Action / affordance | Classification | Rule |
 |---|---|---|
-| Shell/navigation, local route/filter/highlight state, open/copy opaque IDs | IMPLEMENT | Presentation-only; native privilege remains separately constrained. |
-| Local ViewModel search/filter | IMPLEMENT | Operates on available API evidence; no invented backend search. |
-| Refresh approved evidence | READ-ONLY | Safe/idempotent reads only; preserve failures. |
-| Profile/version, audit, selection lineage, normalised quote, discrepancies, integrity inspection | READ-ONLY | API/domain owns all truth. |
-| Raw provider response inspection | READ-ONLY | Admin-only higher-sensitivity permission; no default local export/cache/logging. |
-| Trace-derived presentation | DERIVED FROM AUTHORITATIVE EVIDENCE | Composition only; no new business conclusions or new endpoint authority. |
-| Create/edit/lock profile; correction drafts; objective/optimisation selection; scenario generation; quote execution/selection; recommendation acceptance; customer handoff/purchase | PROHIBITED | Not authorised as Desktop Admin under frozen G2; future command requires separate admission. |
-| Locked-fact modification; eligibility/comparison/ranking/recommendation/integrity override; audit mutation/deletion | PROHIBITED | Certified domain invariants. |
-| Direct PostgreSQL or @miqo/db; local business-rule execution | PROHIBITED | Remote API/domain authority. |
-| Provider activation or live quotation | PROHIBITED | No authority from local flags, reachable endpoints or demo. |
-| Generic HTTP proxy, shell/filesystem bridge, remote executable UI | PROHIBITED | Default-deny native security boundary. |
+| route navigation | IMPLEMENT | presentation only |
+| local filtering/sorting of loaded ViewModels | IMPLEMENT | no global search inference |
+| top command/navigation affordance | IMPLEMENT local-only | global entity search DEFERRED |
+| refresh approved read | READ-ONLY | safe/idempotent reads only |
+| copy opaque technical ID/fingerprint | IMPLEMENT | no business-payload export |
+| profile/version/audit/trace/discrepancy/normalised quote inspection | READ-ONLY | API authoritative |
+| raw provider inspection | sensitive READ-ONLY | permission/access audit; no default persistence/log/export |
+| integrity inspection | READ-ONLY / DERIVED | unknown/missing never PASS |
+| objective/scenario/route/quote/recommendation display from trace | DERIVED | no local business conclusion |
+| provider/certification status | RESERVED / STATUS-ONLY | supplied status only |
+| system diagnostics | IMPLEMENT | safe non-secret runtime data |
+| profile edit, discrepancy update, lock, correction draft | PROHIBITED | no Admin factual mutation |
+| objective change / optimisation controls / scenario generation | PROHIBITED | inspect only |
+| quote execution/selection/customer comparison action | PROHIBITED | inspect only |
+| recommendation create/reorder/accept | PROHIBITED | domain authority |
+| customer handoff / Go to Insurer | PROHIBITED | customer application responsibility |
+| Send customer summary | PROHIBITED unless separately designed/authorised | no command/audit/permission contract |
+| ranking/comparison/integrity override | PROHIBITED | certified authority only |
+| audit mutation/deletion | PROHIBITED | append-only |
+| provider activation/deactivation | PROHIBITED / DEFERRED | separate activation authority |
+| direct PostgreSQL / `@miqo/db` | PROHIBITED | service/API boundary only |
+| generic native HTTP or shell/filesystem bridge | PROHIBITED | least-privilege native boundary |
+| remote executable UI | PROHIBITED | packaged local content only |
 
-## Initial resource allow-list basis
+Every material interactive customer action visible in the seven-screen demo is now explicitly excluded or deferred unless already authorised as read/local presentation behaviour.
 
-All are GET/read-only; no new resource is introduced by this register.
+## New-consumption admission
 
-| Resource | Authoritative owner / evidence |
-|---|---|
-| /health | API runtime/environment preflight |
-| /admin/profiles/:profileId | Profile/audit/discrepancy services |
-| /admin/profile-versions/:versionId | Profile service |
-| /admin/audit?profileId=... | Append-only audit |
-| /admin/selections/:selectionId/trace | Selection trace service |
-| /admin/selections/:selectionId/sp4-trace | SP4 trace service |
-| /quote-requests/:quoteRequestId/raw-response | Provider-response evidence; sensitive Admin read |
-| /profiles/:profileId/discrepancies | Discrepancy evidence |
+Before any new resource is used, record resource, method, owner, read/mutation class, authentication, permission, audit requirement, retry/idempotency, ViewModel mapping and failure mapping. Endpoint reachability is not authorisation.
 
-The last two non-admin-prefixed endpoints are permitted only for read-only evidence composition. Shared adapters map DTOs to ViewModels; they do not fetch, persist or authorise. Server permission/access-audit implementation remains CC-G3-001; this is not a claim of production security completion.
-
-Preserve success → authoritative content; 404/absence → EMPTY/not-found; 409 → BLOCKED; 422 → BLOCKED with reason; unknown environment → NOT_AUTHORISED/fail closed; network/server failure → ERROR; partial → PARTIAL. Never turn missing evidence into zero/success/PASS.
-
-New consumption must record resource, method, owner, read/mutation class, authentication, permission, audit, safe retry/idempotency, ViewModel and failure mappings before use.
+Preserve success → authoritative content; absence → EMPTY/not-found; 409 → BLOCKED; 422 → BLOCKED with reason; unknown environment → NOT_AUTHORISED; network/server failure → ERROR; partial → PARTIAL. Never upgrade missing/blocked/excluded/non-comparable evidence to a favourable state.

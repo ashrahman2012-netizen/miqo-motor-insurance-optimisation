@@ -1,14 +1,31 @@
-# DB-G0 decision log
+# BUILD decision log
+
+## DB-G0 decisions
 
 | ID | Decision | Authority / evidence |
 |---|---|---|
-| D-DB-G0-001 | Create BUILD directly from exact G9 closeout in a separate local worktree. | Handover §18; entry evidence records identical tree and 0/0 comparison. |
-| D-DB-G0-002 | Limit this execution to documentation/control paths; stop after DB-G0. | Launch instruction; handover §18–19. |
-| D-DB-G0-003 | Inherit certified PREP controls and ADR-001 through ADR-005 unchanged. | PREP controls at G9 source. |
-| D-DB-G0-004 | Record UX archive identity only; formal visual adoption and IA/component decisions await DB-G1. | Handover §6, §19. |
-| D-DB-G0-005 | Preserve G2 read candidates as DEFERRED pending evidence/contract assessment; do not promote them to authorised consumption. | PREP capability boundary and interface contract. |
-| D-DB-G0-006 | Carry every PREP risk by original ID and preserve downstream external dependencies/change controls. | PREP risk, blocker and change registers. |
-| D-DB-G0-007 | Validate docs with provenance/path/link/whitespace checks and existing pin/boundary checks; use unchanged repository CI for regression. | DB-G0 documentation-only validation scope. |
-| D-DB-G0-008 | Treat supplied plan's broader execution route as context, subordinate to the active DB-G0-only block. Use handover INV-D numbering (15 invariants), not the plan's older 14-item numbering. | Handover §4, §8, §18. |
+| D-DB-G0-001 | Create BUILD directly from exact G9 closeout in a separate worktree. | DB-G0 entry evidence. |
+| D-DB-G0-002 | Limit DB-G0 to documentation/control paths. | DB-G0 execution block. |
+| D-DB-G0-003 | Inherit certified PREP controls and ADR-001 through ADR-005 unchanged. | PREP G9 controls. |
+| D-DB-G0-004 | Record UX identity only; adoption/IA/components await DB-G1. | Handover. |
+| D-DB-G0-005 | Keep G2 read candidates DEFERRED pending contract assessment. | PREP G2. |
+| D-DB-G0-006 | Carry PREP risks/dependencies/change controls. | PREP registers. |
+| D-DB-G0-007 | Use docs/provenance/boundary validation and repository CI. | DB-G0 scope. |
+| D-DB-G0-008 | Active gateway block outranks broader route context. | Handover. |
 
-No architecture or business-authority conflict was found. Historical PREP documents retain earlier-stage wording (for example Full-mode readiness and proof-pending risk labels); current G9 closeout establishes completed PREP proof. This does not establish BUILD product proof or automatically close inherited BUILD risks.
+## DB-G1 decisions
+
+| ID | Decision | Authority / evidence |
+|---|---|---|
+| D-DB-G1-001 | Verified seven-screen demo is primary visual/interaction reference, not functional authority. | direct archive/image inspection + PREP controls |
+| D-DB-G1-002 | Foundation/App Shell sheet is primary visual-system reference, implemented through `@miqo/ui` v1.1. | demo screen 7 + UI tokens/exports |
+| D-DB-G1-003 | Audit & Trace Console is primary Admin operational UX reference. | demo screen 6 + G2 read boundary |
+| D-DB-G1-004 | Customer mutation/selection/handoff controls shown in demo are excluded from Desktop Admin. | G2 mutation matrix |
+| D-DB-G1-005 | Canonical Desktop Admin route/navigation baseline is frozen by the DB-G1 IA; route existence is not authority. | G2 + DB-G1 cross-check |
+| D-DB-G1-006 | Deferred/reserved routes may exist only with honest capability states and no fabricated data. | R-G2-004 / interface contract |
+| D-DB-G1-007 | `@miqo/ui` remains shared host-neutral semantic design-system authority; Desktop owns page composition/orchestration. | target architecture/UI ownership |
+| D-DB-G1-008 | Dense evidence UX must preserve semantic status, material dimensions and accessibility. | UX-D invariants/accessibility baseline |
+| D-DB-G1-009 | Demo search becomes local navigation/command or loaded-ViewModel filter only; global search is DEFERRED. | no approved global search resource |
+| D-DB-G1-010 | DB-G2 priority is shell/routing/shared primitives/page states; deep trace/viewer components are DB-G4/G5. | component inventory/gateway sequence |
+
+DB-G1 approves no architecture, domain methodology, environment, security or mutation-authority change.

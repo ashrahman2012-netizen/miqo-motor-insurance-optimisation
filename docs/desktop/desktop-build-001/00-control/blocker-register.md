@@ -1,24 +1,25 @@
 # BUILD blocker and dependency register
 
-## Active DB-G0 blockers
+## Active DB-G1 blockers
 
-None after handover availability, exact-source fetch and provenance verification. Local validation and push/PR repository CI passed on the control-establishment revision; see DB-G0 acceptance.
+None at DB-G1 control freeze. The verified UX archive matches the DB-G0 SHA-256 and all seven images were inspected directly. No visual requirement requires changing a frozen PREP architecture, security, environment or mutation boundary.
 
-## Resolved entry conditions
+## Resolved execution conditions
 
-- B-DB-G0-001: Required handover initially absent; supplied at the user-designated path and read on 2026-09-22. SHA-256 recorded in baseline.
-- B-DB-G0-002: Bundled Git HTTPS helper was outside its default exec path; a process-local GIT_EXEC_PATH located the installed helper. The sandbox network was unavailable; authorised escalated fetch succeeded. No repository/toolchain files changed.
+- B-DB-G0-001: required handover initially absent; resolved before DB-G0.
+- B-DB-G0-002: local Git helper/network acquisition issue; resolved during DB-G0 without repository changes.
+- B-DB-G1-001: Codex usage limit prevented agent execution; controller switched DB-G1 to direct ChatGPT + GitHub execution because DB-G1 is documentation/control-only. No partial Codex source change existed.
 
 ## Carried external dependencies
 
-| ID | Need / checkpoint | When blocking | DB-G0 state |
+| ID | Need / checkpoint | When blocking | Current state |
 |---|---|---|---|
-| D-G3-IDP-001 | Real native/public-client IdP registration, issuer, audience, scopes, redirect and role mapping; UI-IDP. | Real-environment authentication proof. | OPEN, non-blocking for docs. |
-| D-G4-SIGN-001 | Organisation Authenticode identity and protected release access; UI-SIGN. | Production signing/release proof. | OPEN, non-blocking for docs. |
-| D-G5-ENV-001 | Approved real API/IdP/profile values; UI-ENV with UI-IDP. | STAGING/CERTIFICATION or PRODUCTION operation. | OPEN, non-blocking for docs. |
-| CC-G3-001 | API authentication, authorisation and access audit. | Authenticated product/platform implementation and proof under later scope. | OPEN, no implementation in DB-G0. |
-| CC-G5-001 | Certification/production environment authority. | Any non-synthetic operation or activation. | OPEN; existing startup guards retained. |
-| CC-G6-001 | Validated trace context and API build identity. | Later observability integration and proof. | OPEN, no implementation in DB-G0. |
-| R-G7-008 | Four inherited moderate npm findings recorded by PREP. | Controlled dependency assessment before release and BUILD hardening. | OPEN; no fresh audit or lockfile update claimed. |
+| D-G3-IDP-001 | real native/public-client IdP registration; UI-IDP | real-environment auth proof | OPEN |
+| D-G4-SIGN-001 | organisation Authenticode identity; UI-SIGN | production signing/release proof | OPEN |
+| D-G5-ENV-001 | approved real API/IdP/profile values; UI-ENV | non-synthetic operation | OPEN |
+| CC-G3-001 | API authentication, permissions, sensitive-read audit, 401/403 | DB-G7 | OPEN / CONTROLLED |
+| CC-G5-001 | certification/production environment authority | non-synthetic activation | OPEN / CONTROLLED |
+| CC-G6-001 | validated trace context/API build identity | DB-G6 | OPEN / CONTROLLED |
+| R-G7-008 | inherited moderate npm findings | dependency assessment before closeout/release | OPEN |
 
-The [PREP blocker record](../../desktop-prep-001/00-control/blocker-register.md) retains resolved G7/G8 history. Those defects are not reopened without new evidence. Production secrets must remain outside source/chat/ordinary artefacts.
+Production secrets remain outside source/chat/ordinary artefacts.

@@ -2,17 +2,17 @@
 
 | Gateway | Title | Status | Evidence / authority |
 |---|---|---|---|
-| DB-G0 | BUILD Entry & Branch Freeze | PASS | [DB-G0 evidence](../08-evidence/DB-G0/acceptance.md) |
-| DB-G1 | BUILD Control System & UX/Capability Baseline | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G2 | Desktop Application Foundation | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G3 | Native Platform, Transport & Environment Boundary | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G4 | Core Admin Evidence Surfaces | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G5 | Deep Audit, Trace & Decision-Evidence Surfaces | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G6 | Observability, Diagnostics & Supportability | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G7 | Identity, Authentication & Authorisation | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G8 | Remaining Admin Areas & Capability Closure | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G9 | Installed Windows Application & Package Lifecycle Proof | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G10 | Accessibility, Security & Cross-Stack Hardening | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
-| DB-G11 | Desktop BUILD Certification & Closeout | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
+| DB-G0 | BUILD Entry & Branch Freeze | PASS | [DB-G0 acceptance](../08-evidence/DB-G0/acceptance.md) |
+| DB-G1 | BUILD Control System & UX/Capability Baseline | **IN PROGRESS** | control/UX baseline committed; acceptance waits for exact-SHA repository/PR CI |
+| DB-G2 | Desktop Application Foundation | NOT STARTED | separate execution block required |
+| DB-G3 | Native Platform, Transport & Environment Boundary | NOT STARTED | separate execution block required |
+| DB-G4 | Core Admin Evidence Surfaces | NOT STARTED | separate execution block required |
+| DB-G5 | Deep Audit, Trace & Decision-Evidence Surfaces | NOT STARTED | separate execution block required |
+| DB-G6 | Observability, Diagnostics & Supportability | NOT STARTED | separate execution block required |
+| DB-G7 | Identity, Authentication & Authorisation | NOT STARTED | separate execution block required |
+| DB-G8 | Remaining Admin Areas & Capability Closure | NOT STARTED | separate execution block required |
+| DB-G9 | Installed Windows Application & Package Lifecycle Proof | NOT STARTED | separate execution block required |
+| DB-G10 | Accessibility, Security & Cross-Stack Hardening | NOT STARTED | separate execution block required |
+| DB-G11 | Desktop BUILD Certification & Closeout | NOT STARTED | separate execution block required |
 
-Stop after DB-G0. A PASS is gateway-specific and never authorises production release or skips a later gate.
+No gateway PASS authorises production release or skips a later gate.
