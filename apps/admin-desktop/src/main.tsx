@@ -1,8 +1,8 @@
 import React from "react";
-import { createRoot } from "react-dom/client";
+import {createRoot} from "react-dom/client";
 import "@miqo/ui/styles.css";
 import "./styles.css";
-import { ScaffoldApp } from "./app/ScaffoldApp";
+import {DesktopApp} from "./app/DesktopApp";
 
 const rootElement = document.getElementById("root");
 
@@ -12,6 +12,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <ScaffoldApp />
+    <DesktopApp />
   </React.StrictMode>
 );

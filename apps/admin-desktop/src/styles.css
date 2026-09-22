@@ -4,12 +4,119 @@ body,
   min-height: 100%;
 }
 
-.desktop-proof-section {
-  margin-top: 1rem;
+.desktop-command-bar {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(260px, 620px);
+  margin: -0.35rem 0 1.5rem;
 }
 
-.desktop-proof-reference {
-  font-family: var(--miqos-font-mono);
+.desktop-command-bar__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.desktop-command-bar__field label {
+  color: var(--miqos-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.desktop-command-bar__field span {
   color: var(--miqos-text-tertiary);
+  font-size: 0.72rem;
+}
+
+.desktop-command-bar__results {
+  position: absolute;
+  top: 4.75rem;
+  left: 0;
+  width: min(100%, 620px);
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.45rem;
+  list-style: none;
+  border: 1px solid var(--miqos-border-active);
+  border-radius: var(--miqos-radius-md);
+  background: var(--miqos-surface-primary);
+  box-shadow: var(--miqos-shadow-card);
+}
+
+.desktop-command-bar__results button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 0;
+  border-radius: var(--miqos-radius-sm);
+  background: transparent;
+  color: var(--miqos-text-primary);
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.desktop-command-bar__results button:hover,
+.desktop-command-bar__results button:focus-visible {
+  background: var(--miqos-surface-secondary);
+}
+
+.desktop-foundation-proof {
+  margin-top: 1.25rem;
+}
+
+.desktop-runtime-warning {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.desktop-runtime-warning code,
+.desktop-technical-reference {
+  color: var(--miqos-text-tertiary);
+  font-family: var(--miqos-font-mono);
+  font-size: 0.76rem;
   overflow-wrap: anywhere;
+}
+
+.desktop-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.5rem 0 0.8rem;
+}
+
+.desktop-section-heading h2,
+.desktop-kicker {
+  margin: 0;
+}
+
+.desktop-kicker {
+  color: var(--miqos-brand-cyan);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.desktop-capability-note {
+  margin-bottom: 0;
+  color: var(--miqos-text-tertiary);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 767px) {
+  .desktop-command-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .desktop-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

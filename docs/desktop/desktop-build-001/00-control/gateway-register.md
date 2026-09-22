@@ -3,8 +3,8 @@
 | Gateway | Title | Status | Evidence / authority |
 |---|---|---|---|
 | DB-G0 | BUILD Entry & Branch Freeze | PASS | [DB-G0 acceptance](../08-evidence/DB-G0/acceptance.md) |
-| DB-G1 | BUILD Control System & UX/Capability Baseline | **PASS** | [DB-G1 acceptance](../08-evidence/DB-G1/acceptance.md); accepted control revision `e832fa8344745222fa060bb19f4a9175b2e78dd7`; CI #671/#672 SUCCESS |
-| DB-G2 | Desktop Application Foundation | NOT STARTED | separate controller execution block required |
+| DB-G1 | BUILD Control System & UX/Capability Baseline | PASS | [DB-G1 acceptance](../08-evidence/DB-G1/acceptance.md) |
+| DB-G2 | Desktop Application Foundation | **IN PROGRESS** | real shell/routing foundation implementation; exact-SHA CI/G7/G8 evidence pending |
 | DB-G3 | Native Platform, Transport & Environment Boundary | NOT STARTED | separate execution block required |
 | DB-G4 | Core Admin Evidence Surfaces | NOT STARTED | separate execution block required |
 | DB-G5 | Deep Audit, Trace & Decision-Evidence Surfaces | NOT STARTED | separate execution block required |
