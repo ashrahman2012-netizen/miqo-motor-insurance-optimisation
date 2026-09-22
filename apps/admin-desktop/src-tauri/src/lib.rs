@@ -13,6 +13,15 @@ use tauri::Manager;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 const DEPLOYMENT_PROFILE_JSON: &str = include_str!("../resources/deployment-profile.test.json");
+const DEPLOYMENT_PROFILE_SCHEMA: &str = "miqos-desktop-config-v1";
+const TEST_PROFILE_ID: &str = "test-synthetic";
+const TEST_DEPLOYMENT_STAGE: &str = "TEST";
+const TEST_APPLICATION_ENVIRONMENT: &str = "SYNTHETIC";
+const TEST_API_BASE_URL: &str = "http://127.0.0.1:4000";
+const TEST_API_SERVICE: &str = "127.0.0.1:4000";
+const TEST_API_AUDIENCE: &str = "miqos-api-test";
+const TEST_OIDC_ISSUER: &str = "https://identity.test.invalid";
+const TEST_OIDC_CLIENT_ID: &str = "miqos-admin-test-public";
 const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_LOG_FILES: usize = 5;
 const MAX_LOG_AGE: StdDuration = StdDuration::from_secs(7 * 24 * 60 * 60);
@@ -80,6 +89,37 @@ struct AdminProfileAuditEvidence {
     discrepancies: Vec<Value>,
 }
 
+#[derive(Debug)]
+enum ApiReadOperation<'a> {
+    Health,
+    AdminAudit { profile_id: &'a str },
+    Discrepancies { profile_id: &'a str },
+}
+
+impl<'a> ApiReadOperation<'a> {
+    fn admin_audit(profile_id: &'a str) -> Result<Self, String> {
+        validate_profile_id(profile_id)?;
+        Ok(Self::AdminAudit { profile_id })
+    }
+
+    fn discrepancies(profile_id: &'a str) -> Result<Self, String> {
+        validate_profile_id(profile_id)?;
+        Ok(Self::Discrepancies { profile_id })
+    }
+
+    fn path(&self) -> String {
+        match self {
+            Self::Health => "/health".to_string(),
+            Self::AdminAudit { profile_id } => {
+                format!("/admin/audit?profileId={profile_id}")
+            }
+            Self::Discrepancies { profile_id } => {
+                format!("/profiles/{profile_id}/discrepancies")
+            }
+        }
+    }
+}
+
 fn timestamp_utc() -> String {
     OffsetDateTime::now_utc()
         .format(&Rfc3339)
@@ -100,8 +140,8 @@ fn emit_info(code: &str, operation: &str, outcome: &str, reason: Option<&str>) {
             "appVersion": env!("CARGO_PKG_VERSION"),
             "buildId": option_env!("MIQO_BUILD_ID").unwrap_or("local"),
             "sourceCommit": option_env!("MIQO_SOURCE_COMMIT").unwrap_or("local"),
-            "deploymentStage": "TEST",
-            "applicationEnvironment": "SYNTHETIC"
+            "deploymentStage": TEST_DEPLOYMENT_STAGE,
+            "applicationEnvironment": TEST_APPLICATION_ENVIRONMENT
         })
     );
 }
@@ -120,31 +160,50 @@ fn emit_error(code: &str, operation: &str, reason: &str) {
             "appVersion": env!("CARGO_PKG_VERSION"),
             "buildId": option_env!("MIQO_BUILD_ID").unwrap_or("local"),
             "sourceCommit": option_env!("MIQO_SOURCE_COMMIT").unwrap_or("local"),
-            "deploymentStage": "TEST",
-            "applicationEnvironment": "SYNTHETIC"
+            "deploymentStage": TEST_DEPLOYMENT_STAGE,
+            "applicationEnvironment": TEST_APPLICATION_ENVIRONMENT
         })
     );
+}
+
+fn validate_deployment_profile(profile: &DeploymentProfile) -> Result<(), String> {
+    if profile.schema_version != DEPLOYMENT_PROFILE_SCHEMA {
+        return Err("DESKTOP_CONFIG_SCHEMA_NOT_AUTHORISED".to_string());
+    }
+
+    if profile.profile_id != TEST_PROFILE_ID
+        || profile.deployment_stage != TEST_DEPLOYMENT_STAGE
+        || profile.application_environment != TEST_APPLICATION_ENVIRONMENT
+    {
+        return Err("DESKTOP_CONFIG_ENVIRONMENT_NOT_AUTHORISED".to_string());
+    }
+
+    if profile.api.base_url != TEST_API_BASE_URL || profile.api.audience != TEST_API_AUDIENCE {
+        return Err("DESKTOP_CONFIG_API_NOT_AUTHORISED".to_string());
+    }
+
+    if profile.oidc.issuer != TEST_OIDC_ISSUER
+        || profile.oidc.client_id != TEST_OIDC_CLIENT_ID
+        || profile.oidc.scopes != ["openid".to_string(), "profile".to_string()]
+    {
+        return Err("DESKTOP_CONFIG_IDENTITY_NOT_AUTHORISED".to_string());
+    }
+
+    let features = profile
+        .features
+        .as_object()
+        .ok_or_else(|| "DESKTOP_CONFIG_FEATURES_INVALID".to_string())?;
+    if !features.is_empty() {
+        return Err("DESKTOP_CONFIG_UNKNOWN_FEATURE_FLAG".to_string());
+    }
+
+    Ok(())
 }
 
 fn deployment_profile() -> Result<DeploymentProfile, String> {
     let profile: DeploymentProfile = serde_json::from_str(DEPLOYMENT_PROFILE_JSON)
         .map_err(|_| "DESKTOP_CONFIG_INVALID".to_string())?;
-
-    let coherent = profile.schema_version == "miqos-desktop-config-v1"
-        && profile.profile_id == "test-synthetic"
-        && profile.deployment_stage == "TEST"
-        && profile.application_environment == "SYNTHETIC"
-        && profile.api.base_url == "http://127.0.0.1:4000"
-        && profile.api.audience == "miqos-api-test"
-        && profile.oidc.issuer == "https://identity.test.invalid"
-        && profile.oidc.client_id == "miqos-admin-test-public"
-        && profile.oidc.scopes == vec!["openid".to_string(), "profile".to_string()]
-        && profile.features.as_object().is_some();
-
-    if !coherent {
-        return Err("DESKTOP_CONFIG_INCOHERENT".to_string());
-    }
-
+    validate_deployment_profile(&profile)?;
     Ok(profile)
 }
 
@@ -157,7 +216,7 @@ fn runtime_profile() -> Result<RuntimeProfile, String> {
         profile_id: profile.profile_id,
         deployment_stage: profile.deployment_stage,
         application_environment: profile.application_environment,
-        api_service: "127.0.0.1:4000".to_string(),
+        api_service: TEST_API_SERVICE.to_string(),
         api_audience: profile.api.audience,
         authentication_mode: "NON_PRODUCTION_STUB".to_string(),
         build_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -191,8 +250,10 @@ fn client() -> Result<Client, String> {
         .map_err(|_| "DESKTOP_HTTP_CLIENT_ERROR".to_string())
 }
 
-fn get_json<T: DeserializeOwned>(path: &str) -> Result<T, String> {
+fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, String> {
     let profile = deployment_profile()?;
+    let path = operation.path();
+
     let response = client()?
         .get(format!("{}{}", profile.api.base_url, path))
         .send()
@@ -218,9 +279,9 @@ fn get_json<T: DeserializeOwned>(path: &str) -> Result<T, String> {
 }
 
 fn attest_health() -> Result<Health, String> {
-    let health: Health = get_json("/health")?;
+    let health: Health = get_json(ApiReadOperation::Health)?;
     if health.status != "ok"
-        || health.data_classification != "SYNTHETIC"
+        || health.data_classification != TEST_APPLICATION_ENVIRONMENT
         || health.live_providers_enabled
     {
         emit_error(
@@ -257,18 +318,17 @@ fn get_health() -> Result<Health, String> {
 
 #[tauri::command]
 fn load_admin_profile_audit(profile_id: String) -> Result<AdminProfileAuditEvidence, String> {
-    validate_profile_id(&profile_id)?;
+    let audit_operation = ApiReadOperation::admin_audit(&profile_id)?;
+    let discrepancy_operation = ApiReadOperation::discrepancies(&profile_id)?;
     attest_health()?;
 
-    let audit_path = format!("/admin/audit?profileId={profile_id}");
-    let discrepancy_path = format!("/profiles/{profile_id}/discrepancies");
-
-    let audit: ItemsEnvelope = get_json(&audit_path).inspect_err(|reason| {
+    let audit: ItemsEnvelope = get_json(audit_operation).inspect_err(|reason| {
         emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
     })?;
-    let discrepancies: ItemsEnvelope = get_json(&discrepancy_path).inspect_err(|reason| {
-        emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
-    })?;
+    let discrepancies: ItemsEnvelope =
+        get_json(discrepancy_operation).inspect_err(|reason| {
+            emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
+        })?;
 
     emit_info(
         "API_REQUEST_COMPLETE",
@@ -349,4 +409,82 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running MIQOS Admin");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bundled_profile() -> DeploymentProfile {
+        serde_json::from_str(DEPLOYMENT_PROFILE_JSON).expect("bundled profile should parse in tests")
+    }
+
+    #[test]
+    fn bundled_test_profile_is_the_only_authorised_current_profile() {
+        let profile = bundled_profile();
+        assert_eq!(validate_deployment_profile(&profile), Ok(()));
+    }
+
+    #[test]
+    fn rejects_environment_or_origin_drift() {
+        let mut profile = bundled_profile();
+        profile.deployment_stage = "PRODUCTION".to_string();
+        profile.application_environment = "PRODUCTION".to_string();
+        assert_eq!(
+            validate_deployment_profile(&profile),
+            Err("DESKTOP_CONFIG_ENVIRONMENT_NOT_AUTHORISED".to_string())
+        );
+
+        let mut profile = bundled_profile();
+        profile.api.base_url = "https://example.invalid".to_string();
+        assert_eq!(
+            validate_deployment_profile(&profile),
+            Err("DESKTOP_CONFIG_API_NOT_AUTHORISED".to_string())
+        );
+    }
+
+    #[test]
+    fn rejects_unknown_feature_flags_and_identity_drift() {
+        let mut profile = bundled_profile();
+        profile.features = json!({"liveProviders": true});
+        assert_eq!(
+            validate_deployment_profile(&profile),
+            Err("DESKTOP_CONFIG_UNKNOWN_FEATURE_FLAG".to_string())
+        );
+
+        let mut profile = bundled_profile();
+        profile.oidc.client_id = "unexpected-client".to_string();
+        assert_eq!(
+            validate_deployment_profile(&profile),
+            Err("DESKTOP_CONFIG_IDENTITY_NOT_AUTHORISED".to_string())
+        );
+    }
+
+    #[test]
+    fn profile_identifiers_cannot_escape_route_templates() {
+        for invalid in ["", "PRO/SYN", "PRO?x=1", "PRO#fragment", "PRO SYN", "../PRO"] {
+            assert_eq!(
+                validate_profile_id(invalid),
+                Err("DESKTOP_INVALID_PROFILE_ID".to_string())
+            );
+        }
+        assert_eq!(validate_profile_id("PRO-SYN_001"), Ok(()));
+    }
+
+    #[test]
+    fn native_read_operations_build_only_approved_current_routes() {
+        assert_eq!(ApiReadOperation::Health.path(), "/health");
+        assert_eq!(
+            ApiReadOperation::admin_audit("PRO-SYN-001")
+                .expect("valid profile")
+                .path(),
+            "/admin/audit?profileId=PRO-SYN-001"
+        );
+        assert_eq!(
+            ApiReadOperation::discrepancies("PRO-SYN-001")
+                .expect("valid profile")
+                .path(),
+            "/profiles/PRO-SYN-001/discrepancies"
+        );
+    }
 }

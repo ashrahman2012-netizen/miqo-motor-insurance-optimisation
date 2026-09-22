@@ -66,7 +66,14 @@ export function DashboardRoute({
         <Card emphasis>
           <h2>Environment</h2>
           <p>Deployment identity remains package-controlled and visible throughout the Admin application.</p>
-          <StatusBadge status="SYNTHETIC" label="TEST · SYNTHETIC" />
+          {effectiveRuntime ? (
+            <StatusBadge
+              status="SYNTHETIC"
+              label={`${effectiveRuntime.deploymentStage} · ${effectiveRuntime.applicationEnvironment}`}
+            />
+          ) : (
+            <StatusBadge status="NOT_AUTHORISED" label="ENVIRONMENT UNKNOWN" />
+          )}
         </Card>
         <Card>
           <h2>Authority</h2>

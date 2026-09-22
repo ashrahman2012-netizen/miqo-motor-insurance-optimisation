@@ -1,23 +1,20 @@
-# Desktop Application Foundation — DB-G2
+# Desktop Native Platform — DB-G3
 
-**Status:** PASS  
-**Accepted executable source:** `34ab244b28e6f97f89bc823e18232986e31e1144`
+**Status:** IN PROGRESS — executable hardening committed; CI/Windows proof pending.
 
-DB-G2 converts the installed G8 proof shell into the real MIQOS Windows Admin application foundation while preserving the certified native/API/security/environment boundary.
+DB-G3 hardens the inherited Tauri proof into the reusable current-package platform boundary while preserving TEST/SYNTHETIC.
 
-Implemented:
+Implemented in the DB-G3 source revision:
 
-- canonical Admin navigation;
-- packaged local in-app routing;
-- TEST/SYNTHETIC runtime/environment identity;
-- local-only command/navigation affordance;
-- Dashboard foundation with inherited representative G8 safe-read proof;
-- System safe diagnostics foundation;
-- explicit READ-ONLY / TRACE-DERIVED / RESERVED route states;
-- removal of proof-only application entry naming.
+- typed private native read operations instead of caller-supplied path strings;
+- exact TEST/SYNTHETIC deployment-profile validation;
+- rejection of configuration origin/identity drift and unknown feature flags;
+- strict profile-ID route parameter validation;
+- fixed GET semantics, redirect denial and 2 MiB response ceiling retained;
+- explicit `admin-read` Tauri capability identifier with only three approved commands;
+- renderer environment display fails closed when runtime identity is unavailable;
+- Rust negative tests for environment/origin/identity/feature/route injection controls.
 
-No new Tauri command, API endpoint, dependency, shared package, database access, Admin mutation, production identity/environment authority or live-provider capability was introduced.
+No new API endpoint, native command, dependency, lockfile, workflow, database, authentication authority, real environment or provider capability is introduced.
 
-See [DB-G2 acceptance](../08-evidence/DB-G2/acceptance.md).
-
-Deep case/audit/trace evidence views remain DB-G4/DB-G5. DB-G3 separately owns expansion/hardening of the native transport/environment implementation.
+See [native platform contract](native-platform-contract.md). Final PASS requires repository CI plus Windows G7/G8 regression evidence.

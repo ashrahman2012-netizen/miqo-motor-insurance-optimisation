@@ -24,3 +24,7 @@ None. DB-G2 source passed repository CI, Windows full package proof, API integra
 | R-G7-008 | inherited moderate npm findings | dependency assessment before closeout/release | OPEN |
 
 Production secrets remain outside source/chat/ordinary artefacts.
+
+## DB-G3 execution
+
+No interactive/user-controlled blocker is required for the current TEST/SYNTHETIC hardening. UI-IDP, UI-ENV and UI-SIGN remain downstream. DB-G3 must stop rather than enabling STAGING/PRODUCTION or real identity to obtain a pass.

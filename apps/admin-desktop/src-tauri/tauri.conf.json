@@ -25,7 +25,7 @@
     "security": {
       "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
       "capabilities": [
-        "scaffold"
+        "admin-read"
       ]
     }
   },

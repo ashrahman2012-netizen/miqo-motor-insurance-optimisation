@@ -21,3 +21,13 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G2-003 | Representative fixed synthetic profile could be mistaken for product case selection. | CONTROLLED | labelled inherited executable proof only; real evidence surfaces DB-G4 |
 | R-DB-G2-004 | PR Windows artifact provenance records synthetic merge rather than branch source SHA. | CONTROLLED | pair merge `2884adb...` with exact head `34ab244...` and frozen base; exact branch push CI also green |
 | R-DB-G2-005 | New shell could regress installed failure/retry/environment proof. | CLOSED BY DB-G2 | G8 #33 installed Windows proof SUCCESS |
+
+## DB-G3 risks
+
+| ID | Risk | State | Control / target |
+|---|---|---|---|
+| R-DB-G3-001 | Internal native transport could drift back toward arbitrary URL/path proxying as DB-G4/G5 endpoints are added. | CONTROLLED / PROOF PENDING | typed operation enum, input constructors and negative tests; future resources require explicit variants |
+| R-DB-G3-002 | Package config drift could silently select a non-authorised environment/API/IdP. | CONTROLLED / PROOF PENDING | exact current-package validation and startup failure |
+| R-DB-G3-003 | Unknown feature flags could become an accidental runtime authority channel. | CONTROLLED / PROOF PENDING | current profile requires empty feature object |
+| R-DB-G3-004 | TEST loopback HTTP could be copied into STAGING/PRODUCTION. | CONTROLLED | current exact TEST exception only; non-synthetic profiles remain blocked by CC-G5-001 |
+| R-DB-G3-005 | Renderer could communicate a trusted environment despite native profile failure. | CONTROLLED / PROOF PENDING | global provider null state plus Dashboard NOT_AUTHORISED correction |
