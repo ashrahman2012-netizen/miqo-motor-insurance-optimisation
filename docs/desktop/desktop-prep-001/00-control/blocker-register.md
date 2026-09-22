@@ -2,24 +2,21 @@
 
 ## Active blockers
 
-### B-G8-PROOF-001 — Strict-mode uninstall-registry enumeration
-
-**Type:** Internal G8 proof-harness robustness defect.  
-**State:** ACTIVE.  
-**Run:** `35624013907`.  
-**Job:** `106414115119`.
-
-The Windows package build completed successfully, including formatting, Clippy, tests, release compilation and NSIS generation.
-
-The installed proof then failed at `scripts/desktop-g8-proof.ps1:33` because strict-mode registry enumeration dereferences `DisplayName` on registry objects where that property is absent.
-
-**Required correction:** Make product filtering safely test for a `DisplayName` property before comparing it.
-
-**Control boundary:** Do not change Tauri capabilities, command permissions, CSP, deployment profile, API transport, logging semantics, packaging configuration, native command set or application logic to resolve this blocker.
-
-**Resume point:** Rerun permanent G8 workflow from the installed proof sequence after the narrow harness correction.
+None for G8.
 
 ## Resolved blockers
+
+### B-G8-DOWNGRADE-001 — Silent NSIS downgrade replaced the installed package
+
+Resolved at source `d8eb075b894ead75b00f7a501a2acde032d7a6c3` with a bounded pre-install NSIS semantic-version check. G8 run `35736586909`, job `106775277095`, completed the installed proof including downgrade rejection.
+
+### B-G8-PROOF-002 — Quoted InstallLocation registry value
+
+Resolved by normalising surrounding quotes before `Join-Path` in the installed-proof harness.
+
+### B-G8-PROOF-001 — Strict-mode uninstall-registry enumeration
+
+Resolved by safely filtering uninstall entries that expose `DisplayName` before comparison.
 
 ### B-G8-CLIPPY-001 — G8 native proof source failed cargo clippy
 

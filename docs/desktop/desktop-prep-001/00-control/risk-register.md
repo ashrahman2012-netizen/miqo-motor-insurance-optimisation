@@ -5,7 +5,7 @@
 | R-G0-001 | GitHub connector commit-run visibility is limited for historic push runs. | CLOSED FOR DESKTOP G7 | G7 | Draft PR #5 provided PR-triggered run-level evidence; Desktop run 35601094369 and certified CI run 35601094316 are recorded. |
 | R-G0-002 | Desktop could modify certified application semantics for convenience. | CONTROLLED | All | Frozen-upstream rule; explicit change control. |
 | R-G0-003 | Existing Admin web host could be mistaken for Desktop architecture. | CLOSED BY G1 | G1 | Dedicated Tauri/React host selected. |
-| R-G1-001 | Tauri introduces Rust/MSVC into a Node/npm repository. | CLOSED FOR BUILD/PACKAGE / INSTALL PROOF PENDING | G4/G7/G8 | Current G8 head passes fmt/clippy/test and produces NSIS; installed-runtime proof remains blocked in proof harness. |
+| R-G1-001 | Tauri introduces Rust/MSVC into a Node/npm repository. | CLOSED BY G8 | G4/G7/G8 | Same-head G7/G8 Windows runs pass fmt, Clippy, tests, package build and installed proof. |
 | R-G1-002 | WebView2 provisioning policy was unresolved. | CLOSED AS DESIGN / PROOF PENDING | G4/G8 | Evergreen + embedded bootstrapper selected; prove clean-machine behaviour in G8. |
 | R-G1-003 | Production authentication was not in certified baseline. | CLOSED AS ARCHITECTURE / IMPLEMENTATION PENDING | G3/BUILD | OIDC/PKCE/native broker frozen; CC-G3-001. |
 | R-G1-004 | Renderer networking could tempt wildcard CORS/generic proxy. | CLOSED BY G3 | G3/G5 | Allow-listed native MIQOS transport. |
@@ -25,7 +25,7 @@
 | R-G4-002 | Enterprise deployment may mandate MSI or per-machine installation. | OPEN / NON-BLOCKING | G7/DEPLOY | NSIS current-user is baseline; add a proven controlled variant only when required. |
 | R-G4-003 | Missing WebView2 on a disconnected device could prevent bootstrapper remediation. | CONTROLLED | G4/G8 | Windows 11 baseline; alternate offline Evergreen installer profile for disconnected deployments. |
 | R-G4-004 | Windows 11 x64 baseline excludes ARM64 and legacy Windows. | ACCEPTED | DEPLOY | Add target only from explicit deployment requirement and evidence. |
-| R-G4-005 | Packaging design has not yet been executed against the real Desktop scaffold. | PARTIALLY CLOSED | G7/G8 | Real NSIS package produced on current G8 head; install/upgrade/downgrade/uninstall proof remains G8. |
+| R-G4-005 | Packaging design has not yet been executed against the real Desktop scaffold. | CLOSED BY G8 | G7/G8 | Real NSIS install, launch, upgrade, downgrade rejection and uninstall passed in run `35736586909`. |
 | R-G5-001 | Production/certification API and IdP endpoint/profile values are not yet provisioned. | OPEN / NON-BLOCKING FOR G5 | G7/G8/DEPLOY | UI-ENV / UI-IDP when real environment values are required; bundled profile architecture already frozen. |
 | R-G5-002 | Environment packages could share WebView/credential/local-state namespace. | CLOSED BY G5 | G5 | Distinct Tauri identifiers for DEV/TEST/CERTIFICATION/PRODUCTION. |
 | R-G5-003 | Frozen certified API only permits SYNTHETIC and liveProviders=false, so STAGING/PRODUCTION profiles cannot currently attest successfully. | OPEN / EXPECTED PLATFORM EXTENSION | BUILD/DEPLOY | CC-G5-001; never bypass prototype boundary with local config. |
@@ -47,4 +47,5 @@
 | R-G7-009 | Released tauri-build 2.6.3 rejected build.windows.staticVCRuntime in the scaffold config. | CLOSED | G7-B | Authorised narrow compatibility correction; later full package CI passed. |
 | R-G7-010 | G7 mechanical package is unsigned. | OPEN / CONTROLLED | G7/G9 | Manifest records Authenticode=NotSigned; acceptable only for controlled mechanical proof. Production signing requires UI-SIGN before production release certification. |
 | R-G7-011 | PR workflow package provenance records GitHub synthetic merge SHA rather than branch head SHA. | CONTROLLED | G7 | Merge commit explicitly pairs Desktop head 65d1b7b... with frozen base ce211bf...; evidence records both revisions. |
-| R-G8-001 | Installed proof harness assumes every uninstall registry object exposes DisplayName under PowerShell strict mode. | OPEN / BLOCKING | G8 | Use safe property-existence filtering only; rerun installed proof without changing application/runtime architecture. |
+| R-G8-001 | Installed proof harness assumes every uninstall registry object exposes DisplayName under PowerShell strict mode. | CLOSED | G8 | Safe property-existence filtering passed in G8 run `35736586909`. |
+| R-G8-002 | Silent NSIS execution could bypass the framework downgrade check. | CLOSED BY G8 | G8 | Pre-install hook independently rejects older semantic versions; installed proof confirms 0.1.0 cannot replace 0.1.1. |

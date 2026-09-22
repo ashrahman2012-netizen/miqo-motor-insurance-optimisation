@@ -1,172 +1,59 @@
 # G8 Evidence — Desktop Skeleton Proof
 
-**Gateway:** G8 — Desktop Skeleton Proof  
-**Current result:** IN EXECUTION — API/PACKAGE PROOF PASS / INSTALLED PROOF BLOCKED  
-**Date:** 2026-09-21
+**Gateway:** G8 — Desktop Skeleton Proof
+**Result:** PASS
+**Date:** 2026-09-22
 
-## Validated application source revision
-
-```text
-3346a5cd713242c8997a25586df753171bf6d9e4
-```
-
-This revision is an empty-content retrigger commit over the Clippy-converged source tree. Comparing it with the preceding formatter commit shows zero file changes.
-
-The Clippy convergence source delta from pre-correction head `d75a82b82088e38297714c25d8d9d2d37055896b` is confined to:
+## Validated source revision
 
 ```text
-apps/admin-desktop/src-tauri/src/lib.rs
+d8eb075b894ead75b00f7a501a2acde032d7a6c3
 ```
 
-and contains only:
+The bounded correction adds an NSIS pre-install hook that reads the registered installed version, compares it with the incoming package version and aborts an older package before file copy. It does not change Tauri capabilities, native commands, CSP, API transport, application semantics or the security classification boundary.
 
-- two `map_err` → `inspect_err` logging transformations;
-- one descending `sort_by` → `sort_by_key(std::cmp::Reverse(...))` transformation;
-- rustfmt layout.
+The proof harness retains its independent post-attempt check that the installed 0.1.1 package remains registered after invoking the 0.1.0 installer.
 
-## Certified regression evidence
+## Same-head executable evidence
 
-Normal repository CI on the validated source:
+| Workflow | Run | Job | Result |
+|---|---:|---:|---|
+| `ci` #661 | `35736586648` | all mandatory jobs | SUCCESS |
+| `desktop-prep-g7` #208 | `35736586650` | `106775275617` | SUCCESS |
+| `desktop-prep-g8` #30 | `35736586909` | `106775277095` Windows installed proof | SUCCESS |
+| `desktop-prep-g8` #30 | `35736586909` | `106775277382` API integration | SUCCESS |
 
-```text
-workflow: ci
-run:      35624013703
-run #:    637
-result:   SUCCESS
-```
+## Completed Windows proof
 
-Desktop G7 regression:
+The successful Windows job proves:
 
-```text
-workflow: desktop-prep-g7
-run:      35624013728
-run #:    189
-job:      106414122940
-result:   SUCCESS
-```
-
-The G7 regression completed:
-
-- canonical Desktop Full contract — SUCCESS;
-- Rust formatting — SUCCESS;
-- Rust Clippy with warnings denied — SUCCESS;
-- Rust tests — SUCCESS;
-- Tauri NSIS build — SUCCESS;
-- packaged artefact detection — SUCCESS;
-- Desktop package evidence upload — SUCCESS.
-
-Historical G7 closure therefore remains valid and the current G8 source is green against the G7 regression guard.
-
-## G8 API/application-service lane
-
-```text
-workflow: desktop-prep-g8
-run:      35624013907
-job:      106414115309
-result:   SUCCESS
-```
-
-Proved:
-
-- PostgreSQL 16 service;
-- certified migrations;
-- certified Fastify API startup;
-- TEST/SYNTHETIC health contract;
-- Desktop application service;
-- existing Admin Audit adapter/ViewModel composition;
-- contradictory environment/provider classification fails closed;
-- API proof artefact upload.
-
-## G8 Windows package lane
-
-```text
-workflow: desktop-prep-g8
-run:      35624013907
-job:      106414115119
-package build stage: SUCCESS
-installed proof stage: FAILURE
-```
-
-The Windows job successfully completed:
-
-- checkout;
-- Node 22.16.0;
-- Rust/Cargo 1.98.1;
-- MSVC verification;
-- locked npm dependency restore;
-- dependency/security boundary verification;
-- Desktop typecheck;
-- Desktop tests;
-- Desktop frontend build;
-- `cargo fmt --check`;
-- `cargo clippy -- -D warnings`;
-- `cargo test`;
-- Tauri release build;
-- NSIS package generation.
-
-The log records:
-
-```text
-Finished 1 bundle:
-...\bundle\nsis\MIQOS Admin [TEST]_0.1.0_x64-setup.exe
-
-DESKTOP_G7_FULL_PASS
-```
-
-Therefore the Clippy convergence objective is complete and the NSIS/package substrate remains healthy.
-
-## Active installed-proof blocker
-
-The installed proof starts with PowerShell strict mode enabled.
-
-At `scripts/desktop-g8-proof.ps1:33`, machine uninstall-registry enumeration currently executes:
-
-```powershell
-Get-ItemProperty $path -ErrorAction SilentlyContinue |
-  Where-Object { $_.DisplayName -eq $ProductName }
-```
-
-At least one registry object returned by the hosted Windows runner has no `DisplayName` property.
-
-PowerShell therefore terminates under strict mode with:
-
-```text
-The property 'DisplayName' cannot be found on this object.
-```
-
-This failure occurs in the proof harness before installation assertions.
-
-It is not evidence of failure in:
-
-- Tauri capability configuration;
-- native command permissions;
-- CSP;
-- deployment profile;
-- native API transport;
-- structured logging semantics;
-- Tauri release compilation;
-- NSIS generation.
-
-## Unproven G8 criteria
-
-The following remain unproven and must not be inferred from the successful build:
-
-- installed package registration/scope;
-- installed application launch;
-- controlled API-unavailable UI;
-- safe retry against SYNTHETIC loopback service;
-- visible SYNTHETIC/ATTESTED evidence;
-- installed structured-log assertions;
-- runtime independence from Node/npm/Rust/Cargo/PostgreSQL/libpq;
+- locked Node/Rust/MSVC and dependency boundary;
+- Desktop typecheck, tests and frontend build;
+- Rust formatting, Clippy with warnings denied and Rust tests;
+- Tauri release and NSIS package generation;
+- current-user install and installed application launch;
+- controlled API-unavailable state and safe retry;
+- SYNTHETIC/ATTESTED environment evidence;
+- structured local logging assertions;
+- installed-runtime independence from development tools/services;
 - 0.1.0 → 0.1.1 upgrade;
-- downgrade rejection;
+- rejection of the 0.1.0 downgrade attempt without replacement evidence;
 - silent uninstall;
-- installed-proof artefact upload.
+- proof artefact upload.
 
-## Next controlled operation
+## Evidence artefacts
 
-Correct only the registry filtering in `scripts/desktop-g8-proof.ps1` so registry entries without `DisplayName` are safely ignored while strict mode remains enabled.
+```text
+Windows proof artefact: 10698328970
+digest: sha256:49974751bd01a4cce48b837cbe8c98eaf4ef740a2608e46580bca1401afd69a8
 
-Then rerun the permanent `desktop-prep-g8` workflow.
+API proof artefact: 10697247792
+digest: sha256:565d383a990a29f37871f2f2daae2c3b48435358318a5b00f2f16008d7a8cc85
 
-G8 may be marked PASS only when the installed proof and proof artefact upload complete successfully.
+G7 package artefact: 10699045077
+digest: sha256:c33a935edbaafb00ca26ecd9b14f00226a36ce05778cf75c980ce261eeec78ec
+```
+
+## Gate conclusion
+
+G8 is PASS. The Windows installed Desktop skeleton proof is complete on the validated source revision. G9 PREP certification and final evidence review are now authorised; production signing and real-environment dependencies remain separately controlled.

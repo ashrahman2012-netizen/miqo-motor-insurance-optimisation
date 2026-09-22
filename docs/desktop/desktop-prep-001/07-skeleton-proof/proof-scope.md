@@ -1,6 +1,6 @@
 # G8 Skeleton Proof — Architecture Scope Defined at G1
 
-**Status:** IN EXECUTION — API/PACKAGE PROOF PASS / INSTALLED PROOF BLOCKED
+**Status:** PASS — WINDOWS INSTALLED DESKTOP SKELETON PROOF COMPLETE
 
 The G8 skeleton must prove ADR-001 rather than grow into feature implementation.
 
@@ -47,9 +47,9 @@ Tauri host
 without altering certified application/domain semantics.
 
 
-## Execution evidence — current
+## Execution evidence — complete
 
-Run `35624013907` has proved:
+Same-head run `35736586909` has proved:
 
 1. controlled monorepo Desktop build — PASS;
 2. shared MIQOS UI/contracts/adapters integration — PASS;
@@ -59,8 +59,12 @@ Run `35624013907` has proved:
 6. restrictive native command/capability/CSP build contract — PASS;
 7. Rust fmt/clippy/test — PASS;
 8. Tauri release compilation — PASS;
-9. NSIS installer generation — PASS.
+9. NSIS installer generation — PASS;
+10. current-user install and installed launch — PASS;
+11. controlled API-unavailable and SYNTHETIC retry states — PASS;
+12. installed structured logging and development-runtime independence — PASS;
+13. 0.1.0 → 0.1.1 upgrade — PASS;
+14. downgrade rejection without package replacement — PASS;
+15. silent uninstall and proof artefact upload — PASS.
 
-The installed package lifecycle proof has not yet passed because the proof harness failed while enumerating Windows uninstall registry entries under strict mode.
-
-No installed-runtime conclusion may be inferred until that harness defect is corrected and the permanent workflow reruns successfully.
+The installed package lifecycle is therefore proved at source `d8eb075b894ead75b00f7a501a2acde032d7a6c3`.

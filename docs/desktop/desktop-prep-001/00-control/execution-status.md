@@ -2,102 +2,35 @@
 
 **Programme:** MIQOS-DESKTOP-PREP-001
 **Gateway:** G8 — Desktop Skeleton Proof
-**Status:** IN EXECUTION — API/PACKAGE PROOF PASS / INSTALLED PROOF BLOCKED
+**Status:** G8 PASS — WINDOWS INSTALLED DESKTOP SKELETON PROOF COMPLETE
 **Execution branch:** miqos/desktop-prep-001
 **Upstream certified branch:** miqos/app-build-001
 **Upstream certified SHA:** ce211bf4e23643f1eab75e865210f4de121841fb
-**Current controlled source head:** 3346a5cd713242c8997a25586df753171bf6d9e4
-**Date:** 2026-09-21
+**Validated source head:** d8eb075b894ead75b00f7a501a2acde032d7a6c3
+**Date:** 2026-09-22
 
 ## Current control position
 
-G0 through G7 remain PASS.
+G0 through G8 are PASS. G9 is NOT STARTED.
 
-G7 historical closure remains valid and the current G8 source head has also restored the G7 regression guard:
+The validated head adds a pre-install NSIS hook that compares the incoming package version with the registered installed version and aborts a downgrade before file copy. The permanent proof retains the independent post-attempt assertion that the older package did not replace the installed 0.1.1 package.
 
-- `desktop-prep-g7` run `35624013728` / #189 — **SUCCESS**;
-- canonical Desktop full contract — **SUCCESS**;
-- packaged artefact detection — **SUCCESS**;
-- Desktop package evidence upload — **SUCCESS**.
+## Same-head certification evidence
 
-The certified repository CI is also green on the same source tree:
+- repository CI run `35736586648` / #661 — **SUCCESS**;
+- Desktop G7 run `35736586650` / #208, job `106775275617` — **SUCCESS**;
+- Desktop G8 run `35736586909` / #30 — **SUCCESS**;
+- G8 Windows installed proof job `106775277095` — **SUCCESS**;
+- G8 API integration job `106775277382` — **SUCCESS**.
 
-- `ci` run `35624013703` / #637 — **SUCCESS**.
+The Windows proof completed package build, install, launch, controlled unavailable/retry behaviour, SYNTHETIC/ATTESTED evidence, structured logging, runtime independence, 0.1.0 → 0.1.1 upgrade, downgrade rejection, uninstall and artefact upload.
 
-## G8 current evidence
+## Evidence artefacts
 
-Permanent G8 run:
-
-```text
-workflow: desktop-prep-g8
-run:      35624013907
-run #:    12
-```
-
-### API/application-service lane
-
-Job `106414115309` — **SUCCESS**.
-
-Proved:
-
-- PostgreSQL 16 migration path;
-- certified Fastify API startup;
-- TEST/SYNTHETIC health boundary;
-- Desktop application service;
-- existing Admin Audit adapter/ViewModel composition;
-- contradictory environment/provider evidence fails closed;
-- API proof artefact upload.
-
-### Windows package lane
-
-Job `106414115119` reached:
-
-- Node/Rust/MSVC setup — PASS;
-- npm/dependency boundary — PASS;
-- Desktop typecheck/tests/build — PASS;
-- `cargo fmt --check` — PASS;
-- `cargo clippy -- -D warnings` — PASS;
-- `cargo test` — PASS;
-- Tauri release build — PASS;
-- NSIS package generation — PASS;
-- G7 full package contract — PASS.
-
-The installed proof then failed immediately in the proof harness before installation assertions.
-
-## Active G8 blocker
-
-`scripts/desktop-g8-proof.ps1` line 33 enumerates HKLM uninstall registry entries using:
-
-```powershell
-Where-Object { $_.DisplayName -eq $ProductName }
-```
-
-Under `Set-StrictMode -Version Latest`, at least one registry object lacks a `DisplayName` property, producing:
-
-```text
-The property 'DisplayName' cannot be found on this object.
-```
-
-This is a proof-harness robustness defect, not evidence of a Tauri, NSIS, native-command, CSP, API, or package-build failure.
+- G8 Windows artefact `10698328970`, digest `sha256:49974751bd01a4cce48b837cbe8c98eaf4ef740a2608e46580bca1401afd69a8`;
+- G8 API artefact `10697247792`, digest `sha256:565d383a990a29f37871f2f2daae2c3b48435358318a5b00f2f16008d7a8cc85`;
+- G7 package artefact `10699045077`, digest `sha256:c33a935edbaafb00ca26ecd9b14f00226a36ce05778cf75c980ce261eeec78ec`.
 
 ## Next controlled operation
 
-Correct only the uninstall-registry enumeration in the G8 proof harness so missing `DisplayName` properties are safely ignored under strict mode.
-
-Then rerun the permanent G8 workflow and require the installed sequence to complete:
-
-- install;
-- launch;
-- controlled API-unavailable UI;
-- safe retry against SYNTHETIC stub;
-- visible SYNTHETIC/ATTESTED evidence;
-- structured log proof;
-- runtime independence;
-- 0.1.0 → 0.1.1 upgrade;
-- downgrade rejection;
-- silent uninstall;
-- proof artefact upload.
-
-G8 remains **NOT PASS** until that evidence exists.
-
-G9 remains NOT STARTED.
+Begin G9 PREP certification and final evidence review. Production signing and real-environment identity/configuration dependencies remain separately controlled and were not broadened by G8.

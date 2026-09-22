@@ -10,7 +10,7 @@
 | G5 | Environment & Configuration Model | PASS | 08-evidence/G5/environment-and-configuration-model.md; ADR-004 |
 | G6 | Observability & Supportability | PASS | 08-evidence/G6/observability-and-supportability.md; ADR-005 |
 | G7 | Build & CI/CD Preparation | **PASS** | 08-evidence/G7/build-ci-preparation.md; 08-evidence/G7/windows-preflight-run.md; 08-evidence/G7/full-package-ci.md |
-| G8 | Desktop Skeleton Proof | **IN EXECUTION — API/PACKAGE PASS / INSTALLED PROOF BLOCKED** | 07-skeleton-proof/proof-scope.md; 08-evidence/G8/skeleton-proof.md |
+| G8 | Desktop Skeleton Proof | **PASS** | 07-skeleton-proof/proof-scope.md; 08-evidence/G8/skeleton-proof.md; run `35736586909` |
 | G9 | PREP Certification | NOT STARTED | — |
 
 ## G7 closure evidence
@@ -36,9 +36,7 @@
 
 G7-B has passed.
 
-The remainder of G8 is now authorised.
-
-G9 remains gated on completion of G8 and final PREP evidence review.
+G8 has passed. G9 is authorised and remains gated on final PREP evidence review.
 
 ## Gateway rule
 
@@ -47,9 +45,9 @@ No gateway may be marked PASS without executable evidence tied to a controlled s
 
 ## Current regression evidence on G8 source
 
-- source head: `3346a5cd713242c8997a25586df753171bf6d9e4`
-- certified CI run `35624013703` — **SUCCESS**
-- Desktop G7 regression run `35624013728` — **SUCCESS**
-- G8 API integration job `106414115309` — **SUCCESS**
-- G8 Windows build/package stage in job `106414115119` — **SUCCESS**
-- G8 installed proof — **BLOCKED** by strict-mode registry enumeration in the proof harness.
+- source head: `d8eb075b894ead75b00f7a501a2acde032d7a6c3`
+- certified CI run `35736586648` / #661 — **SUCCESS**
+- Desktop G7 regression run `35736586650` / #208 — **SUCCESS**
+- G8 API integration job `106775277382` — **SUCCESS**
+- G8 Windows installed proof job `106775277095` — **SUCCESS**
+- G8 Windows evidence artefact `10698328970` — **UPLOADED**
