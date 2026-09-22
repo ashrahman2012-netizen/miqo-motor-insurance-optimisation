@@ -30,3 +30,4 @@ Production secrets remain outside source/chat/ordinary artefacts.
 No interactive/user-controlled blocker is required for the current TEST/SYNTHETIC hardening. UI-IDP, UI-ENV and UI-SIGN remain downstream. DB-G3 must stop rather than enabling STAGING/PRODUCTION or real identity to obtain a pass.
 
 - B-DB-G3-001: initial native hardening revision `ce4fd0c95b50b61a3c4d3dfc91ee0951c459c654` failed G7/G8 Windows build at `cargo fmt --check` only. Formatter-prescribed whitespace/layout correction applied; no behavioural or boundary change.
+- B-DB-G3-002: repaired source `9c8a329d9535c89e38039048496ee81ac13039a4` passed G7 but G8 installed proof referenced removed `capabilities/scaffold.json`. Proof harness updated to assert the active `admin-read` capability, exact three permissions, and absence of the legacy scaffold capability. No runtime authority broadened.

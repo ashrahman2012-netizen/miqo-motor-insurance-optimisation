@@ -53,3 +53,4 @@ No DB-G2 decision changes domain methodology, mutation authority, security ident
 | D-DB-G3-005 | Rename active capability identity from proof-era scaffold to `admin-read` without broadening command permissions. | least-privilege Tauri boundary |
 | D-DB-G3-006 | Correct Dashboard environment presentation so unresolved runtime identity is NOT_AUTHORISED rather than statically labelled SYNTHETIC. | G5 fail-closed visible identity |
 | D-DB-G3-007 | Real OIDC/token broker and non-synthetic environment activation remain deferred to DB-G7/CC-G3-001 and CC-G5-001. | gateway separation |
+| D-DB-G3-008 | Update the installed-proof harness to follow and positively assert the renamed `admin-read` capability, while also asserting the legacy scaffold capability is absent. | G8 failure evidence + least-privilege proof continuity |

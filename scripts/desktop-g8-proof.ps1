@@ -272,7 +272,11 @@ function Get-UninstallerPath {
 
 function Assert-StaticSecurityBoundary {
   $config = Get-Content "apps/admin-desktop/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
-  $capability = Get-Content "apps/admin-desktop/src-tauri/capabilities/scaffold.json" -Raw | ConvertFrom-Json
+  $capabilityPath = "apps/admin-desktop/src-tauri/capabilities/admin-read.json"
+  $legacyCapabilityPath = "apps/admin-desktop/src-tauri/capabilities/scaffold.json"
+  Assert-True (Test-Path -LiteralPath $capabilityPath) "Active admin-read capability file is missing."
+  Assert-True (-not (Test-Path -LiteralPath $legacyCapabilityPath)) "Proof-era scaffold capability must not remain active."
+  $capability = Get-Content $capabilityPath -Raw | ConvertFrom-Json
   $package = Get-Content "apps/admin-desktop/package.json" -Raw | ConvertFrom-Json
   $installerHookPath = "apps/admin-desktop/src-tauri/windows/installer-hooks.nsh"
 
@@ -291,13 +295,18 @@ function Assert-StaticSecurityBoundary {
   Assert-True (-not $csp.Contains("http:")) "Renderer CSP must not permit arbitrary HTTP origins."
   Assert-True (-not $csp.Contains("https:")) "Renderer CSP must not permit arbitrary HTTPS origins."
 
+  $configuredCapabilities = @($config.app.security.capabilities)
+  Assert-True ($configuredCapabilities.Count -eq 1) "Main window must configure exactly one capability."
+  Assert-True ($configuredCapabilities[0] -eq "admin-read") "Main window must use the admin-read capability."
+  Assert-True ($capability.identifier -eq "admin-read") "Capability identifier must remain admin-read."
+
   $permissions = @($capability.permissions)
   $expected = @(
     "allow-get-runtime-profile",
     "allow-get-health",
     "allow-load-admin-profile-audit"
   )
-  Assert-True ($permissions.Count -eq $expected.Count) "Capability must expose exactly three proof commands."
+  Assert-True ($permissions.Count -eq $expected.Count) "Capability must expose exactly three approved read/runtime commands."
   foreach ($permission in $expected) {
     Assert-True ($permissions -contains $permission) "Missing native permission '$permission'."
   }
