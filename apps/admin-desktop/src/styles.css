@@ -1,0 +1,15 @@
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+.desktop-proof-section {
+  margin-top: 1rem;
+}
+
+.desktop-proof-reference {
+  font-family: var(--miqos-font-mono);
+  color: var(--miqos-text-tertiary);
+  overflow-wrap: anywhere;
+}

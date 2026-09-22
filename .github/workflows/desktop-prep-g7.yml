@@ -1,0 +1,100 @@
+name: desktop-prep-g7
+
+on:
+  push:
+    branches:
+      - miqos/desktop-prep-001
+    paths:
+      - ".github/workflows/desktop-prep-g7.yml"
+      - "scripts/desktop-ci.ps1"
+      - "apps/admin-desktop/**"
+      - "packages/application-contracts/**"
+      - "packages/application-adapters/**"
+      - "packages/ui/**"
+      - "package.json"
+      - "package-lock.json"
+      - "docs/desktop/desktop-prep-001/**"
+  pull_request:
+    paths:
+      - ".github/workflows/desktop-prep-g7.yml"
+      - "scripts/desktop-ci.ps1"
+      - "apps/admin-desktop/**"
+      - "packages/application-contracts/**"
+      - "packages/application-adapters/**"
+      - "packages/ui/**"
+      - "package.json"
+      - "package-lock.json"
+      - "docs/desktop/desktop-prep-001/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+cache-mode: none
+
+concurrency:
+  group: desktop-prep-g7-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-desktop:
+    name: Windows Desktop preflight/full
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.16.0
+          package-manager-cache: false
+
+      - name: Select exact Rust toolchain
+        shell: pwsh
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+
+      - name: Verify MSVC C++ toolchain
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (!(Test-Path $vswhere)) { throw "vswhere not found" }
+          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ([string]::IsNullOrWhiteSpace($installation)) { throw "MSVC C++ build tools not found" }
+          Write-Host "MSVC installation: $installation"
+
+      - name: Execute canonical Desktop CI contract
+        shell: pwsh
+        run: ./scripts/desktop-ci.ps1 -Mode Auto
+
+      - name: Detect packaged artifact
+        id: artifact
+        shell: pwsh
+        run: |
+          if (Test-Path "dist/desktop/build-manifest.json") {
+            "produced=true" >> $env:GITHUB_OUTPUT
+          } else {
+            "produced=false" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Upload Desktop package evidence
+        if: steps.artifact.outputs.produced == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: miqos-admin-windows-x64-${{ github.sha }}
+          path: dist/desktop/**
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
