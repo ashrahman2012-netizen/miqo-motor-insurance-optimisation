@@ -247,3 +247,23 @@ Both the branch head and merge revision are retained in G7 evidence.
 **Decision:** G7 is PASS.
 
 The remainder of G8 Desktop Skeleton Proof is authorised. G9 remains gated.
+
+## D-G9-001 — PREP certification scope
+**Decision:** G9 certifies bounded Desktop preparation/build readiness, not production release readiness.
+
+Production signing, real IdP/RBAC integration, real certification/production environment activation and live-provider operation remain downstream gates.
+
+## D-G9-002 — Certified evidence head
+**Decision:** Certify `ff47096526b4bcf381ea69bc5a20bf01dcbaf9f0` as the exact PREP evidence head.
+
+Repository CI #663, Desktop G7 #210 and Desktop G8 #31 all completed successfully on that head. The immediately preceding executable source `d8eb075b894ead75b00f7a501a2acde032d7a6c3` differs only by the G8 evidence/control documentation recorded in `ff47096526b4bcf381ea69bc5a20bf01dcbaf9f0`.
+
+## D-G9-003 — Frozen upstream integrity accepted
+**Decision:** Accept final comparison to upstream certified application baseline `ce211bf4e23643f1eab75e865210f4de121841fb`.
+
+The PREP branch is 219 commits ahead and 0 behind; changes are confined to the dedicated Desktop host/proof surface, Desktop PREP control/evidence, Desktop workflows/scripts and workspace lockfile additions. Existing certified application/domain source is not modified.
+
+## D-G9-004 — Desktop PREP closeout
+**Decision:** G9 is PASS and MIQOS-DESKTOP-PREP-001 is CERTIFIED COMPLETE.
+
+The Windows Admin application build is authorised to start from the G9 closeout commit. Open real-environment/signing/identity dependencies carry forward and must be satisfied only when their downstream gateway becomes active.

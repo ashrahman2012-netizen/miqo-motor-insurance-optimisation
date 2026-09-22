@@ -2,7 +2,7 @@
 
 ## Active blockers
 
-None for G8.
+None for G9 / PREP certification.
 
 ## Resolved blockers
 
@@ -85,7 +85,7 @@ Previous 403 integration condition is resolved.
 
 **Checkpoint:** UI-SIGN.
 
-**Becomes blocking for:** production signing evidence and G9 certification if production-signed release readiness is in certification scope.
+**Becomes blocking for:** production signing/release evidence. G9 PREP certification explicitly excludes production-signed release readiness.
 
 **Security rule:** private signing keys/secrets must not be pasted into chat, committed to Git or placed in ordinary build artefacts.
 
