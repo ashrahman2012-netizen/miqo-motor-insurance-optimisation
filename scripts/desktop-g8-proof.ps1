@@ -274,8 +274,15 @@ function Assert-StaticSecurityBoundary {
   $config = Get-Content "apps/admin-desktop/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
   $capability = Get-Content "apps/admin-desktop/src-tauri/capabilities/scaffold.json" -Raw | ConvertFrom-Json
   $package = Get-Content "apps/admin-desktop/package.json" -Raw | ConvertFrom-Json
+  $installerHookPath = "apps/admin-desktop/src-tauri/windows/installer-hooks.nsh"
 
   Assert-True ($config.app.windows[0].devtools -eq $false) "Production/test package devtools must remain disabled."
+  Assert-True ($config.bundle.windows.allowDowngrades -eq $false) "Windows package must disable downgrades."
+  Assert-True ($config.bundle.windows.nsis.installerHooks -eq "./windows/installer-hooks.nsh") "NSIS downgrade guard must remain configured."
+  Assert-True (Test-Path -LiteralPath $installerHookPath) "NSIS downgrade guard is missing."
+  $installerHook = Get-Content -LiteralPath $installerHookPath -Raw
+  Assert-True ($installerHook.Contains('nsis_tauri_utils::SemverCompare "${VERSION}" $R8')) "NSIS downgrade guard must compare installer and installed versions."
+  Assert-True ($installerHook.Contains('$R9 == -1')) "NSIS downgrade guard must reject an older installer version."
 
   $csp = [string]$config.app.security.csp
   Assert-True ($csp.Contains("default-src 'self'")) "CSP must default to self."
