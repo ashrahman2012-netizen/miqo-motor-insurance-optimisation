@@ -1,0 +1,69 @@
+{
+  "checkedOn": "2026-09-22",
+  "controlEstablishmentSha": "2e964af5559b9ba1cc339b1baea7c9f520e524b3",
+  "prNumber": 6,
+  "prBaseSha": "f01776e9bb98bb47a0693f43194d1d48b03b6d5e",
+  "observedPrMergeSha": "88ec21ccc398c91e5c81a3c0a990256b6cd52c8d",
+  "runs": [
+    {
+      "id": 35755994162,
+      "name": "ci",
+      "head_sha": "2e964af5559b9ba1cc339b1baea7c9f520e524b3",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 668,
+      "event": "pull_request",
+      "html_url": "https://github.com/ashrahman2012-netizen/miqo-motor-insurance-optimisation/actions/runs/35755994162",
+      "jobs": [
+        {
+          "id": 106841787524,
+          "name": "locked-dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106841787593,
+          "name": "target-stack-sprint1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106841787639,
+          "name": "postgres-contract",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 35755967218,
+      "name": "ci",
+      "head_sha": "2e964af5559b9ba1cc339b1baea7c9f520e524b3",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 667,
+      "event": "push",
+      "html_url": "https://github.com/ashrahman2012-netizen/miqo-motor-insurance-optimisation/actions/runs/35755967218",
+      "jobs": [
+        {
+          "id": 106841690251,
+          "name": "target-stack-sprint1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106841690697,
+          "name": "locked-dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106841690746,
+          "name": "postgres-contract",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

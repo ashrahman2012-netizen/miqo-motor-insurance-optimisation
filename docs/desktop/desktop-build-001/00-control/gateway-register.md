@@ -2,7 +2,7 @@
 
 | Gateway | Title | Status | Evidence / authority |
 |---|---|---|---|
-| DB-G0 | BUILD Entry & Branch Freeze | IN PROGRESS | [DB-G0 evidence](../08-evidence/DB-G0/entry-and-validation.md) |
+| DB-G0 | BUILD Entry & Branch Freeze | PASS | [DB-G0 evidence](../08-evidence/DB-G0/acceptance.md) |
 | DB-G1 | BUILD Control System & UX/Capability Baseline | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
 | DB-G2 | Desktop Application Foundation | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |
 | DB-G3 | Native Platform, Transport & Environment Boundary | NOT STARTED | Separate execution block required; no implementation or acceptance claimed. |

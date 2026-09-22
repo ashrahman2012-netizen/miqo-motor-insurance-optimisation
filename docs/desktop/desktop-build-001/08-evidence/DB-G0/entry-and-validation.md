@@ -2,7 +2,7 @@
 
 Programme: MIQOS-DESKTOP-BUILD-001
 Gateway: DB-G0 — BUILD Entry & Branch Freeze
-Status: IN PROGRESS; control-establishment commit and CI pending.
+Status: entry checks complete; final DB-G0 PASS is recorded in [acceptance](acceptance.md).
 Date: 2026-09-22
 
 ## Entry and provenance
@@ -82,4 +82,4 @@ UX authority conflict: no authority imported; reference identity only, visual in
 
 Missing handover and local source acquisition conditions are resolved. All PREP risks and downstream dependencies remain visible in the BUILD registers; no architecture, security or integrity exception is accepted.
 
-Only DB-G0 is authorised now. DB-G1 remains NOT STARTED pending a separate execution block. The next evidence record will identify the exact control-establishment revision, changed-file inventory and validation results before declaring DB-G0 PASS.
+Only DB-G0 is authorised now. DB-G1 remains NOT STARTED pending a separate execution block. The acceptance record identifies the exact validated control-establishment revision, changed-file inventory and validation results supporting DB-G0 PASS.

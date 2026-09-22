@@ -2,7 +2,7 @@
 
 ## Active DB-G0 blockers
 
-None after handover availability, exact-source fetch and provenance verification. Validation/CI must complete before DB-G0 PASS.
+None after handover availability, exact-source fetch and provenance verification. Local validation and push/PR repository CI passed on the control-establishment revision; see DB-G0 acceptance.
 
 ## Resolved entry conditions
 
