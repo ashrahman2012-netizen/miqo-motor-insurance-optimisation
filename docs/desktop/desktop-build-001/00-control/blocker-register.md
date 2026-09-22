@@ -28,3 +28,5 @@ Production secrets remain outside source/chat/ordinary artefacts.
 ## DB-G3 execution
 
 No interactive/user-controlled blocker is required for the current TEST/SYNTHETIC hardening. UI-IDP, UI-ENV and UI-SIGN remain downstream. DB-G3 must stop rather than enabling STAGING/PRODUCTION or real identity to obtain a pass.
+
+- B-DB-G3-001: initial native hardening revision `ce4fd0c95b50b61a3c4d3dfc91ee0951c459c654` failed G7/G8 Windows build at `cargo fmt --check` only. Formatter-prescribed whitespace/layout correction applied; no behavioural or boundary change.

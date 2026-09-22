@@ -325,10 +325,9 @@ fn load_admin_profile_audit(profile_id: String) -> Result<AdminProfileAuditEvide
     let audit: ItemsEnvelope = get_json(audit_operation).inspect_err(|reason| {
         emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
     })?;
-    let discrepancies: ItemsEnvelope =
-        get_json(discrepancy_operation).inspect_err(|reason| {
-            emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
-        })?;
+    let discrepancies: ItemsEnvelope = get_json(discrepancy_operation).inspect_err(|reason| {
+        emit_error("API_REQUEST_FAILURE", "load_admin_profile_audit", reason);
+    })?;
 
     emit_info(
         "API_REQUEST_COMPLETE",
@@ -416,7 +415,8 @@ mod tests {
     use super::*;
 
     fn bundled_profile() -> DeploymentProfile {
-        serde_json::from_str(DEPLOYMENT_PROFILE_JSON).expect("bundled profile should parse in tests")
+        serde_json::from_str(DEPLOYMENT_PROFILE_JSON)
+            .expect("bundled profile should parse in tests")
     }
 
     #[test]
@@ -462,7 +462,14 @@ mod tests {
 
     #[test]
     fn profile_identifiers_cannot_escape_route_templates() {
-        for invalid in ["", "PRO/SYN", "PRO?x=1", "PRO#fragment", "PRO SYN", "../PRO"] {
+        for invalid in [
+            "",
+            "PRO/SYN",
+            "PRO?x=1",
+            "PRO#fragment",
+            "PRO SYN",
+            "../PRO",
+        ] {
             assert_eq!(
                 validate_profile_id(invalid),
                 Err("DESKTOP_INVALID_PROFILE_ID".to_string())
