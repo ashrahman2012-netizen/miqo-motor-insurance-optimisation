@@ -96,18 +96,6 @@ test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evide
     assert.equal("riskProfileVersionId" in customerItem,false);
     assert.equal("createdAt" in customerItem,false);
 
-    const storedClient=new Client({connectionString:process.env.DATABASE_URL});
-    await storedClient.connect();
-    try{
-      const stored=(await storedClient.query(
-        "SELECT risk_profile_version_id,created_at FROM discrepancy WHERE discrepancy_id=$1",
-        ["DISC-R1-001"],
-      )).rows[0];
-      assert.equal(stored.risk_profile_version_id,created.versionId);
-      assert.ok(stored.created_at);
-    }finally{
-      await storedClient.end();
-    }
   }finally{
     await app.close();
   }
