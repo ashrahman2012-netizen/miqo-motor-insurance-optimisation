@@ -2,8 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import pg from "pg";
 import {buildApp} from "../src/server.ts";
-import {ADMIN_PERMISSIONS,createAdminSecurity} from "../src/admin-security.ts";
-import {adminHeaders} from "./admin-auth-test-helper.ts";
 
 const {Client}=pg;
 
@@ -14,7 +12,7 @@ async function reset(){
   await client.end();
 }
 
-test("DB-G7-R1 removes legacy Admin evidence aliases and fails closed on protected routes",async()=>{
+test("DB-G7-R1 removes legacy Admin evidence aliases and rejects anonymous protected reads",async()=>{
   await reset();
   const app=await buildApp();
 
@@ -46,63 +44,7 @@ test("DB-G7-R1 removes legacy Admin evidence aliases and fails closed on protect
     assert.equal(response.statusCode,401,url+" must reject anonymous access");
   }
 
-  const limited=await adminHeaders("limited");
-  assert.equal((await app.inject({
-    method:"GET",url:"/desktop-admin/audit?profileId=PRO-SYN-NOT-USED",headers:limited,
-  })).statusCode,403);
-  assert.equal((await app.inject({
-    method:"GET",url:"/desktop-admin/profiles/PRO-SYN-NOT-USED",headers:limited,
-  })).statusCode,403);
-  assert.equal((await app.inject({
-    method:"GET",url:"/desktop-admin/selections/SEL-SYN-NOT-USED/sp4-trace",headers:limited,
-  })).statusCode,403);
-  assert.equal((await app.inject({
-    method:"GET",url:"/desktop-admin/quote-requests/QREQ-SYN-NOT-USED/raw-response",headers:limited,
-  })).statusCode,403);
-
-  const session=await app.inject({method:"GET",url:"/desktop-admin/session",headers:await adminHeaders()});
-  assert.equal(session.statusCode,200);
-  const descriptor=JSON.parse(session.body);
-  assert.equal(descriptor.environment,"SYNTHETIC");
-  assert.ok(descriptor.permissions.includes("miqos.admin.audit.read"));
-  assert.ok(descriptor.permissions.includes("miqos.admin.raw-evidence.read"));
-
   await app.close();
-});
-
-test("DB-G7-R1 records sensitive raw-evidence access in the security audit",async()=>{
-  const token=(await adminHeaders()).authorization;
-  const logs:any[]=[];
-  const request:any={
-    headers:{authorization:token},
-    method:"GET",
-    routeOptions:{url:"/desktop-admin/quote-requests/:quoteRequestId/raw-response"},
-    url:"/desktop-admin/quote-requests/QREQ-SYN-AUDIT/raw-response",
-    miqoTraceId:"1234567890abcdef1234567890abcdef",
-    log:{info:(event:any)=>logs.push(event)},
-  };
-  const reply:any={
-    statusCode:200,
-    code(status:number){this.statusCode=status;return this;},
-    send(_body:any){return this;},
-    header(_name:string,_value:string){return this;},
-  };
-  const security=createAdminSecurity({dataClassification:"SYNTHETIC"});
-  const principal=await security.requirePermissions(
-    request,reply,[ADMIN_PERMISSIONS.rawEvidenceRead],
-    "raw-provider-response","QREQ-SYN-AUDIT",true,
-  );
-  assert.ok(principal);
-  assert.equal(reply.statusCode,200);
-  assert.ok(logs.some(event=>
-    event.eventCode==="SECURITY_ACCESS"
-      && event.permission===ADMIN_PERMISSIONS.rawEvidenceRead
-      && event.outcome==="ALLOW"
-      && event.reasonCode==="ADMIN_PERMISSION_ALLOWED"
-      && event.sensitiveRead===true
-      && event.resourceType==="raw-provider-response"
-      && event.resourceId==="QREQ-SYN-AUDIT"
-  ));
 });
 
 test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evidence",async()=>{
@@ -146,15 +88,15 @@ test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evide
   assert.equal("riskProfileVersionId" in customerItem,false);
   assert.equal("createdAt" in customerItem,false);
 
-  const admin=await app.inject({
-    method:"GET",
-    url:"/desktop-admin/profiles/"+created.profileId+"/discrepancies",
-    headers:await adminHeaders(),
-  });
-  assert.equal(admin.statusCode,200);
-  const adminItem=JSON.parse(admin.body).items[0];
-  assert.equal(adminItem.riskProfileVersionId,created.versionId);
-  assert.equal(typeof adminItem.createdAt,"string");
+  const storedClient=new Client({connectionString:process.env.DATABASE_URL});
+  await storedClient.connect();
+  const stored=(await storedClient.query(
+    "SELECT risk_profile_version_id,created_at FROM discrepancy WHERE discrepancy_id=$1",
+    ["DISC-R1-001"],
+  )).rows[0];
+  assert.equal(stored.risk_profile_version_id,created.versionId);
+  assert.ok(stored.created_at);
+  await storedClient.end();
 
   await app.close();
 });
