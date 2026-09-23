@@ -48,37 +48,37 @@ const ROUTES: Readonly<Record<string, Omit<DesktopRouteModel, "path">>> = {
   "/admin/optimisation": {
     title: "Optimisation",
     eyebrow: "Trace-derived foundation",
-    description: "Authoritative optimisation evidence may be presented from approved traces. Objective changes and optimisation mutations are not authorised.",
+    description: "Open an exact selection to inspect persisted objective and optimisation lineage. Objective changes and optimisation mutations are not authorised.",
     disposition: "TRACE_DERIVED",
   },
   "/admin/scenarios": {
     title: "Scenarios",
     eyebrow: "Trace-derived foundation",
-    description: "Scenario evidence may be inspected when supplied by authoritative traces. Scenario generation remains outside Desktop Admin authority.",
+    description: "Open an exact selection to inspect all persisted scenarios and O-class deltas in its authoritative trace. Scenario generation remains outside Desktop Admin authority.",
     disposition: "TRACE_DERIVED",
   },
   "/admin/market-routes": {
     title: "Market Routes",
     eyebrow: "Trace-derived foundation",
-    description: "Market-route evidence is inspection-only. Route execution and provider activation are not authorised.",
+    description: "Open an exact selection to inspect persisted route/provider/channel and quote lineage. Route execution and provider activation are not authorised.",
     disposition: "TRACE_DERIVED",
   },
   "/admin/quote-runs": {
     title: "Quote Runs",
     eyebrow: "Read-only foundation",
-    description: "Quote evidence may be inspected through approved trace composition. Global quote-run listing and quote execution remain deferred.",
+    description: "Open an exact selection to inspect quote-request, raw-provider and normalised quotation evidence. Global quote-run listing and quote execution remain deferred.",
     disposition: "READ_ONLY",
   },
   "/admin/recommendations": {
     title: "Recommendation Sets",
     eyebrow: "Read-only foundation",
-    description: "Recommendation evidence is backend-owned and inspectable. Creation, reordering, acceptance and customer handoff are not authorised.",
+    description: "Open an exact selection to inspect persisted recommendation-set, explanation and evidence ordering. Desktop does not create, reorder or accept recommendations.",
     disposition: "READ_ONLY",
   },
   "/admin/integrity": {
     title: "Integrity",
     eyebrow: "Read-only foundation",
-    description: "Integrity outcomes are rendered exactly as authoritative evidence supplies them. Desktop does not evaluate or override integrity.",
+    description: "Open an exact selection to inspect persisted integrity and governance evidence. Desktop does not evaluate or override integrity.",
     disposition: "READ_ONLY",
   },
   "/admin/discrepancies": {
@@ -90,7 +90,7 @@ const ROUTES: Readonly<Record<string, Omit<DesktopRouteModel, "path">>> = {
   "/admin/audit": {
     title: "Audit & Trace",
     eyebrow: "Primary Admin workspace",
-    description: "Foundation route for append-only audit and exact decision-lineage reconstruction. Deep evidence composition is implemented in later gateways.",
+    description: "Append-only profile audit plus exact selection-linked decision-lineage reconstruction.",
     disposition: "READ_ONLY",
   },
   "/admin/providers": {
@@ -151,7 +151,7 @@ export function resolveDesktopRoute(pathname: string): DesktopRouteModel {
       path,
       title: "Selection Trace",
       eyebrow: "Read-only lineage",
-      description: "Exact selection-lineage route. Deep trace composition is implemented in DB-G5.",
+      description: "Exact selection-lineage route presenting authoritative scenario, route, quote, recommendation and integrity evidence.",
       disposition: "READ_ONLY",
     };
   }

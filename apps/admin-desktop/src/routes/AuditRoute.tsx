@@ -1,11 +1,17 @@
 import {useState} from "react";
-import {Card, PageHeader, PageState, StatusBadge} from "@miqo/ui";
+import {Card, ContentGrid, PageHeader, PageState, StatusBadge} from "@miqo/ui";
 import {ExactIdLookup} from "../components/ExactIdLookup";
 import {loadDesktopAuditProof} from "../services/admin-audit";
 import {classifyDesktopReadFailure} from "../services/admin-profile";
 import type {DesktopApiTransport, DesktopAuditProof} from "../services/contracts";
 
-export function AuditRoute({transport}: {transport: DesktopApiTransport}) {
+export function AuditRoute({
+  transport,
+  onNavigate,
+}: {
+  transport: DesktopApiTransport;
+  onNavigate: (path: string) => void;
+}) {
   const [proof, setProof] = useState<DesktopAuditProof | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,12 +34,24 @@ export function AuditRoute({transport}: {transport: DesktopApiTransport}) {
       <PageHeader
         eyebrow="Append-only lifecycle evidence"
         title="Audit & Trace"
-        description="DB-G4 exposes core profile audit history only. End-to-end selection/quote/recommendation lineage remains DB-G5."
-        actions={<StatusBadge status="INFORMATIONAL" label="CORE AUDIT" />}
+        description="Inspect append-only profile audit history or open an exact Selection ID for complete scenario, quote, recommendation and integrity lineage."
+        actions={<StatusBadge status="INFORMATIONAL" label="READ ONLY" />}
       />
-      <Card emphasis>
-        <ExactIdLookup label="Profile ID" placeholder="PRO-SYN-…" buttonLabel="Load audit" onSubmit={load} />
-      </Card>
+      <ContentGrid columns={2}>
+        <Card emphasis>
+          <h2>Profile lifecycle audit</h2>
+          <ExactIdLookup label="Profile ID" placeholder="PRO-SYN-…" buttonLabel="Load audit" onSubmit={load} />
+        </Card>
+        <Card>
+          <h2>Decision lineage</h2>
+          <ExactIdLookup
+            label="Selection ID"
+            placeholder="SEL-…"
+            buttonLabel="Open selection trace"
+            onSubmit={selectionId => onNavigate(`/admin/selections/${selectionId}/trace`)}
+          />
+        </Card>
+      </ContentGrid>
       {loading ? <PageState state="LOADING" title="Loading audit evidence" message="Reading the authorised append-only audit resource." /> : null}
       {failure ? (
         <Card>

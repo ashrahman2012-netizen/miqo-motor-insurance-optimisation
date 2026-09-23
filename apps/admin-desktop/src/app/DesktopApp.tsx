@@ -11,6 +11,8 @@ import {CommandBar} from "../components/CommandBar";
 import {AuditRoute} from "../routes/AuditRoute";
 import {CasesRoute} from "../routes/CasesRoute";
 import {DashboardRoute} from "../routes/DashboardRoute";
+import {DecisionEvidenceEntryRoute} from "../routes/DecisionEvidenceEntryRoute";
+import {DecisionTraceRoute} from "../routes/DecisionTraceRoute";
 import {DiscrepanciesRoute} from "../routes/DiscrepanciesRoute";
 import {ProfileEvidenceRoute} from "../routes/ProfileEvidenceRoute";
 import {ProfileVersionRoute} from "../routes/ProfileVersionRoute";
@@ -47,6 +49,15 @@ export function DesktopApp() {
   const route = resolveDesktopRoute(path);
   const profileMatch = route.path.match(/^\/admin\/profiles\/([^/]+)$/);
   const profileVersionMatch = route.path.match(/^\/admin\/profile-versions\/([^/]+)$/);
+  const selectionTraceMatch = route.path.match(/^\/admin\/selections\/([^/]+)\/trace$/);
+  const decisionEntryPaths = new Set([
+    "/admin/optimisation",
+    "/admin/scenarios",
+    "/admin/market-routes",
+    "/admin/quote-runs",
+    "/admin/recommendations",
+    "/admin/integrity",
+  ]);
 
   return (
     <ApplicationEnvironmentProvider value={environment}>
@@ -78,10 +89,18 @@ export function DesktopApp() {
           <ProfileEvidenceRoute transport={transport} profileId={profileMatch[1]} />
         ) : profileVersionMatch ? (
           <ProfileVersionRoute transport={transport} versionId={profileVersionMatch[1]} />
+        ) : selectionTraceMatch ? (
+          <DecisionTraceRoute transport={transport} selectionId={selectionTraceMatch[1]} />
+        ) : decisionEntryPaths.has(route.path) ? (
+          <DecisionEvidenceEntryRoute
+            title={route.title}
+            description={route.description}
+            onNavigate={navigate}
+          />
         ) : route.path === "/admin/discrepancies" ? (
           <DiscrepanciesRoute transport={transport} />
         ) : route.path === "/admin/audit" ? (
-          <AuditRoute transport={transport} />
+          <AuditRoute transport={transport} onNavigate={navigate} />
         ) : route.path === "/admin/system" ? (
           <SystemRoute runtime={runtime} />
         ) : (
