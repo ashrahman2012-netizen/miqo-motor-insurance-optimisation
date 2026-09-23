@@ -47,3 +47,14 @@ No DB-G5 blocker remains.
 - B-DB-G5-003: `1be0f6480d9a516daf0df93effcf4a66997bb67c` passed repository CI, G7 package proof and G8 API/installed lifecycle proof.
 
 No user interaction, production identity, production environment or signing input was required for DB-G5.
+
+
+## DB-G6 execution
+
+No DB-G6 blocker remains.
+
+- B-DB-G6-001: initial source `4bb1b6ba68fae69ffa102f0675f46adba289ee0e` was superseded while Windows workflows were cancelled; repository CI was green.
+- B-DB-G6-002: `76228263892a751cfa9eda3f069f1bafb3ed0d7b` repaired typed support-snapshot construction. Repository CI and G8 API integration passed, but Windows G7/G8 stopped at `cargo fmt --check`.
+- B-DB-G6-003: `b7c1931aa2e1ef291036ece8eadfa043465d5389` applied formatter-prescribed layout only and passed repository CI, G7 package proof and G8 API/installed lifecycle proof.
+
+No production identity, environment, signing or provider input was required for DB-G6.

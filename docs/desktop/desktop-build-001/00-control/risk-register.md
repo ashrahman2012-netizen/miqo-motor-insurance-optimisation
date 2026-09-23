@@ -47,3 +47,15 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G5-003 | Raw provider payload could leak through logging/export/caching. | CONTROLLED / HARDEN DB-G6/7/10 | exact trace view only; no default export/cache; operational logs exclude payload/token material |
 | R-DB-G5-004 | Native deep-trace command could evolve into generic multi-resource transport. | CONTROLLED / PROOF PENDING | one typed command; typed operation enum; exact six-permission G8 assertion |
 | R-DB-G5-005 | Global decision-data search/list could be implied by top-level routes. | CONTROLLED | exact Selection ID entry and explicit no-global-search copy |
+
+
+## DB-G6 risks
+
+| ID | Risk | State | Control / target |
+|---|---|---|---|
+| R-DB-G6-001 | Correlation identifiers could be conflated with business/audit identity. | CONTROLLED | distinct session/trace/request labels; no business-authority semantics |
+| R-DB-G6-002 | API build headers could leak configuration/secrets. | CONTROLLED | fixed semantic version/build/source fields only; no environment dump |
+| R-DB-G6-003 | Support evidence could become a payload/log exfiltration mechanism. | CONTROLLED | fixed typed diagnostics struct; no log-content/raw-payload fields; no export/upload permission |
+| R-DB-G6-004 | Operational logs could capture credential or business payload material. | CONTROLLED / HARDEN DB-G7/10 | structured code/reference fields only; G8 asserts no Bearer/refresh_token |
+| R-DB-G6-005 | Installed UI path for support-snapshot generation is not directly exercised by G8 automation. | ACCEPTED / HARDEN DB-G10 | native command exactly permissioned/compiled; closed metadata construction; add installed UI exercise during hardening |
+| R-DB-G6-006 | In-memory diagnostics may report only the most recent API operation rather than a full support timeline. | ACCEPTED | intentional bounded current-session summary; logs remain bounded chronological evidence |

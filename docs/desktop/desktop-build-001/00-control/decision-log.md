@@ -78,3 +78,16 @@ No DB-G2 decision changes domain methodology, mutation authority, security ident
 | D-DB-G5-004 | Comparison state, evidence ordinal/exclusion, recommendation and integrity outcome are rendered as persisted evidence and never recalculated in Desktop. | DB-G1 capability freeze |
 | D-DB-G5-005 | Decision-evidence entry routes remain exact-ID navigation; no global scenario/quote/recommendation list/search is created. | DB-G1 search boundary |
 | D-DB-G5-006 | Fail closed on selection, surfaced-quote or raw-response correlation mismatch. | evidence-integrity requirement |
+
+
+## DB-G6 decisions
+
+| ID | Decision | Authority / evidence |
+|---|---|---|
+| D-DB-G6-001 | Use W3C-shaped trace context for native reads while keeping server request ID independent. | CC-G6-001 + correlation contract |
+| D-DB-G6-002 | Accept inbound trace IDs only after strict shape/non-zero validation; otherwise create a server trace ID. | fail-closed correlation |
+| D-DB-G6-003 | Expose only API semantic version, CI/build ID and source commit as server build identity. | safe diagnostics boundary |
+| D-DB-G6-004 | Reject contradictory returned trace IDs in Desktop native core. | cross-stack correlation integrity |
+| D-DB-G6-005 | Support snapshots are explicit, in-memory, metadata-only objects with declared exclusions and SHA-256 checksum. | data-minimisation boundary |
+| D-DB-G6-006 | Do not add filesystem/dialog/export/upload capability for support evidence at DB-G6. | least privilege |
+| D-DB-G6-007 | Close CC-G6-001 for the current TEST/SYNTHETIC stack only. | DB-G6 executable proof |
