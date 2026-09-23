@@ -95,15 +95,15 @@ const ROUTES: Readonly<Record<string, Omit<DesktopRouteModel, "path">>> = {
   },
   "/admin/providers": {
     title: "Providers",
-    eyebrow: "Reserved capability",
-    description: "Provider status may be displayed only from authoritative evidence. Activation and deactivation remain separately governed.",
-    disposition: "RESERVED",
+    eyebrow: "Capability closure",
+    description: "No authoritative global provider-status resource is admitted to Desktop Admin. Provider identity and route evidence remain available only inside exact persisted decision traces; activation and deactivation are prohibited.",
+    disposition: "DEFERRED",
   },
   "/admin/certification": {
     title: "Certification",
-    eyebrow: "Reserved capability",
-    description: "Certification evidence may be displayed when authoritative data exists. TEST/SYNTHETIC proof is not production certification.",
-    disposition: "RESERVED",
+    eyebrow: "Capability closure",
+    description: "No authoritative certification-status resource is admitted to Desktop Admin. TEST/SYNTHETIC CI, packaging and identity proof are engineering evidence and must not be presented as production certification.",
+    disposition: "DEFERRED",
   },
   "/admin/system": {
     title: "System",

@@ -17,6 +17,8 @@ import {DecisionTraceRoute} from "../routes/DecisionTraceRoute";
 import {DiscrepanciesRoute} from "../routes/DiscrepanciesRoute";
 import {ProfileEvidenceRoute} from "../routes/ProfileEvidenceRoute";
 import {ProfileVersionRoute} from "../routes/ProfileVersionRoute";
+import {ProvidersRoute} from "../routes/ProvidersRoute";
+import {CertificationRoute} from "../routes/CertificationRoute";
 import {RouteStatePage} from "../routes/RouteStatePage";
 import {SystemRoute} from "../routes/SystemRoute";
 import {ADMIN_NAVIGATION, resolveDesktopRoute} from "./navigation";
@@ -161,6 +163,10 @@ export function DesktopApp() {
           <DiscrepanciesRoute transport={transport} />
         ) : route.path === "/admin/audit" ? (
           <AuditRoute transport={transport} onNavigate={navigate} />
+        ) : route.path === "/admin/providers" ? (
+          <ProvidersRoute onNavigate={navigate} />
+        ) : route.path === "/admin/certification" ? (
+          <CertificationRoute />
         ) : route.path === "/admin/system" ? (
           <SystemRoute runtime={runtime} transport={transport} />
         ) : (

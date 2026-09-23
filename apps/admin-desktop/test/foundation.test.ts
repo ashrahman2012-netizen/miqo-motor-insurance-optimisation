@@ -40,9 +40,18 @@ describe("Desktop application foundation identity", () => {
     expect(resolveDesktopRoute("/admin/selections/SEL-SYN-001/trace").disposition).toBe("READ_ONLY");
   });
 
-  it("keeps provider activation and unsupported global functionality out of the route model", () => {
-    expect(resolveDesktopRoute("/admin/providers").disposition).toBe("RESERVED");
+  it("closes unsupported global capability routes explicitly without creating authority", () => {
+    expect(resolveDesktopRoute("/admin/providers").disposition).toBe("DEFERRED");
+    expect(resolveDesktopRoute("/admin/certification").disposition).toBe("DEFERRED");
     expect(resolveDesktopRoute("/admin/optimisation").disposition).toBe("TRACE_DERIVED");
     expect(resolveDesktopRoute("/admin/unknown").disposition).toBe("NOT_FOUND");
+  });
+
+  it("gives every canonical navigation route a non-reserved closure state", () => {
+    for (const item of ADMIN_NAVIGATION) {
+      const route = resolveDesktopRoute(item.href);
+      expect(route.disposition).not.toBe("RESERVED");
+      expect(route.disposition).not.toBe("NOT_FOUND");
+    }
   });
 });
