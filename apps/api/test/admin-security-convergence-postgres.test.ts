@@ -64,6 +64,14 @@ test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evide
         "INSERT INTO discrepancy(discrepancy_id,risk_profile_version_id,field_id,declared_value_json,verified_value_json,state,blocking) VALUES($1,$2,$3,$4::jsonb,$5::jsonb,$6,$7)",
         ["DISC-R1-001",created.versionId,"annual_mileage","8000","9000","REVIEW_REQUIRED",true],
       );
+      await client.query(
+        "INSERT INTO audit_event(audit_event_id,event_type,entity_type,entity_id,trace_id,metadata_json) VALUES "+
+        "('AUD-R1-SCENARIO','sp4_scenario_exploration_generated','customer_objective','OBJ-R1',$1,'{}'::jsonb),"+
+        "('AUD-R1-RESULT','sp4_recommendation_set_created','recommendation_set','REC-R1',$1,'{}'::jsonb),"+
+        "('AUD-R1-EXPLAIN','sp4_recommendation_explanation_created','recommendation_explanation','EXP-R1',$1,'{}'::jsonb),"+
+        "('AUD-R1-RAW','raw_provider_response_captured','raw_provider_response','RAW-R1',$1,'{}'::jsonb)",
+        [created.profileId],
+      );
     }finally{
       await client.end();
     }
@@ -74,15 +82,25 @@ test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evide
     });
     assert.equal(customerSnapshot.statusCode,200);
     const customerAudit=JSON.parse(customerSnapshot.body).audit;
-    assert.equal(customerAudit.length,1);
-    assert.equal(customerAudit[0].eventType,"profile_validated");
-    assert.deepEqual(
-      Object.keys(customerAudit[0]).sort(),
-      ["entityId","eventType","metadataJson","occurredAt"].sort(),
-    );
-    assert.equal("auditEventId" in customerAudit[0],false);
-    assert.equal("traceId" in customerAudit[0],false);
-    assert.equal("entityType" in customerAudit[0],false);
+    const customerEventTypes=customerAudit.map((event:any)=>event.eventType);
+    for(const eventType of [
+      "profile_validated",
+      "sp4_scenario_exploration_generated",
+      "sp4_recommendation_set_created",
+      "sp4_recommendation_explanation_created",
+    ]){
+      assert.ok(customerEventTypes.includes(eventType),eventType+" must remain available to the customer-safe lifecycle projection");
+    }
+    assert.equal(customerEventTypes.includes("raw_provider_response_captured"),false);
+    for(const event of customerAudit){
+      assert.deepEqual(
+        Object.keys(event).sort(),
+        ["entityId","eventType","metadataJson","occurredAt"].sort(),
+      );
+      assert.equal("auditEventId" in event,false);
+      assert.equal("traceId" in event,false);
+      assert.equal("entityType" in event,false);
+    }
 
     const customer=await app.inject({
       method:"GET",url:"/profiles/"+created.profileId+"/discrepancies",
