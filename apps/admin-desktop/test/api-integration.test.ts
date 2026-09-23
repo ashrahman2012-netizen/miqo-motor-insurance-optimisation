@@ -7,6 +7,7 @@ import type {
   ProfileVersionApi,
 } from "@miqo/application-adapters";
 import {loadDesktopAuditProof} from "../src/services/admin-audit";
+import {loadDesktopDecisionTrace} from "../src/services/admin-decision-trace";
 import {
   loadDesktopProfileEvidence,
   loadDesktopProfileVersionEvidence,
@@ -69,6 +70,37 @@ class FastifyProofTransport implements DesktopApiTransport {
     const discrepancies = await discrepancyResponse.json() as {items: ReadonlyArray<AdminDiscrepancyApi>};
     return {auditEvents: audit.items, discrepancies: discrepancies.items};
   }
+
+  async loadAdminSelectionTrace(selectionId: string) {
+    const traceResponse = await fetch(
+      this.baseUrl + "/admin/selections/" + encodeURIComponent(selectionId) + "/sp4-trace",
+    );
+    if (!traceResponse.ok) throw new Error(`DESKTOP_API_STATUS_${traceResponse.status}`);
+    const trace = await traceResponse.json() as import("@miqo/application-adapters").AdminSprint4TraceApi;
+    const surfaced = trace.marketRouteQuotes.find(
+      item => item.normalisedQuote.normalisedQuoteId === trace.recommendation.surfacedNormalisedQuoteId,
+    );
+    const [auditResponse, discrepancyResponse, rawResponse] = await Promise.all([
+      fetch(this.baseUrl + "/admin/audit?profileId=" + encodeURIComponent(trace.profile.profileId)),
+      fetch(this.baseUrl + "/profiles/" + encodeURIComponent(trace.profile.profileId) + "/discrepancies"),
+      surfaced
+        ? fetch(this.baseUrl + "/quote-requests/" + encodeURIComponent(surfaced.quoteRequest.quoteRequestId) + "/raw-response")
+        : Promise.resolve(null),
+    ]);
+    if (!auditResponse.ok || !discrepancyResponse.ok || (rawResponse && !rawResponse.ok)) {
+      throw new Error("G8_ADMIN_SELECTION_TRACE_REQUEST_FAILED");
+    }
+    const audit = await auditResponse.json() as {items: ReadonlyArray<AdminAuditEventApi>};
+    const discrepancies = await discrepancyResponse.json() as {items: ReadonlyArray<AdminDiscrepancyApi>};
+    return {
+      trace,
+      auditEvents: audit.items,
+      discrepancies: discrepancies.items,
+      rawProviderResponse: rawResponse
+        ? await rawResponse.json() as import("@miqo/application-adapters").AdminRawProviderResponseApi
+        : null,
+    };
+  }
 }
 
 describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fastify API", () => {
@@ -113,6 +145,84 @@ describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fasti
     expect(versionEvidence.version.versionId).toBe(profile.versionId);
   });
 
+  it("loads complete persisted SP4 selection lineage without Desktop decision recomputation", async () => {
+    async function json(path: string, init?: RequestInit) {
+      const response = await fetch(baseUrl + path, init);
+      const body = await response.json();
+      expect(response.ok).toBe(true);
+      return body as any;
+    }
+
+    const profile = await json("/profiles", {method: "POST"});
+    for (const [fieldId, value] of [
+      ["main_driver_id", "DRV-DESKTOP-G5"],
+      ["annual_mileage", 8000],
+      ["licence_held_since", "2018-04-16"],
+    ] as const) {
+      await json("/profile-versions/" + profile.versionId + "/facts/" + fieldId, {
+        method: "PUT",
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify({value}),
+      });
+    }
+    await json("/profiles/" + profile.profileId + "/lock", {method: "POST"});
+
+    const objectiveResponse = await json(
+      "/profile-versions/" + profile.versionId + "/customer-objectives",
+      {
+        method: "POST",
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify({objectiveId: "LOWEST_ANNUAL_PREMIUM"}),
+      },
+    );
+    const objective = objectiveResponse.item;
+    const exploration = await json(
+      "/customer-objectives/" + objective.customerObjectiveId + "/scenario-explorations",
+      {
+        method: "POST",
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify({
+          choices: {
+            voluntary_excess: [250, 500],
+            payment_structure: ["ANNUAL", "MONTHLY"],
+          },
+        }),
+      },
+    );
+    const base = "/customer-objectives/" + objective.customerObjectiveId
+      + "/scenario-explorations/" + encodeURIComponent(exploration.explorationFingerprint);
+    await json(base + "/market-route-quotes", {method: "POST"});
+    const recommendation = await json(base + "/recommendations", {method: "POST"});
+    const shortlist = await json(
+      "/profile-versions/" + profile.versionId + "/shortlists",
+      {method: "POST"},
+    );
+    const selection = await json("/shortlists/" + shortlist.shortlistId + "/selections", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        normalisedQuoteId: recommendation.surfacedNormalisedQuoteId,
+        recommendationSetId: recommendation.recommendationSetId,
+      }),
+    });
+
+    const proof = await loadDesktopDecisionTrace(
+      new FastifyProofTransport(baseUrl),
+      selection.selectionId,
+    );
+    expect(proof.trace.profile.profileId).toBe(profile.profileId);
+    expect(proof.trace.selection.selectionId).toBe(selection.selectionId);
+    expect(proof.trace.recommendation.recommendationSetId).toBe(recommendation.recommendationSetId);
+    expect(proof.trace.marketRouteQuotes.length).toBeGreaterThan(4);
+    expect(proof.viewModel.normalisedEvidence?.normalisedQuoteId)
+      .toBe(recommendation.surfacedNormalisedQuoteId);
+    expect(proof.viewModel.rawProviderResponse?.quoteRequestId)
+      .toBe(proof.viewModel.currentArtefact?.quoteRequestId);
+    expect(
+      proof.viewModel.integrityQueue.find(item => item.category === "FINAL_INTEGRITY")?.status.code,
+    ).toBe("PASS");
+  });
+
   it("fails closed when server environment attestation contradicts TEST/SYNTHETIC", async () => {
     const transport: DesktopApiTransport = {
       getRuntimeProfile: () => new FastifyProofTransport(baseUrl).getRuntimeProfile(),
@@ -124,6 +234,7 @@ describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fasti
       loadAdminProfile: async () => ({versions: [], audit: [], discrepancies: []}),
       loadAdminProfileVersion: async () => { throw new Error("NOT_USED"); },
       loadAdminProfileAudit: async () => ({auditEvents: [], discrepancies: []}),
+      loadAdminSelectionTrace: async () => { throw new Error("NOT_USED"); },
     };
 
     await expect(loadDesktopAuditProof(transport, "PRO-SYN-001"))

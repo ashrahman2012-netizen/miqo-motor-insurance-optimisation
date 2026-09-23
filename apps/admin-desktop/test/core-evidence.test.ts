@@ -50,6 +50,7 @@ function transport(): DesktopApiTransport {
       version: {...profileEvidence.versions[0], versionId},
     }),
     loadAdminProfileAudit: async () => ({auditEvents: [], discrepancies: []}),
+    loadAdminSelectionTrace: async () => { throw new Error("NOT_USED"); },
   };
 }
 

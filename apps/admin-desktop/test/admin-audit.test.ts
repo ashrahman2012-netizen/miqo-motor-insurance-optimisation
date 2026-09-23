@@ -31,6 +31,7 @@ function transport(
     loadAdminProfile: async () => ({versions: [], audit: [], discrepancies: []}),
     loadAdminProfileVersion: async () => { throw new Error("NOT_USED"); },
     loadAdminProfileAudit: async () => evidence,
+    loadAdminSelectionTrace: async () => { throw new Error("NOT_USED"); },
   };
 }
 
