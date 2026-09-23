@@ -31,3 +31,8 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G3-003 | Unknown feature flags could become an accidental runtime authority channel. | CONTROLLED / PROOF PENDING | current profile requires empty feature object |
 | R-DB-G3-004 | TEST loopback HTTP could be copied into STAGING/PRODUCTION. | CONTROLLED | current exact TEST exception only; non-synthetic profiles remain blocked by CC-G5-001 |
 | R-DB-G3-005 | Renderer could communicate a trusted environment despite native profile failure. | CONTROLLED / PROOF PENDING | global provider null state plus Dashboard NOT_AUTHORISED correction |
+
+| R-DB-G4-001 | Reusing customer profile adapter could leak mutation affordances into Admin. | CONTROLLED | Desktop read model strips editable/action properties; unit test proves absence |
+| R-DB-G4-002 | Exact-ID lookup could drift into implied global search. | CONTROLLED | local identifier validation + explicit UI copy; no search endpoint |
+| R-DB-G4-003 | Native command expansion could become generic transport. | CONTROLLED / PROOF PENDING | two typed enum operations only; exact Tauri permission list + Rust tests |
+| R-DB-G4-004 | Historical discrepancy evidence may be incomplete because current API discrepancy resource is current-version oriented. | CONTROLLED | profile view labels current-version discrepancy evidence; no fabricated history |

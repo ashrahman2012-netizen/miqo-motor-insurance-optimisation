@@ -8,7 +8,12 @@ import {
 import type {DesktopRuntimeProfile} from "../services/contracts";
 import {TauriDesktopApiTransport} from "../services/tauri-transport";
 import {CommandBar} from "../components/CommandBar";
+import {AuditRoute} from "../routes/AuditRoute";
+import {CasesRoute} from "../routes/CasesRoute";
 import {DashboardRoute} from "../routes/DashboardRoute";
+import {DiscrepanciesRoute} from "../routes/DiscrepanciesRoute";
+import {ProfileEvidenceRoute} from "../routes/ProfileEvidenceRoute";
+import {ProfileVersionRoute} from "../routes/ProfileVersionRoute";
 import {RouteStatePage} from "../routes/RouteStatePage";
 import {SystemRoute} from "../routes/SystemRoute";
 import {ADMIN_NAVIGATION, resolveDesktopRoute} from "./navigation";
@@ -40,6 +45,8 @@ export function DesktopApp() {
     ? createApplicationEnvironmentVM("SYNTHETIC")
     : null;
   const route = resolveDesktopRoute(path);
+  const profileMatch = route.path.match(/^\/admin\/profiles\/([^/]+)$/);
+  const profileVersionMatch = route.path.match(/^\/admin\/profile-versions\/([^/]+)$/);
 
   return (
     <ApplicationEnvironmentProvider value={environment}>
@@ -65,6 +72,16 @@ export function DesktopApp() {
 
         {route.path === "/" ? (
           <DashboardRoute transport={transport} runtime={runtime} />
+        ) : route.path === "/admin/cases" ? (
+          <CasesRoute onNavigate={navigate} />
+        ) : profileMatch ? (
+          <ProfileEvidenceRoute transport={transport} profileId={profileMatch[1]} />
+        ) : profileVersionMatch ? (
+          <ProfileVersionRoute transport={transport} versionId={profileVersionMatch[1]} />
+        ) : route.path === "/admin/discrepancies" ? (
+          <DiscrepanciesRoute transport={transport} />
+        ) : route.path === "/admin/audit" ? (
+          <AuditRoute transport={transport} />
         ) : route.path === "/admin/system" ? (
           <SystemRoute runtime={runtime} />
         ) : (

@@ -2,8 +2,15 @@ import {describe, expect, it} from "vitest";
 import type {
   AdminAuditEventApi,
   AdminDiscrepancyApi,
+  ProfileDiscrepancyApi,
+  ProfileSnapshotApi,
+  ProfileVersionApi,
 } from "@miqo/application-adapters";
 import {loadDesktopAuditProof} from "../src/services/admin-audit";
+import {
+  loadDesktopProfileEvidence,
+  loadDesktopProfileVersionEvidence,
+} from "../src/services/admin-profile";
 import type {
   DesktopAdminProfileAuditEvidence,
   DesktopApiTransport,
@@ -36,6 +43,18 @@ class FastifyProofTransport implements DesktopApiTransport {
     const response = await fetch(this.baseUrl + "/health");
     if (!response.ok) throw new Error("G8_HEALTH_REQUEST_FAILED");
     return response.json() as Promise<DesktopHealth>;
+  }
+
+  async loadAdminProfile(profileId: string) {
+    const response = await fetch(this.baseUrl + "/admin/profiles/" + encodeURIComponent(profileId));
+    if (!response.ok) throw new Error(`DESKTOP_API_STATUS_${response.status}`);
+    return response.json() as Promise<ProfileSnapshotApi & {discrepancies: ReadonlyArray<ProfileDiscrepancyApi>}>;
+  }
+
+  async loadAdminProfileVersion(versionId: string) {
+    const response = await fetch(this.baseUrl + "/admin/profile-versions/" + encodeURIComponent(versionId));
+    if (!response.ok) throw new Error(`DESKTOP_API_STATUS_${response.status}`);
+    return response.json() as Promise<{profileId: string; version: ProfileVersionApi}>;
   }
 
   async loadAdminProfileAudit(profileId: string): Promise<DesktopAdminProfileAuditEvidence> {
@@ -78,6 +97,22 @@ describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fasti
     expect(proof.viewModel.pageState.state).toBe("PARTIAL");
   });
 
+  it("loads exact profile and profile-version evidence through existing Admin reads", async () => {
+    const created = await fetch(baseUrl + "/profiles", {method: "POST"});
+    expect(created.status).toBe(201);
+    const profile = await created.json() as {profileId: string; versionId: string};
+    const transport = new FastifyProofTransport(baseUrl);
+
+    const profileEvidence = await loadDesktopProfileEvidence(transport, profile.profileId);
+    expect(profileEvidence.profileId).toBe(profile.profileId);
+    expect(profileEvidence.version.versionId).toBe(profile.versionId);
+    expect(profileEvidence.fields).toEqual([]);
+
+    const versionEvidence = await loadDesktopProfileVersionEvidence(transport, profile.versionId);
+    expect(versionEvidence.profileId).toBe(profile.profileId);
+    expect(versionEvidence.version.versionId).toBe(profile.versionId);
+  });
+
   it("fails closed when server environment attestation contradicts TEST/SYNTHETIC", async () => {
     const transport: DesktopApiTransport = {
       getRuntimeProfile: () => new FastifyProofTransport(baseUrl).getRuntimeProfile(),
@@ -86,6 +121,8 @@ describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fasti
         dataClassification: "PRODUCTION",
         liveProvidersEnabled: true,
       }),
+      loadAdminProfile: async () => ({versions: [], audit: [], discrepancies: []}),
+      loadAdminProfileVersion: async () => { throw new Error("NOT_USED"); },
       loadAdminProfileAudit: async () => ({auditEvents: [], discrepancies: []}),
     };
 

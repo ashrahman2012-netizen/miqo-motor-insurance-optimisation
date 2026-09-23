@@ -54,3 +54,15 @@ No DB-G2 decision changes domain methodology, mutation authority, security ident
 | D-DB-G3-006 | Correct Dashboard environment presentation so unresolved runtime identity is NOT_AUTHORISED rather than statically labelled SYNTHETIC. | G5 fail-closed visible identity |
 | D-DB-G3-007 | Real OIDC/token broker and non-synthetic environment activation remain deferred to DB-G7/CC-G3-001 and CC-G5-001. | gateway separation |
 | D-DB-G3-008 | Update the installed-proof harness to follow and positively assert the renamed `admin-read` capability, while also asserting the legacy scaffold capability is absent. | G8 failure evidence + least-privilege proof continuity |
+
+
+## DB-G4 decisions
+
+| ID | Decision | Authority / evidence |
+|---|---|---|
+| D-DB-G4-001 | Use existing `/admin/profiles/:profileId` and `/admin/profile-versions/:versionId` resources; add no API endpoint. | frozen G2 interface contract + current Fastify API |
+| D-DB-G4-002 | Expand native `admin-read` allow-list by exactly two typed reads for Admin Profile and Admin Profile Version. | DB-G3 platform contract + DB-G4 scope |
+| D-DB-G4-003 | Reuse profile adapter only for passive mapping; strip `editable`, lock action and discrepancy resolution actions at Desktop service boundary. | DB-G1 capability freeze |
+| D-DB-G4-004 | Cases provides exact-ID navigation only; global case/entity list/search remains DEFERRED. | D-DB-G1-009 |
+| D-DB-G4-005 | Audit & Trace at DB-G4 presents profile lifecycle audit only; end-to-end selection/quote/recommendation lineage remains DB-G5. | gateway separation |
+| D-DB-G4-006 | Current-version discrepancy resource is read-only; Desktop presents no correction/resolution control. | G2 mutation matrix |

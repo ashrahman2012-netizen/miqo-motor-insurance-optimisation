@@ -92,11 +92,23 @@ struct AdminProfileAuditEvidence {
 #[derive(Debug)]
 enum ApiReadOperation<'a> {
     Health,
+    AdminProfile { profile_id: &'a str },
+    AdminProfileVersion { version_id: &'a str },
     AdminAudit { profile_id: &'a str },
     Discrepancies { profile_id: &'a str },
 }
 
 impl<'a> ApiReadOperation<'a> {
+    fn admin_profile(profile_id: &'a str) -> Result<Self, String> {
+        validate_profile_id(profile_id)?;
+        Ok(Self::AdminProfile { profile_id })
+    }
+
+    fn admin_profile_version(version_id: &'a str) -> Result<Self, String> {
+        validate_version_id(version_id)?;
+        Ok(Self::AdminProfileVersion { version_id })
+    }
+
     fn admin_audit(profile_id: &'a str) -> Result<Self, String> {
         validate_profile_id(profile_id)?;
         Ok(Self::AdminAudit { profile_id })
@@ -110,6 +122,10 @@ impl<'a> ApiReadOperation<'a> {
     fn path(&self) -> String {
         match self {
             Self::Health => "/health".to_string(),
+            Self::AdminProfile { profile_id } => format!("/admin/profiles/{profile_id}"),
+            Self::AdminProfileVersion { version_id } => {
+                format!("/admin/profile-versions/{version_id}")
+            }
             Self::AdminAudit { profile_id } => {
                 format!("/admin/audit?profileId={profile_id}")
             }
@@ -228,17 +244,27 @@ fn runtime_profile() -> Result<RuntimeProfile, String> {
     })
 }
 
-fn validate_profile_id(profile_id: &str) -> Result<(), String> {
-    let valid = !profile_id.is_empty()
-        && profile_id.len() <= 100
-        && profile_id
+fn valid_resource_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 100
+        && value
             .chars()
-            .all(|value| value.is_ascii_alphanumeric() || value == '-' || value == '_');
+            .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_')
+}
 
-    if valid {
+fn validate_profile_id(profile_id: &str) -> Result<(), String> {
+    if valid_resource_id(profile_id) {
         Ok(())
     } else {
         Err("DESKTOP_INVALID_PROFILE_ID".to_string())
+    }
+}
+
+fn validate_version_id(version_id: &str) -> Result<(), String> {
+    if valid_resource_id(version_id) {
+        Ok(())
+    } else {
+        Err("DESKTOP_INVALID_PROFILE_VERSION_ID".to_string())
     }
 }
 
@@ -317,6 +343,24 @@ fn get_health() -> Result<Health, String> {
 }
 
 #[tauri::command]
+fn load_admin_profile(profile_id: String) -> Result<Value, String> {
+    let operation = ApiReadOperation::admin_profile(&profile_id)?;
+    attest_health()?;
+    get_json(operation).inspect_err(|reason| {
+        emit_error("API_REQUEST_FAILURE", "load_admin_profile", reason);
+    })
+}
+
+#[tauri::command]
+fn load_admin_profile_version(version_id: String) -> Result<Value, String> {
+    let operation = ApiReadOperation::admin_profile_version(&version_id)?;
+    attest_health()?;
+    get_json(operation).inspect_err(|reason| {
+        emit_error("API_REQUEST_FAILURE", "load_admin_profile_version", reason);
+    })
+}
+
+#[tauri::command]
 fn load_admin_profile_audit(profile_id: String) -> Result<AdminProfileAuditEvidence, String> {
     let audit_operation = ApiReadOperation::admin_audit(&profile_id)?;
     let discrepancy_operation = ApiReadOperation::discrepancies(&profile_id)?;
@@ -392,6 +436,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_runtime_profile,
             get_health,
+            load_admin_profile,
+            load_admin_profile_version,
             load_admin_profile_audit
         ])
         .setup(|app| {
@@ -482,6 +528,18 @@ mod tests {
     fn native_read_operations_build_only_approved_current_routes() {
         assert_eq!(ApiReadOperation::Health.path(), "/health");
         assert_eq!(
+            ApiReadOperation::admin_profile("PRO-SYN-001")
+                .expect("valid profile")
+                .path(),
+            "/admin/profiles/PRO-SYN-001"
+        );
+        assert_eq!(
+            ApiReadOperation::admin_profile_version("RPV-SYN-001-V1")
+                .expect("valid version")
+                .path(),
+            "/admin/profile-versions/RPV-SYN-001-V1"
+        );
+        assert_eq!(
             ApiReadOperation::admin_audit("PRO-SYN-001")
                 .expect("valid profile")
                 .path(),
@@ -493,5 +551,16 @@ mod tests {
                 .path(),
             "/profiles/PRO-SYN-001/discrepancies"
         );
+    }
+
+    #[test]
+    fn profile_version_identifiers_cannot_escape_route_templates() {
+        for invalid in ["", "RPV/SYN", "RPV?x=1", "RPV#fragment", "RPV SYN", "../RPV"] {
+            assert_eq!(
+                validate_version_id(invalid),
+                Err("DESKTOP_INVALID_PROFILE_VERSION_ID".to_string())
+            );
+        }
+        assert_eq!(validate_version_id("RPV-SYN_001-V1"), Ok(()));
     }
 }

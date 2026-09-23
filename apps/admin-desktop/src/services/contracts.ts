@@ -1,4 +1,10 @@
-import type {AdminAuditEventApi, AdminDiscrepancyApi} from "@miqo/application-adapters";
+import type {
+  AdminAuditEventApi,
+  AdminDiscrepancyApi,
+  ProfileDiscrepancyApi,
+  ProfileSnapshotApi,
+  ProfileVersionApi,
+} from "@miqo/application-adapters";
 import type {AdminAuditTracePageVM} from "@miqo/application-contracts";
 
 export interface DesktopRuntimeProfile {
@@ -21,6 +27,15 @@ export interface DesktopHealth {
   readonly liveProvidersEnabled: boolean;
 }
 
+export interface DesktopAdminProfileEvidence extends ProfileSnapshotApi {
+  readonly discrepancies: ReadonlyArray<ProfileDiscrepancyApi>;
+}
+
+export interface DesktopAdminProfileVersionEvidence {
+  readonly profileId: string;
+  readonly version: ProfileVersionApi;
+}
+
 export interface DesktopAdminProfileAuditEvidence {
   readonly auditEvents: ReadonlyArray<AdminAuditEventApi>;
   readonly discrepancies: ReadonlyArray<AdminDiscrepancyApi>;
@@ -29,6 +44,8 @@ export interface DesktopAdminProfileAuditEvidence {
 export interface DesktopApiTransport {
   getRuntimeProfile(): Promise<DesktopRuntimeProfile>;
   getHealth(): Promise<DesktopHealth>;
+  loadAdminProfile(profileId: string): Promise<DesktopAdminProfileEvidence>;
+  loadAdminProfileVersion(versionId: string): Promise<DesktopAdminProfileVersionEvidence>;
   loadAdminProfileAudit(profileId: string): Promise<DesktopAdminProfileAuditEvidence>;
 }
 

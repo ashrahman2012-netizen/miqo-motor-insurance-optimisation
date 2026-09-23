@@ -28,6 +28,8 @@ function transport(
   return {
     getRuntimeProfile: async () => runtime,
     getHealth: async () => health,
+    loadAdminProfile: async () => ({versions: [], audit: [], discrepancies: []}),
+    loadAdminProfileVersion: async () => { throw new Error("NOT_USED"); },
     loadAdminProfileAudit: async () => evidence,
   };
 }

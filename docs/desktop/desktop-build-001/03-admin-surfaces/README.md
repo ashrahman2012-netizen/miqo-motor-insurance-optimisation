@@ -1,3 +1,14 @@
-# Admin evidence surfaces
+# Desktop Admin surfaces
 
-Status: NOT STARTED. This directory is reserved by DB-G0 for later authorised gateway work. No implementation or acceptance is claimed. Certified PREP controls remain governing.
+DB-G4 activates the first operational evidence surfaces on the frozen DB-G2 shell.
+
+Current DB-G4 scope:
+
+- exact profile lookup and read-only profile evidence;
+- exact profile-version evidence;
+- current-version discrepancy evidence;
+- core append-only profile audit evidence.
+
+See [Core evidence contract](core-evidence-contract.md).
+
+Deep selection/quotation/recommendation lineage remains DB-G5. Provider/certification operational capability remains later-gateway scope.

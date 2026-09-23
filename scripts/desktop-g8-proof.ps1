@@ -304,6 +304,8 @@ function Assert-StaticSecurityBoundary {
   $expected = @(
     "allow-get-runtime-profile",
     "allow-get-health",
+    "allow-load-admin-profile",
+    "allow-load-admin-profile-version",
     "allow-load-admin-profile-audit"
   )
   Assert-True ($permissions.Count -eq $expected.Count) "Capability must expose exactly three approved read/runtime commands."
