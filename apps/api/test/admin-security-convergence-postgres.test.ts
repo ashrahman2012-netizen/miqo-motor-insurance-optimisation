@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import pg from "pg";
 import {buildApp} from "../src/server.ts";
+import {ADMIN_PERMISSIONS,createAdminSecurity} from "../src/admin-security.ts";
 import {adminHeaders} from "./admin-auth-test-helper.ts";
 
 const {Client}=pg;
@@ -67,6 +68,41 @@ test("DB-G7-R1 removes legacy Admin evidence aliases and fails closed on protect
   assert.ok(descriptor.permissions.includes("miqos.admin.raw-evidence.read"));
 
   await app.close();
+});
+
+test("DB-G7-R1 records sensitive raw-evidence access in the security audit",async()=>{
+  const token=(await adminHeaders()).authorization;
+  const logs:any[]=[];
+  const request:any={
+    headers:{authorization:token},
+    method:"GET",
+    routeOptions:{url:"/desktop-admin/quote-requests/:quoteRequestId/raw-response"},
+    url:"/desktop-admin/quote-requests/QREQ-SYN-AUDIT/raw-response",
+    miqoTraceId:"1234567890abcdef1234567890abcdef",
+    log:{info:(event:any)=>logs.push(event)},
+  };
+  const reply:any={
+    statusCode:200,
+    code(status:number){this.statusCode=status;return this;},
+    send(_body:any){return this;},
+    header(_name:string,_value:string){return this;},
+  };
+  const security=createAdminSecurity({dataClassification:"SYNTHETIC"});
+  const principal=await security.requirePermissions(
+    request,reply,[ADMIN_PERMISSIONS.rawEvidenceRead],
+    "raw-provider-response","QREQ-SYN-AUDIT",true,
+  );
+  assert.ok(principal);
+  assert.equal(reply.statusCode,200);
+  assert.ok(logs.some(event=>
+    event.eventCode==="SECURITY_ACCESS"
+      && event.permission===ADMIN_PERMISSIONS.rawEvidenceRead
+      && event.outcome==="ALLOW"
+      && event.reasonCode==="ADMIN_PERMISSION_ALLOWED"
+      && event.sensitiveRead===true
+      && event.resourceType==="raw-provider-response"
+      && event.resourceId==="QREQ-SYN-AUDIT"
+  ));
 });
 
 test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evidence",async()=>{
