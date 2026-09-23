@@ -205,8 +205,8 @@ test("BUILD-001I keyboard, focus, labels and reduced-motion baseline",async({pag
   expect(labelCheck.unnamedButtons).toBe(0);
   expect(labelCheck.duplicateIds).toEqual([]);
 
-  await page.emulateMedia({reducedMotion:"reduce"});
   await page.goto("/dashboard?"+q);
+  await page.emulateMedia({reducedMotion:"reduce"});
   const transitionDuration=await page.locator(".miqos-sidebar-nav__link").first().evaluate(element=>getComputedStyle(element).transitionDuration);
   expect(transitionDuration).not.toBe("0.14s");
 });
