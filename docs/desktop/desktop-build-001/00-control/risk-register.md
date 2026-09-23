@@ -36,3 +36,14 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G4-002 | Exact-ID lookup could drift into implied global search. | CONTROLLED | local identifier validation + explicit UI copy; no search endpoint |
 | R-DB-G4-003 | Native command expansion could become generic transport. | CONTROLLED / PROOF PENDING | two typed enum operations only; exact Tauri permission list + Rust tests |
 | R-DB-G4-004 | Historical discrepancy evidence may be incomplete because current API discrepancy resource is current-version oriented. | CONTROLLED | profile view labels current-version discrepancy evidence; no fabricated history |
+
+
+## DB-G5 risks
+
+| ID | Risk | State | Control / target |
+|---|---|---|---|
+| R-DB-G5-001 | Displayed persisted ordinal/comparison/integrity could be mistaken for Desktop computation. | CONTROLLED | explicit UI copy + adapter composition only; no calculation code |
+| R-DB-G5-002 | Raw provider response could be associated with the wrong quote request. | CONTROLLED | native derives surfaced request from trace; service verifies response correlation |
+| R-DB-G5-003 | Raw provider payload could leak through logging/export/caching. | CONTROLLED / HARDEN DB-G6/7/10 | exact trace view only; no default export/cache; operational logs exclude payload/token material |
+| R-DB-G5-004 | Native deep-trace command could evolve into generic multi-resource transport. | CONTROLLED / PROOF PENDING | one typed command; typed operation enum; exact six-permission G8 assertion |
+| R-DB-G5-005 | Global decision-data search/list could be implied by top-level routes. | CONTROLLED | exact Selection ID entry and explicit no-global-search copy |

@@ -36,3 +36,14 @@ No interactive/user-controlled blocker is required for the current TEST/SYNTHETI
 ## DB-G4 execution
 
 No DB-G4 blocker identified at implementation start. Required profile, profile-version, discrepancy and audit read resources already exist. No new backend resource or mutation authority is required.
+
+
+## DB-G5 execution
+
+No DB-G5 blocker remains.
+
+- B-DB-G5-001: revisions `2ee749af...`, `672d39ed...` and `435596e5...` were superseded while Windows workflows were cancelled by newer pushes; repository CI remained green.
+- B-DB-G5-002: revision `6c28b92a64f916d931bf221b87a5bce5e280f56b` passed repository CI and G8 API integration but G7/G8 Windows execution stopped at `cargo fmt --check`. Formatter-prescribed layout repair only was applied.
+- B-DB-G5-003: `1be0f6480d9a516daf0df93effcf4a66997bb67c` passed repository CI, G7 package proof and G8 API/installed lifecycle proof.
+
+No user interaction, production identity, production environment or signing input was required for DB-G5.

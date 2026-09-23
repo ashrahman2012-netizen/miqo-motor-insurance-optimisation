@@ -1,18 +1,18 @@
 # MIQOS-DESKTOP-BUILD-001 — Execution status
 
 **Date:** 2026-09-23  
-**Gateway:** DB-G4 — Core Admin Evidence Surfaces  
+**Gateway:** DB-G5 — Deep Audit, Trace & Decision-Evidence Surfaces  
 **Status:** PASS  
 **Branch:** `miqos/desktop-build-001`  
-**DB-G4 entry:** `2925141157e792ef7ebc5290f3c7d463ac1d0760`  
-**Accepted executable source:** `e4377a6b7533a3bd7a542e863899e79e7fe87c1d`
+**DB-G5 entry:** `4194504c0c007bae86612a5c11f9a1ea750129f0`  
+**Accepted executable source:** `1be0f6480d9a516daf0df93effcf4a66997bb67c`
 
-DB-G0 through DB-G4 are PASS.
+DB-G0 through DB-G5 are PASS.
 
-DB-G4 implements authoritative read-only profile, exact profile-version, current-version discrepancy and core append-only audit evidence surfaces. Exact-ID lookup is used instead of unsupported global search/listing. No factual edit/correction, validation execution, locking, discrepancy resolution, deep selection trace, backend endpoint addition or mutation is introduced.
+DB-G5 implements read-only exact-selection decision lineage across scenario exploration, market routes, quote requests, raw provider responses, normalised quotations, recommendation/explanation evidence, persisted integrity evidence and append-only audit context. Desktop renders supplied decisions and does not calculate ranking, comparability, recommendation or integrity.
 
-Accepted executable source is green under repository CI #691/#692, Windows G7 #221 and Windows/API G8 #41.
+Accepted executable source is green under CI #703/#704, Windows G7 #227 and Windows/API G8 #47.
 
-Next controlled gateway: **DB-G5 — Deep Audit, Trace & Decision-Evidence Surfaces**.
+Next controlled gateway: **DB-G6 — Observability, Diagnostics & Supportability**.
 
-DB-G5 through DB-G11 remain otherwise NOT STARTED. Production release, real IdP/RBAC, real environments, provider activation and signing remain separately gated.
+DB-G6 through DB-G11 remain NOT STARTED. Production release, real IdP/RBAC, real environments, provider activation and signing remain separately gated.

@@ -66,3 +66,15 @@ No DB-G2 decision changes domain methodology, mutation authority, security ident
 | D-DB-G4-004 | Cases provides exact-ID navigation only; global case/entity list/search remains DEFERRED. | D-DB-G1-009 |
 | D-DB-G4-005 | Audit & Trace at DB-G4 presents profile lifecycle audit only; end-to-end selection/quote/recommendation lineage remains DB-G5. | gateway separation |
 | D-DB-G4-006 | Current-version discrepancy resource is read-only; Desktop presents no correction/resolution control. | G2 mutation matrix |
+
+
+## DB-G5 decisions
+
+| ID | Decision | Authority / evidence |
+|---|---|---|
+| D-DB-G5-001 | Use the existing SP4 selection trace as the primary authoritative deep-decision source; add no new backend resource. | G2 interface boundary + existing Fastify trace |
+| D-DB-G5-002 | Renderer supplies only an exact Selection ID; native core derives profile and surfaced quote-request linkage from the trace. | least-privilege native boundary |
+| D-DB-G5-003 | Raw-provider evidence may be read only for the quote request linked to the persisted surfaced normalised quote. | trace correlation control |
+| D-DB-G5-004 | Comparison state, evidence ordinal/exclusion, recommendation and integrity outcome are rendered as persisted evidence and never recalculated in Desktop. | DB-G1 capability freeze |
+| D-DB-G5-005 | Decision-evidence entry routes remain exact-ID navigation; no global scenario/quote/recommendation list/search is created. | DB-G1 search boundary |
+| D-DB-G5-006 | Fail closed on selection, surfaced-quote or raw-response correlation mismatch. | evidence-integrity requirement |
