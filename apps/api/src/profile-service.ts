@@ -145,10 +145,21 @@ export async function listDiscrepancies(db:MiqoDatabase,profileId:string) {
   return db.select().from(discrepancy).where(eq(discrepancy.riskProfileVersionId,v.riskProfileVersionId));
 }
 
+const CUSTOMER_LIFECYCLE_AUDIT_EVENTS=new Set([
+  "profile_created",
+  "fact_saved",
+  "profile_correction_started",
+  "profile_validated",
+  "profile_locked",
+  "optimisation_catalogue_registered",
+  "customer_objective_selected",
+  "optimisation_preferences_saved",
+]);
+
 export async function listCustomerLifecycleAudit(db:MiqoDatabase,profileId:string) {
   const events=await auditEvents(db,profileId);
   return events
-    .filter(event=>event.eventType==="profile_validated")
+    .filter(event=>CUSTOMER_LIFECYCLE_AUDIT_EVENTS.has(event.eventType))
     .map(event=>({
       eventType:event.eventType,
       entityId:event.entityId,
