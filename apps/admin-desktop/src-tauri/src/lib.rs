@@ -792,15 +792,17 @@ fn begin_authentication_blocking() -> Result<DesktopAuthSession, String> {
         );
         launch_system_browser(&auth_url)?;
         let code = wait_for_authorisation_code(listener, &state)?;
+        let token_body = format!(
+            "grant_type=authorization_code&code={}&redirect_uri={}&client_id={}&code_verifier={}",
+            url_encode(&code),
+            url_encode(&redirect_uri),
+            url_encode(&profile.oidc.client_id),
+            url_encode(&verifier),
+        );
         let response = client()?
             .post(discovery.token_endpoint)
-            .form(&[
-                ("grant_type", "authorization_code"),
-                ("code", code.as_str()),
-                ("redirect_uri", redirect_uri.as_str()),
-                ("client_id", profile.oidc.client_id.as_str()),
-                ("code_verifier", verifier.as_str()),
-            ])
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(token_body)
             .send()
             .map_err(|_| "DESKTOP_AUTH_TOKEN_EXCHANGE_FAILED".to_string())?;
         if !response.status().is_success() {
