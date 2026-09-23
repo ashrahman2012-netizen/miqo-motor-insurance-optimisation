@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import pg from "pg";
 import { buildApp } from "../src/server.ts";
 import { executeMockProvider } from "../../../packages/mock-providers/src/index.ts";
+import {adminHeaders} from "./admin-auth-test-helper.ts";
 
 const {Client}=pg;
 
@@ -53,7 +54,7 @@ test("SP2 normaliser creates idempotent DIRECTLY_COMPARABLE derived quote and pr
   assert.equal(two.created,false);
   assert.equal(two.item.normalisedQuoteId,one.item.normalisedQuoteId);
 
-  const rawAfter=JSON.parse((await app.inject({method:"GET",url:`/quote-requests/${p.quoteRequestId}/raw-response`})).body);
+  const rawAfter=JSON.parse((await app.inject({method:"GET",url:`/desktop-admin/quote-requests/${p.quoteRequestId}/raw-response`,headers:await adminHeaders()})).body);
   assert.deepEqual({payloadText:rawAfter.payloadText,payloadSha256:rawAfter.payloadSha256},before);
 
   const c=new Client({connectionString:process.env.DATABASE_URL});

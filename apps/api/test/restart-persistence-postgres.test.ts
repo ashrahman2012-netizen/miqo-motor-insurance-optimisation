@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import pg from "pg";
 import { buildApp } from "../src/server.ts";
+import {adminHeaders} from "./admin-auth-test-helper.ts";
 
 const {Client}=pg;
 
@@ -112,7 +113,8 @@ test("SP2 full persisted chain survives API restart with identical lineage, hash
 
   const afterRaw=JSON.parse((await app.inject({
     method:"GET",
-    url:"/quote-requests/"+before.prepared.quoteRequestId+"/raw-response",
+    url:"/desktop-admin/quote-requests/"+before.prepared.quoteRequestId+"/raw-response",
+    headers:await adminHeaders(),
   })).body);
 
   const afterNormalised=JSON.parse((await app.inject({

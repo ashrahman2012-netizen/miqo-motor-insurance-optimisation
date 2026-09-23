@@ -151,6 +151,18 @@ describe.skipIf(!apiUrl||!idpUrl)("G8 Desktop application service against certif
     const limited=await obtainSyntheticAdminToken("limited");
     const denied=await fetch(baseUrl+"/desktop-admin/audit?profileId=PRO-SYN-001",{headers:{authorization:"Bearer "+limited}});
     expect(denied.status).toBe(403);
+    expect((await fetch(baseUrl+"/desktop-admin/selections/SEL-SYN-MISSING/trace")).status).toBe(401);
+    expect((await fetch(baseUrl+"/desktop-admin/selections/SEL-SYN-MISSING/trace",{headers:{authorization:"Bearer "+limited}})).status).toBe(403);
+    expect((await fetch(baseUrl+"/desktop-admin/quote-requests/QREQ-SYN-MISSING/raw-response")).status).toBe(401);
+    expect((await fetch(baseUrl+"/desktop-admin/quote-requests/QREQ-SYN-MISSING/raw-response",{headers:{authorization:"Bearer "+limited}})).status).toBe(403);
+    for(const legacy of [
+      "/admin/profiles/PRO-SYN-001",
+      "/admin/profile-versions/RPV-SYN-001",
+      "/admin/audit?profileId=PRO-SYN-001",
+      "/admin/selections/SEL-SYN-MISSING/trace",
+      "/admin/selections/SEL-SYN-MISSING/sp4-trace",
+      "/quote-requests/QREQ-SYN-MISSING/raw-response",
+    ])expect((await fetch(baseUrl+legacy)).status).toBe(404);
     const session=await fetch(baseUrl+"/desktop-admin/session",{headers:{authorization:"Bearer "+adminAccessToken}});
     expect(session.status).toBe(200);
     const descriptor=await session.json() as {permissions:string[];environment:string};

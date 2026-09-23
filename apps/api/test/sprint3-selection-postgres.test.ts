@@ -132,7 +132,7 @@ test("SP3 comparison shortlist selection final integrity completion and trace ar
   assert.equal(selection.completion.liveProviderActivity,"DISABLED");
 
   const trace=JSON.parse((await app.inject({
-    method:"GET",url:"/admin/selections/"+selected.selectionId+"/trace",
+    method:"GET",url:"/desktop-admin/selections/"+selected.selectionId+"/trace",headers:await adminHeaders(),
   })).body);
   assert.equal(trace.riskProfileVersion.riskProfileVersionId,journey.profile.versionId);
   assert.equal(trace.scenario.scenarioId,journey.scenarioId);

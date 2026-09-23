@@ -1,4 +1,5 @@
 import {test,expect} from "@playwright/test";
+import {obtainAdminToken} from "./admin-auth";
 const API="http://127.0.0.1:4000";
 const ADMIN="http://127.0.0.1:3001";
 
@@ -41,7 +42,8 @@ async function prepare(request:any){
   expect(selectionResponse.status()).toBe(201);
   const selection=await selectionResponse.json();
 
-  const trace=await (await request.get(API+"/admin/selections/"+selection.selectionId+"/sp4-trace")).json();
+  const adminToken=await obtainAdminToken();
+  const trace=await (await request.get(API+"/desktop-admin/selections/"+selection.selectionId+"/sp4-trace",{headers:{authorization:"Bearer "+adminToken}})).json();
   const selectedEvidence=trace.marketRouteQuotes.find((item:any)=>item.normalisedQuote.normalisedQuoteId===trace.recommendation.surfacedNormalisedQuoteId);
 
   return {profile,objective,exploration,recommendation,selection,trace,selectedEvidence};

@@ -95,11 +95,13 @@ async function createCompletedSprint3Journey(app:any){
   })).body);
   const trace=JSON.parse((await app.inject({
     method:"GET",
-    url:"/admin/selections/"+selected.selectionId+"/trace",
+    url:"/desktop-admin/selections/"+selected.selectionId+"/trace",
+    headers:await adminHeaders(),
   })).body);
   const audit=JSON.parse((await app.inject({
     method:"GET",
-    url:"/admin/audit?profileId="+encodeURIComponent(profile.profileId),
+    url:"/desktop-admin/audit?profileId="+encodeURIComponent(profile.profileId),
+    headers:await adminHeaders(),
   })).body);
 
   return {profile,generated,scenario,prepared,executed,normalised,shortlist,selected,selection,trace,audit};
@@ -170,11 +172,13 @@ test("SP3 completed journey survives API restart with exact selection integrity 
   })).body);
   const afterTrace=JSON.parse((await app.inject({
     method:"GET",
-    url:"/admin/selections/"+before.selected.selectionId+"/trace",
+    url:"/desktop-admin/selections/"+before.selected.selectionId+"/trace",
+    headers:await adminHeaders(),
   })).body);
   const afterAudit=JSON.parse((await app.inject({
     method:"GET",
-    url:"/admin/audit?profileId="+encodeURIComponent(before.profile.profileId),
+    url:"/desktop-admin/audit?profileId="+encodeURIComponent(before.profile.profileId),
+    headers:await adminHeaders(),
   })).body);
 
   assert.equal(afterShortlist.shortlistId,before.shortlist.shortlistId);

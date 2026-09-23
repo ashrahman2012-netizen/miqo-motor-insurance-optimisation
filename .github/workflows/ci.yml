@@ -92,6 +92,10 @@ jobs:
       PGPASSWORD: miqo
       MIQO_DATA_CLASSIFICATION: SYNTHETIC
       MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      MIQO_ADMIN_AUTH_ISSUER: http://127.0.0.1:4100
+      MIQO_ADMIN_AUTH_AUDIENCE: miqos-api-test
+      MIQO_ADMIN_AUTH_JWKS_URL: http://127.0.0.1:4100/jwks
+      MIQO_ADMIN_GROUP_PERMISSION_MAP: '{"miqos-admin-read":["miqos.admin.case.read","miqos.admin.profile.read","miqos.admin.audit.read","miqos.admin.trace.read","miqos.admin.discrepancy.read","miqos.admin.integrity.read","miqos.admin.system.read"],"miqos-admin-raw":["miqos.admin.raw-evidence.read"],"miqos-admin-profile":["miqos.admin.profile.read"]}'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -101,6 +105,15 @@ jobs:
       - run: npm run verify:boundary
       - run: npm run db:migrate
       - run: npm run db:seed:syn001
+      - name: Start deterministic TEST OIDC authority
+        run: |
+          node scripts/desktop-test-idp.mjs > /tmp/miqo-test-idp.log 2>&1 &
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4100/.well-known/openid-configuration > /dev/null; then exit 0; fi
+            sleep 0.25
+          done
+          cat /tmp/miqo-test-idp.log
+          exit 1
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
       - run: npm run test:api:postgres
       - run: npx playwright install --with-deps chromium

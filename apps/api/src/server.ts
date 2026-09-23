@@ -195,7 +195,6 @@ export async function buildApp() {
     const result=await executePreparedQuoteRequest(db,req.params.quoteRequestId);
     return reply.code(result.created?201:200).send(result);
   });
-  app.get("/quote-requests/:quoteRequestId/raw-response",async(req:any)=>getRawProviderResponse(db,req.params.quoteRequestId));
   app.post("/raw-provider-responses/:rawProviderResponseId/normalise",async(req:any,reply)=>{
     const result=await normaliseRawProviderResponse(db,req.params.rawProviderResponseId);
     return reply.code(result.created?201:200).send(result);
@@ -245,6 +244,11 @@ export async function buildApp() {
     if(!principal)return;
     return {items:await listDiscrepancies(db,req.params.profileId)};
   });
+  app.get("/desktop-admin/selections/:selectionId/trace",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.traceRead,ADMIN_PERMISSIONS.integrityRead],"selection-trace",req.params.selectionId);
+    if(!principal)return;
+    return getSelectionTrace(db,req.params.selectionId);
+  });
   app.get("/desktop-admin/selections/:selectionId/sp4-trace",async(req:any,reply)=>{
     const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.traceRead,ADMIN_PERMISSIONS.integrityRead],"selection-trace",req.params.selectionId);
     if(!principal)return;
@@ -255,12 +259,6 @@ export async function buildApp() {
     if(!principal)return;
     return getRawProviderResponse(db,req.params.quoteRequestId);
   });
-
-  app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
-  app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
-  app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
-  app.get("/admin/selections/:selectionId/trace",async(req:any)=>getSelectionTrace(db,req.params.selectionId));
-  app.get("/admin/selections/:selectionId/sp4-trace",async(req:any)=>getSprint4AdminSelectionTrace(db,req.params.selectionId));
 
   app.setErrorHandler((error:any,req:any,reply)=>{
     if(error instanceof FinalIntegrityError)return reply.code(409).send({error:error.message,selectionId:error.selectionId,signals:error.signals});
