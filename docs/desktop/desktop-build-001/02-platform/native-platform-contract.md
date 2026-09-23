@@ -2,7 +2,7 @@
 
 **Programme:** MIQOS-DESKTOP-BUILD-001  
 **Gateway:** DB-G3 — Native Platform, Transport & Environment Boundary  
-**Status:** IMPLEMENTATION IN PROGRESS
+**Status:** FROZEN AT DB-G3
 
 ## Boundary implemented
 

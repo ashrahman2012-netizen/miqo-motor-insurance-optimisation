@@ -1,22 +1,15 @@
 # DB-G3 evidence — Native Platform, Transport & Environment Boundary
 
-**Status:** IN PROGRESS — executable source committed; exact-source CI/Windows evidence pending.
+**Status:** PASS
 
-Entry: `c03a9ec518683121cf6816f6faeb8d9b580fce6a`.
+Entry: `c03a9ec518683121cf6816f6faeb8d9b580fce6a`  
+Accepted executable source: `6abb124e2a6235ac4d2e71ce63b71dc753bc123a`
 
-Expected evidence:
+Evidence:
 
-- exact source delta / boundary review;
-- Rust negative tests through canonical Desktop CI;
-- repository push/PR CI;
-- Windows G7 full package proof;
-- Windows/API G8 installed regression proof;
-- final DB-G3 acceptance record.
+- [Native platform contract](../../02-platform/native-platform-contract.md)
+- [DB-G3 acceptance](acceptance.md)
 
-No production identity, production signing or non-synthetic environment proof is claimed.
+DB-G3 preserves TEST/SYNTHETIC and does not enable production identity, production signing, non-synthetic environments, live providers or new Admin API resources.
 
-## Repair history
-
-Initial source `ce4fd0c95b50b61a3c4d3dfc91ee0951c459c654` reached Desktop typecheck/tests successfully but G7 and Windows G8 stopped at Rust formatting. DB-G3 does not count those failed jobs as proof. The next source revision contains formatter-only correction plus this evidence note and must rerun the complete validation chain.
-
-Second repair: `9c8a329d...` passed G7/package build but G8 failed before installation because the proof script still opened the removed `scaffold.json`. The harness now validates `admin-read.json`, its configured identifier, exact three command permissions, and absence of the legacy file. The repaired source must rerun the complete chain.
+Intermediate failed revisions are retained in the acceptance record as repair history and are not counted as proof.
