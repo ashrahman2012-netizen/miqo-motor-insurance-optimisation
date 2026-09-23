@@ -146,14 +146,10 @@ export async function listDiscrepancies(db:MiqoDatabase,profileId:string) {
 }
 
 const CUSTOMER_LIFECYCLE_AUDIT_EVENTS=new Set([
-  "profile_created",
-  "fact_saved",
-  "profile_correction_started",
   "profile_validated",
   "profile_locked",
   "optimisation_catalogue_registered",
   "customer_objective_selected",
-  "optimisation_preferences_saved",
 ]);
 
 export async function listCustomerLifecycleAudit(db:MiqoDatabase,profileId:string) {
