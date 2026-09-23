@@ -532,7 +532,11 @@ fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, S
         .header("traceparent", &trace.traceparent)
         .send()
         .map_err(|_| {
-            emit_error("API_REQUEST_FAILURE", operation_name, "DESKTOP_API_UNAVAILABLE");
+            emit_error(
+                "API_REQUEST_FAILURE",
+                operation_name,
+                "DESKTOP_API_UNAVAILABLE",
+            );
             "DESKTOP_API_UNAVAILABLE".to_string()
         })?;
 
@@ -833,9 +837,18 @@ fn create_support_snapshot(app: tauri::AppHandle) -> Result<SupportSnapshot, Str
     );
     let snapshot = SupportSnapshot {
         schema_version: "miqos-desktop-support-snapshot-v1".to_string(),
-        created_at_utc: unsigned["createdAtUtc"].as_str().unwrap_or_default().to_string(),
-        support_reference: unsigned["supportReference"].as_str().unwrap_or_default().to_string(),
-        evidence_scope: unsigned["evidenceScope"].as_str().unwrap_or_default().to_string(),
+        created_at_utc: unsigned["createdAtUtc"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+        support_reference: unsigned["supportReference"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+        evidence_scope: unsigned["evidenceScope"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
         diagnostics,
         excluded_categories,
         sha256,
