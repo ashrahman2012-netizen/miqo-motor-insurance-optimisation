@@ -150,6 +150,9 @@ const CUSTOMER_LIFECYCLE_AUDIT_EVENTS=new Set([
   "profile_locked",
   "optimisation_catalogue_registered",
   "customer_objective_selected",
+  "sp4_scenario_exploration_generated",
+  "sp4_recommendation_set_created",
+  "sp4_recommendation_explanation_created",
 ]);
 
 export async function listCustomerLifecycleAudit(db:MiqoDatabase,profileId:string) {
