@@ -14,7 +14,7 @@ const runtime: DesktopRuntimeProfile = {
   applicationEnvironment: "SYNTHETIC",
   apiService: "127.0.0.1:4000",
   apiAudience: "miqos-api-test",
-  authenticationMode: "NON_PRODUCTION_STUB",
+  authenticationMode: "NATIVE_OIDC_PKCE",
   buildVersion: "0.1.0",
   buildId: "test",
   sourceCommit: "test",
