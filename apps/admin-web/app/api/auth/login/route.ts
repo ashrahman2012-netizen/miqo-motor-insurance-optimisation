@@ -21,7 +21,8 @@ export async function GET(request:NextRequest){
   const state=b64url(randomBytes(24));
   const verifier=b64url(randomBytes(48));
   const challenge=b64url(createHash("sha256").update(verifier).digest());
-  const redirectUri=new URL("/api/auth/callback",request.url).toString();
+  const publicOrigin=(process.env.NEXT_PUBLIC_ADMIN_WEB_URL??"http://127.0.0.1:3001").replace(/\/$/,"");
+  const redirectUri=publicOrigin+"/api/auth/callback";
   const authorize=new URL(idp+"/authorize");
   authorize.searchParams.set("response_type","code");
   authorize.searchParams.set("client_id",clientId);

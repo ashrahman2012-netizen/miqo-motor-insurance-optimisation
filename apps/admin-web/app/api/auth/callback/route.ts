@@ -21,7 +21,8 @@ export async function GET(request:NextRequest){
 
   const idp=(process.env.MIQO_ADMIN_WEB_IDP_URL??"http://127.0.0.1:4100").replace(/\/$/,"");
   const clientId=process.env.MIQO_ADMIN_AUTH_CLIENT_ID??"miqos-admin-test-public";
-  const redirectUri=new URL("/api/auth/callback",request.url).toString();
+  const publicOrigin=(process.env.NEXT_PUBLIC_ADMIN_WEB_URL??"http://127.0.0.1:3001").replace(/\/$/,"");
+  const redirectUri=publicOrigin+"/api/auth/callback";
   const tokenResponse=await fetch(idp+"/token",{
     method:"POST",
     headers:{"content-type":"application/x-www-form-urlencoded"},
@@ -40,7 +41,7 @@ export async function GET(request:NextRequest){
     return NextResponse.json({error:"ADMIN_AUTH_TOKEN_RESPONSE_INVALID"},{status:401});
   }
 
-  const response=NextResponse.redirect(new URL(safeReturnTo(request.cookies.get("miqo_admin_return_to")?.value),request.url));
+  const response=NextResponse.redirect(new URL(safeReturnTo(request.cookies.get("miqo_admin_return_to")?.value),publicOrigin));
   response.cookies.set("miqo_admin_access",token.access_token,{
     httpOnly:true,sameSite:"lax",secure:false,path:"/",maxAge:Math.min(token.expires_in??300,300),
   });
