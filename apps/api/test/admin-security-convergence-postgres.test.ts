@@ -15,8 +15,8 @@ async function reset(){
 test("DB-G7-R1 removes legacy Admin evidence aliases and rejects anonymous protected reads",async()=>{
   await reset();
   const app=await buildApp();
-
-  const legacyAliases=[
+  try{
+    const legacyAliases=[
     "/admin/profiles/PRO-SYN-NOT-USED",
     "/admin/profile-versions/RPV-SYN-NOT-USED",
     "/admin/audit?profileId=PRO-SYN-NOT-USED",
@@ -39,18 +39,20 @@ test("DB-G7-R1 removes legacy Admin evidence aliases and rejects anonymous prote
     "/desktop-admin/selections/SEL-SYN-NOT-USED/sp4-trace",
     "/desktop-admin/quote-requests/QREQ-SYN-NOT-USED/raw-response",
   ];
-  for(const url of protectedRoutes){
-    const response=await app.inject({method:"GET",url});
-    assert.equal(response.statusCode,401,url+" must reject anonymous access");
+    for(const url of protectedRoutes){
+      const response=await app.inject({method:"GET",url});
+      assert.equal(response.statusCode,401,url+" must reject anonymous access");
+    }
+  }finally{
+    await app.close();
   }
-
-  await app.close();
 });
 
 test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evidence",async()=>{
   await reset();
   const app=await buildApp();
-  const created=JSON.parse((await app.inject({method:"POST",url:"/profiles"})).body);
+  try{
+    const created=JSON.parse((await app.inject({method:"POST",url:"/profiles"})).body);
 
   const client=new Client({connectionString:process.env.DATABASE_URL});
   await client.connect();
@@ -94,9 +96,10 @@ test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evide
     "SELECT risk_profile_version_id,created_at FROM discrepancy WHERE discrepancy_id=$1",
     ["DISC-R1-001"],
   )).rows[0];
-  assert.equal(stored.risk_profile_version_id,created.versionId);
-  assert.ok(stored.created_at);
-  await storedClient.end();
-
-  await app.close();
+    assert.equal(stored.risk_profile_version_id,created.versionId);
+    assert.ok(stored.created_at);
+    await storedClient.end();
+  }finally{
+    await app.close();
+  }
 });
