@@ -21,6 +21,7 @@ import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupatio
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
 import { getSprint4ObjectiveQuoteComparison } from "./sprint4-comparison-service.ts";
+import {ADMIN_PERMISSIONS, createAdminSecurity} from "./admin-security.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -48,6 +49,7 @@ function serverTraceId(requestId:string){
 export async function buildApp() {
   const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true});
   await app.register(cors,{origin:[process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000",process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001"],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+  const adminSecurity=createAdminSecurity({dataClassification:classification});
 
   app.addHook("onRequest",async(req:any)=>{
     const incoming=traceIdFromTraceparent(req.headers.traceparent);
@@ -216,6 +218,43 @@ export async function buildApp() {
   })));
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
+
+  app.get("/desktop-admin/session",async(req:any,reply)=>{
+    const principal=await adminSecurity.requireAuthentication(req,reply,"admin-session");
+    if(!principal)return;
+    return adminSecurity.sessionDescriptor(principal);
+  });
+  app.get("/desktop-admin/profiles/:profileId",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.profileRead],"profile",req.params.profileId);
+    if(!principal)return;
+    return {versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)};
+  });
+  app.get("/desktop-admin/profile-versions/:versionId",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.profileRead],"profile-version",req.params.versionId);
+    if(!principal)return;
+    return profileSnapshotByVersion(db,req.params.versionId);
+  });
+  app.get("/desktop-admin/audit",async(req:any,reply)=>{
+    const profileId=String(req.query.profileId??"");
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.auditRead],"profile-audit",profileId);
+    if(!principal)return;
+    return {items:await auditEvents(db,profileId)};
+  });
+  app.get("/desktop-admin/profiles/:profileId/discrepancies",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.discrepancyRead],"profile-discrepancy",req.params.profileId);
+    if(!principal)return;
+    return {items:await listDiscrepancies(db,req.params.profileId)};
+  });
+  app.get("/desktop-admin/selections/:selectionId/sp4-trace",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.traceRead,ADMIN_PERMISSIONS.integrityRead],"selection-trace",req.params.selectionId);
+    if(!principal)return;
+    return getSprint4AdminSelectionTrace(db,req.params.selectionId);
+  });
+  app.get("/desktop-admin/quote-requests/:quoteRequestId/raw-response",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.rawEvidenceRead],"raw-provider-response",req.params.quoteRequestId,true);
+    if(!principal)return;
+    return getRawProviderResponse(db,req.params.quoteRequestId);
+  });
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));

@@ -1,4 +1,5 @@
-import {describe, expect, it} from "vitest";
+import {beforeAll, describe, expect, it} from "vitest";
+import {createHash} from "node:crypto";
 import type {
   AdminAuditEventApi,
   AdminDiscrepancyApi,
@@ -20,9 +21,45 @@ import type {
 } from "../src/services/contracts";
 
 const apiUrl = process.env.MIQO_G8_API_URL?.replace(/\/$/, "") ?? null;
+const idpUrl = process.env.MIQO_G8_IDP_URL?.replace(/\/$/, "") ?? null;
+let adminAccessToken = "";
+
+function pkceChallenge(verifier:string){
+  return createHash("sha256").update(verifier).digest("base64url");
+}
+
+async function obtainSyntheticAdminToken(loginHint?:string){
+  if(!idpUrl)throw new Error("MIQO_G8_IDP_URL_REQUIRED");
+  const verifier=("miqos-g8-pkce-verifier-"+(loginHint??"full")+"-").padEnd(64,"x");
+  const redirectUri="http://127.0.0.1:59999/oauth/callback";
+  const authorize=new URL(idpUrl+"/authorize");
+  authorize.searchParams.set("response_type","code");
+  authorize.searchParams.set("client_id","miqos-admin-test-public");
+  authorize.searchParams.set("redirect_uri",redirectUri);
+  authorize.searchParams.set("scope","openid profile");
+  authorize.searchParams.set("state","g8-state");
+  authorize.searchParams.set("nonce","g8-nonce");
+  authorize.searchParams.set("code_challenge",pkceChallenge(verifier));
+  authorize.searchParams.set("code_challenge_method","S256");
+  authorize.searchParams.set("audience","miqos-api-test");
+  if(loginHint)authorize.searchParams.set("login_hint",loginHint);
+  const authResponse=await fetch(authorize,{redirect:"manual"});
+  expect(authResponse.status).toBe(302);
+  const location=authResponse.headers.get("location");
+  if(!location)throw new Error("G8_IDP_REDIRECT_MISSING");
+  const code=new URL(location).searchParams.get("code");
+  if(!code)throw new Error("G8_IDP_CODE_MISSING");
+  const tokenResponse=await fetch(idpUrl+"/token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:new URLSearchParams({
+    grant_type:"authorization_code",code,redirect_uri:redirectUri,client_id:"miqos-admin-test-public",code_verifier:verifier,
+  })});
+  expect(tokenResponse.ok).toBe(true);
+  const token=await tokenResponse.json() as {access_token:string};
+  return token.access_token;
+}
 
 class FastifyProofTransport implements DesktopApiTransport {
-  constructor(private readonly baseUrl: string) {}
+  constructor(private readonly baseUrl: string, private readonly token = adminAccessToken) {}
+  private admin(path:string){return fetch(this.baseUrl+path,{headers:{authorization:"Bearer "+this.token}});}
 
   async getRuntimeProfile(): Promise<DesktopRuntimeProfile> {
     return {
@@ -32,7 +69,7 @@ class FastifyProofTransport implements DesktopApiTransport {
       applicationEnvironment: "SYNTHETIC",
       apiService: "127.0.0.1:4000",
       apiAudience: "miqos-api-test",
-      authenticationMode: "NON_PRODUCTION_STUB",
+      authenticationMode: "NATIVE_OIDC_PKCE",
       buildVersion: "0.1.0",
       buildId: "g8-api-integration",
       sourceCommit: "integration-test",
@@ -47,21 +84,21 @@ class FastifyProofTransport implements DesktopApiTransport {
   }
 
   async loadAdminProfile(profileId: string) {
-    const response = await fetch(this.baseUrl + "/admin/profiles/" + encodeURIComponent(profileId));
+    const response = await this.admin("/desktop-admin/profiles/" + encodeURIComponent(profileId));
     if (!response.ok) throw new Error(`DESKTOP_API_STATUS_${response.status}`);
     return response.json() as Promise<ProfileSnapshotApi & {discrepancies: ReadonlyArray<ProfileDiscrepancyApi>}>;
   }
 
   async loadAdminProfileVersion(versionId: string) {
-    const response = await fetch(this.baseUrl + "/admin/profile-versions/" + encodeURIComponent(versionId));
+    const response = await this.admin("/desktop-admin/profile-versions/" + encodeURIComponent(versionId));
     if (!response.ok) throw new Error(`DESKTOP_API_STATUS_${response.status}`);
     return response.json() as Promise<{profileId: string; version: ProfileVersionApi}>;
   }
 
   async loadAdminProfileAudit(profileId: string): Promise<DesktopAdminProfileAuditEvidence> {
     const [auditResponse, discrepancyResponse] = await Promise.all([
-      fetch(this.baseUrl + "/admin/audit?profileId=" + encodeURIComponent(profileId)),
-      fetch(this.baseUrl + "/profiles/" + encodeURIComponent(profileId) + "/discrepancies"),
+      this.admin("/desktop-admin/audit?profileId=" + encodeURIComponent(profileId)),
+      this.admin("/desktop-admin/profiles/" + encodeURIComponent(profileId) + "/discrepancies"),
     ]);
     if (!auditResponse.ok || !discrepancyResponse.ok) {
       throw new Error("G8_ADMIN_AUDIT_REQUEST_FAILED");
@@ -73,7 +110,8 @@ class FastifyProofTransport implements DesktopApiTransport {
 
   async loadAdminSelectionTrace(selectionId: string) {
     const traceResponse = await fetch(
-      this.baseUrl + "/admin/selections/" + encodeURIComponent(selectionId) + "/sp4-trace",
+      this.baseUrl + "/desktop-admin/selections/" + encodeURIComponent(selectionId) + "/sp4-trace",
+      {headers:{authorization:"Bearer "+this.token}},
     );
     if (!traceResponse.ok) throw new Error(`DESKTOP_API_STATUS_${traceResponse.status}`);
     const trace = await traceResponse.json() as import("@miqo/application-adapters").AdminSprint4TraceApi;
@@ -81,10 +119,10 @@ class FastifyProofTransport implements DesktopApiTransport {
       item => item.normalisedQuote.normalisedQuoteId === trace.recommendation.surfacedNormalisedQuoteId,
     );
     const [auditResponse, discrepancyResponse, rawResponse] = await Promise.all([
-      fetch(this.baseUrl + "/admin/audit?profileId=" + encodeURIComponent(trace.profile.profileId)),
-      fetch(this.baseUrl + "/profiles/" + encodeURIComponent(trace.profile.profileId) + "/discrepancies"),
+      this.admin("/desktop-admin/audit?profileId=" + encodeURIComponent(trace.profile.profileId)),
+      this.admin("/desktop-admin/profiles/" + encodeURIComponent(trace.profile.profileId) + "/discrepancies"),
       surfaced
-        ? fetch(this.baseUrl + "/quote-requests/" + encodeURIComponent(surfaced.quoteRequest.quoteRequestId) + "/raw-response")
+        ? this.admin("/desktop-admin/quote-requests/" + encodeURIComponent(surfaced.quoteRequest.quoteRequestId) + "/raw-response")
         : Promise.resolve(null),
     ]);
     if (!auditResponse.ok || !discrepancyResponse.ok || (rawResponse && !rawResponse.ok)) {
@@ -103,8 +141,23 @@ class FastifyProofTransport implements DesktopApiTransport {
   }
 }
 
-describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fastify API", () => {
+describe.skipIf(!apiUrl||!idpUrl)("G8 Desktop application service against certified Fastify API", () => {
   const baseUrl = apiUrl as string;
+  beforeAll(async()=>{adminAccessToken=await obtainSyntheticAdminToken();});
+
+  it("enforces 401 and 403 on Desktop-protected Admin resources", async()=>{
+    const anonymous=await fetch(baseUrl+"/desktop-admin/session");
+    expect(anonymous.status).toBe(401);
+    const limited=await obtainSyntheticAdminToken("limited");
+    const denied=await fetch(baseUrl+"/desktop-admin/audit?profileId=PRO-SYN-001",{headers:{authorization:"Bearer "+limited}});
+    expect(denied.status).toBe(403);
+    const session=await fetch(baseUrl+"/desktop-admin/session",{headers:{authorization:"Bearer "+adminAccessToken}});
+    expect(session.status).toBe(200);
+    const descriptor=await session.json() as {permissions:string[];environment:string};
+    expect(descriptor.environment).toBe("SYNTHETIC");
+    expect(descriptor.permissions).toContain("miqos.admin.trace.read");
+    expect(descriptor.permissions).toContain("miqos.admin.raw-evidence.read");
+  });
 
   it("returns validated trace/request correlation and safe API build identity", async () => {
     const traceId = "0123456789abcdef0123456789abcdef";
