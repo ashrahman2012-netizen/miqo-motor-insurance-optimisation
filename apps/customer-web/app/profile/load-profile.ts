@@ -1,6 +1,6 @@
 import {
   composeProfileLifecycleVM,
-  type ProfileDiscrepancyApi,
+  type CustomerProfileDiscrepancyApi,
   type ProfileSnapshotApi,
 } from "@miqo/application-adapters";
 import type {ProfileLifecycleVM} from "@miqo/application-contracts";
@@ -20,7 +20,7 @@ export async function loadProfileLifecycle(profileId:string):Promise<ProfileLife
   const encoded=encodeURIComponent(profileId);
   const [snapshot,discrepancyResponse]=await Promise.all([
     getJson<ProfileSnapshotApi>(`/profiles/${encoded}/snapshot`),
-    getJson<{items:ReadonlyArray<ProfileDiscrepancyApi>}>(`/profiles/${encoded}/discrepancies`),
+    getJson<{items:ReadonlyArray<CustomerProfileDiscrepancyApi>}>(`/profiles/${encoded}/discrepancies`),
   ]);
   return composeProfileLifecycleVM({
     profileId,

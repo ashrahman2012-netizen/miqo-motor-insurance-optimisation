@@ -42,12 +42,19 @@ export interface ProfileSnapshotApi {
 
 export interface ProfileDiscrepancyApi {
   readonly discrepancyId:string;
+  readonly riskProfileVersionId:string;
   readonly fieldId:string;
   readonly declaredValueJson:unknown;
   readonly verifiedValueJson:unknown;
   readonly state:string;
   readonly blocking:boolean;
+  readonly createdAt:string;
 }
+
+export type CustomerProfileDiscrepancyApi = Pick<
+  ProfileDiscrepancyApi,
+  "discrepancyId"|"fieldId"|"declaredValueJson"|"verifiedValueJson"|"state"|"blocking"
+>;
 
 const FIELD_LABELS:Record<string,string>={
   main_driver_id:"Main driver",
@@ -145,7 +152,7 @@ export function selectCurrentProfileLifecycleVersion(snapshot:ProfileSnapshotApi
 export function composeProfileLifecycleVM(args:{
   profileId:string;
   snapshot:ProfileSnapshotApi;
-  discrepancies:ReadonlyArray<ProfileDiscrepancyApi>;
+  discrepancies:ReadonlyArray<CustomerProfileDiscrepancyApi>;
 }):ProfileLifecycleVM {
   const current=selectCurrentProfileLifecycleVersion(args.snapshot);
   if(!current)throw new Error("PROFILE_VERSION_NOT_FOUND");
