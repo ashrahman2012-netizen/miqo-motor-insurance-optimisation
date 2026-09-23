@@ -62,7 +62,7 @@ test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evide
     try{
       await client.query(
         "INSERT INTO discrepancy(discrepancy_id,risk_profile_version_id,field_id,declared_value_json,verified_value_json,state,blocking) VALUES($1,$2,$3,$4::jsonb,$5::jsonb,$6,$7)",
-        ["DISC-R1-001",created.versionId,"annual_mileage","8000","9000","OPEN",true],
+        ["DISC-R1-001",created.versionId,"annual_mileage","8000","9000","REVIEW_REQUIRED",true],
       );
     }finally{
       await client.end();

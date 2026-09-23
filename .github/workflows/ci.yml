@@ -115,15 +115,7 @@ jobs:
           cat /tmp/miqo-test-idp.log
           exit 1
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
-      - name: Run PostgreSQL API regression
-        shell: bash
-        run: |
-          set -euo pipefail
-          for test_file in apps/api/test/*.test.ts; do
-            echo "::group::${test_file}"
-            timeout 90s node --experimental-strip-types --test --test-concurrency=1 "${test_file}"
-            echo "::endgroup::"
-          done
+      - run: npm run test:api:postgres
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test -c playwright.target.config.ts
       - run: npm run certify:app-build-001
