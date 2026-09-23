@@ -1,6 +1,7 @@
 import {Card, DefinitionList, PageHeader, PageState, StatusBadge} from "@miqo/ui";
+import type {DesktopRuntimeProfile} from "../services/contracts";
 
-export function CertificationRoute() {
+export function CertificationRoute({runtime}:{runtime:DesktopRuntimeProfile|null}) {
   return (
     <>
       <PageHeader
@@ -13,16 +14,16 @@ export function CertificationRoute() {
         <PageState
           state="EMPTY"
           title="Authoritative certification evidence unavailable"
-          message="The current TEST/SYNTHETIC engineering proof is not production, provider, regulatory or deployment certification."
+          message="Engineering CI, packaging and TEST identity proof are not production, provider, regulatory or deployment certification."
         />
       </Card>
       <Card>
-        <h2>What the current evidence does prove</h2>
+        <h2>Current engineering boundary</h2>
         <DefinitionList compact items={[
-          {label:"Environment",value:"TEST / SYNTHETIC"},
-          {label:"Live providers",value:"DISABLED"},
+          {label:"Deployment stage",value:runtime?.deploymentStage??"UNAVAILABLE"},
+          {label:"Application environment",value:runtime?.applicationEnvironment??"UNAVAILABLE"},
+          {label:"Authentication mode",value:runtime?.authenticationMode??"UNAVAILABLE"},
           {label:"Desktop package proof",value:"Engineering lifecycle evidence only"},
-          {label:"Identity proof",value:"Deterministic TEST OIDC only"},
           {label:"Production certification",value:"NOT CLAIMED"},
         ]} />
       </Card>

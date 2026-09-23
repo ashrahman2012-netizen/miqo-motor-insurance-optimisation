@@ -166,7 +166,7 @@ export function DesktopApp() {
         ) : route.path === "/admin/providers" ? (
           <ProvidersRoute onNavigate={navigate} />
         ) : route.path === "/admin/certification" ? (
-          <CertificationRoute />
+          <CertificationRoute runtime={runtime} />
         ) : route.path === "/admin/system" ? (
           <SystemRoute runtime={runtime} transport={transport} />
         ) : (
