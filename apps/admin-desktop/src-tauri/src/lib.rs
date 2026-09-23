@@ -6,13 +6,16 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
     fs,
+    io::{Read, Write},
+    net::{TcpListener, TcpStream},
     path::Path,
-    process,
+    process::{self, Command},
     sync::{
         atomic::{AtomicU64, Ordering},
         Mutex, OnceLock,
     },
-    time::{Duration as StdDuration, SystemTime, UNIX_EPOCH},
+    thread,
+    time::{Duration as StdDuration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::Manager;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
@@ -25,11 +28,13 @@ const TEST_APPLICATION_ENVIRONMENT: &str = "SYNTHETIC";
 const TEST_API_BASE_URL: &str = "http://127.0.0.1:4000";
 const TEST_API_SERVICE: &str = "127.0.0.1:4000";
 const TEST_API_AUDIENCE: &str = "miqos-api-test";
-const TEST_OIDC_ISSUER: &str = "https://identity.test.invalid";
+const TEST_OIDC_ISSUER: &str = "http://127.0.0.1:4100";
 const TEST_OIDC_CLIENT_ID: &str = "miqos-admin-test-public";
 const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_LOG_FILES: usize = 5;
 const MAX_LOG_AGE: StdDuration = StdDuration::from_secs(7 * 24 * 60 * 60);
+const AUTH_CALLBACK_PATH: &str = "/oauth/callback";
+const AUTH_TIMEOUT: StdDuration = StdDuration::from_secs(60);
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,6 +85,46 @@ struct Health {
     status: String,
     data_classification: String,
     live_providers_enabled: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SessionDescriptor {
+    subject_id: String,
+    display_name: String,
+    environment: String,
+    permissions: Vec<String>,
+    session_expires_at: String,
+    authentication_context: Value,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DesktopAuthSession {
+    state: String,
+    descriptor: Option<SessionDescriptor>,
+}
+
+#[derive(Debug)]
+struct AuthState {
+    state: String,
+    access_token: Option<String>,
+    descriptor: Option<SessionDescriptor>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OidcDiscovery {
+    issuer: String,
+    authorization_endpoint: String,
+    token_endpoint: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct TokenResponse {
+    access_token: String,
+    token_type: String,
+    expires_in: Option<u64>,
+    refresh_token: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -143,6 +188,7 @@ struct TraceContext {
 }
 
 static OBSERVABILITY_STATE: OnceLock<Mutex<ObservabilityState>> = OnceLock::new();
+static AUTH_STATE: OnceLock<Mutex<AuthState>> = OnceLock::new();
 static TRACE_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Deserialize)]
@@ -169,6 +215,7 @@ struct AdminSelectionTraceEvidence {
 #[derive(Debug)]
 enum ApiReadOperation<'a> {
     Health,
+    AdminSession,
     AdminProfile { profile_id: &'a str },
     AdminProfileVersion { version_id: &'a str },
     AdminAudit { profile_id: &'a str },
@@ -211,6 +258,7 @@ impl<'a> ApiReadOperation<'a> {
     fn name(&self) -> &'static str {
         match self {
             Self::Health => "health",
+            Self::AdminSession => "admin_session",
             Self::AdminProfile { .. } => "admin_profile",
             Self::AdminProfileVersion { .. } => "admin_profile_version",
             Self::AdminAudit { .. } => "admin_audit",
@@ -220,24 +268,30 @@ impl<'a> ApiReadOperation<'a> {
         }
     }
 
+
+    fn requires_authentication(&self) -> bool {
+        !matches!(self, Self::Health)
+    }
+
     fn path(&self) -> String {
         match self {
             Self::Health => "/health".to_string(),
-            Self::AdminProfile { profile_id } => format!("/admin/profiles/{profile_id}"),
+            Self::AdminSession => "/desktop-admin/session".to_string(),
+            Self::AdminProfile { profile_id } => format!("/desktop-admin/profiles/{profile_id}"),
             Self::AdminProfileVersion { version_id } => {
-                format!("/admin/profile-versions/{version_id}")
+                format!("/desktop-admin/profile-versions/{version_id}")
             }
             Self::AdminAudit { profile_id } => {
-                format!("/admin/audit?profileId={profile_id}")
+                format!("/desktop-admin/audit?profileId={profile_id}")
             }
             Self::AdminSelectionSp4Trace { selection_id } => {
-                format!("/admin/selections/{selection_id}/sp4-trace")
+                format!("/desktop-admin/selections/{selection_id}/sp4-trace")
             }
             Self::Discrepancies { profile_id } => {
-                format!("/profiles/{profile_id}/discrepancies")
+                format!("/desktop-admin/profiles/{profile_id}/discrepancies")
             }
             Self::RawProviderResponse { quote_request_id } => {
-                format!("/quote-requests/{quote_request_id}/raw-response")
+                format!("/desktop-admin/quote-requests/{quote_request_id}/raw-response")
             }
         }
     }
@@ -413,7 +467,7 @@ fn runtime_profile() -> Result<RuntimeProfile, String> {
         application_environment: profile.application_environment,
         api_service: TEST_API_SERVICE.to_string(),
         api_audience: profile.api.audience,
-        authentication_mode: "NON_PRODUCTION_STUB".to_string(),
+        authentication_mode: "NATIVE_OIDC_PKCE".to_string(),
         build_version: env!("CARGO_PKG_VERSION").to_string(),
         build_id: option_env!("MIQO_BUILD_ID").unwrap_or("local").to_string(),
         source_commit: option_env!("MIQO_SOURCE_COMMIT")
@@ -422,6 +476,355 @@ fn runtime_profile() -> Result<RuntimeProfile, String> {
         deployment_profile_sha256: profile_hash,
     })
 }
+
+
+fn auth_state() -> &'static Mutex<AuthState> {
+    AUTH_STATE.get_or_init(|| {
+        Mutex::new(AuthState {
+            state: "SIGNED_OUT".to_string(),
+            access_token: None,
+            descriptor: None,
+        })
+    })
+}
+
+fn auth_session_snapshot() -> DesktopAuthSession {
+    let state = auth_state()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    DesktopAuthSession {
+        state: state.state.clone(),
+        descriptor: state.descriptor.clone(),
+    }
+}
+
+fn set_auth_state(state_name: &str, access_token: Option<String>, descriptor: Option<SessionDescriptor>) {
+    let mut state = auth_state()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(mut previous) = state.access_token.take() {
+        previous.clear();
+    }
+    state.state = state_name.to_string();
+    state.access_token = access_token;
+    state.descriptor = descriptor;
+}
+
+fn current_access_token() -> Result<String, String> {
+    let mut state = auth_state()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if state.state != "AUTHENTICATED" {
+        return Err("DESKTOP_AUTHENTICATION_REQUIRED".to_string());
+    }
+    if let Some(descriptor) = &state.descriptor {
+        if let Ok(expires_at) = OffsetDateTime::parse(&descriptor.session_expires_at, &Rfc3339) {
+            if expires_at <= OffsetDateTime::now_utc() {
+                if let Some(mut token) = state.access_token.take() {
+                    token.clear();
+                }
+                state.descriptor = None;
+                state.state = "EXPIRED".to_string();
+                return Err("DESKTOP_SESSION_EXPIRED".to_string());
+            }
+        }
+    }
+    state
+        .access_token
+        .clone()
+        .ok_or_else(|| "DESKTOP_AUTHENTICATION_REQUIRED".to_string())
+}
+
+fn base64url_encode(bytes: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    let mut out = String::new();
+    let mut index = 0usize;
+    while index < bytes.len() {
+        let a = bytes[index];
+        let b = bytes.get(index + 1).copied();
+        let c = bytes.get(index + 2).copied();
+        out.push(TABLE[(a >> 2) as usize] as char);
+        out.push(TABLE[(((a & 0x03) << 4) | b.unwrap_or(0) >> 4) as usize] as char);
+        if let Some(b) = b {
+            out.push(TABLE[(((b & 0x0f) << 2) | c.unwrap_or(0) >> 6) as usize] as char);
+        }
+        if let Some(c) = c {
+            out.push(TABLE[(c & 0x3f) as usize] as char);
+        }
+        index += 3;
+    }
+    out
+}
+
+#[cfg(target_os = "windows")]
+fn secure_random_bytes(length: usize) -> Result<Vec<u8>, String> {
+    #[link(name = "bcrypt")]
+    extern "system" {
+        fn BCryptGenRandom(
+            algorithm: *mut std::ffi::c_void,
+            buffer: *mut u8,
+            length: u32,
+            flags: u32,
+        ) -> i32;
+    }
+    const BCRYPT_USE_SYSTEM_PREFERRED_RNG: u32 = 0x00000002;
+    let mut bytes = vec![0u8; length];
+    let status = unsafe {
+        BCryptGenRandom(
+            std::ptr::null_mut(),
+            bytes.as_mut_ptr(),
+            length as u32,
+            BCRYPT_USE_SYSTEM_PREFERRED_RNG,
+        )
+    };
+    if status == 0 {
+        Ok(bytes)
+    } else {
+        Err("DESKTOP_AUTH_RANDOM_FAILED".to_string())
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn secure_random_bytes(_length: usize) -> Result<Vec<u8>, String> {
+    Err("DESKTOP_AUTH_WINDOWS_REQUIRED".to_string())
+}
+
+fn random_base64url(length: usize) -> Result<String, String> {
+    Ok(base64url_encode(&secure_random_bytes(length)?))
+}
+
+fn url_encode(value: &str) -> String {
+    let mut out = String::new();
+    for byte in value.as_bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => out.push(*byte as char),
+            _ => out.push_str(&format!("%{:02X}", byte)),
+        }
+    }
+    out
+}
+
+fn url_decode(value: &str) -> Result<String, String> {
+    let bytes = value.as_bytes();
+    let mut out = Vec::new();
+    let mut index = 0usize;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => {
+                out.push(b' ');
+                index += 1;
+            }
+            b'%' if index + 2 < bytes.len() => {
+                let hex = std::str::from_utf8(&bytes[index + 1..index + 3])
+                    .map_err(|_| "DESKTOP_AUTH_CALLBACK_INVALID".to_string())?;
+                let decoded = u8::from_str_radix(hex, 16)
+                    .map_err(|_| "DESKTOP_AUTH_CALLBACK_INVALID".to_string())?;
+                out.push(decoded);
+                index += 3;
+            }
+            value => {
+                out.push(value);
+                index += 1;
+            }
+        }
+    }
+    String::from_utf8(out).map_err(|_| "DESKTOP_AUTH_CALLBACK_INVALID".to_string())
+}
+
+fn query_value(target: &str, name: &str) -> Result<Option<String>, String> {
+    let query = target.split_once('?').map(|(_, query)| query).unwrap_or("");
+    for item in query.split('&') {
+        if item.is_empty() {
+            continue;
+        }
+        let (key, value) = item.split_once('=').unwrap_or((item, ""));
+        if url_decode(key)? == name {
+            return Ok(Some(url_decode(value)?));
+        }
+    }
+    Ok(None)
+}
+
+fn discover_oidc(profile: &DeploymentProfile) -> Result<OidcDiscovery, String> {
+    let response = client()?
+        .get(format!(
+            "{}/.well-known/openid-configuration",
+            profile.oidc.issuer.trim_end_matches('/')
+        ))
+        .send()
+        .map_err(|_| "DESKTOP_IDP_UNAVAILABLE".to_string())?;
+    if !response.status().is_success() {
+        return Err("DESKTOP_IDP_UNAVAILABLE".to_string());
+    }
+    let discovery: OidcDiscovery = response
+        .json()
+        .map_err(|_| "DESKTOP_IDP_DISCOVERY_INVALID".to_string())?;
+    if discovery.issuer != profile.oidc.issuer
+        || !discovery
+            .authorization_endpoint
+            .starts_with(&(profile.oidc.issuer.clone() + "/"))
+        || !discovery
+            .token_endpoint
+            .starts_with(&(profile.oidc.issuer.clone() + "/"))
+    {
+        return Err("DESKTOP_IDP_DISCOVERY_NOT_AUTHORISED".to_string());
+    }
+    Ok(discovery)
+}
+
+#[cfg(target_os = "windows")]
+fn launch_system_browser(url: &str) -> Result<(), String> {
+    Command::new("rundll32.exe")
+        .arg("url.dll,FileProtocolHandler")
+        .arg(url)
+        .spawn()
+        .map(|_| ())
+        .map_err(|_| "DESKTOP_SYSTEM_BROWSER_FAILED".to_string())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn launch_system_browser(_url: &str) -> Result<(), String> {
+    Err("DESKTOP_AUTH_WINDOWS_REQUIRED".to_string())
+}
+
+fn callback_response(stream: &mut TcpStream, status: &str, message: &str) {
+    let body = format!("<html><body><h1>{message}</h1><p>You can return to MIQOS Admin.</p></body></html>");
+    let response = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        body.len(),
+        body
+    );
+    let _ = stream.write_all(response.as_bytes());
+}
+
+fn wait_for_authorisation_code(listener: TcpListener, expected_state: &str) -> Result<String, String> {
+    listener
+        .set_nonblocking(true)
+        .map_err(|_| "DESKTOP_AUTH_CALLBACK_FAILED".to_string())?;
+    let deadline = Instant::now() + AUTH_TIMEOUT;
+    while Instant::now() < deadline {
+        match listener.accept() {
+            Ok((mut stream, _)) => {
+                let _ = stream.set_read_timeout(Some(StdDuration::from_secs(2)));
+                let mut buffer = [0u8; 8192];
+                let count = stream
+                    .read(&mut buffer)
+                    .map_err(|_| "DESKTOP_AUTH_CALLBACK_FAILED".to_string())?;
+                let request = String::from_utf8_lossy(&buffer[..count]);
+                let first_line = request
+                    .lines()
+                    .next()
+                    .ok_or_else(|| "DESKTOP_AUTH_CALLBACK_INVALID".to_string())?;
+                let target = first_line
+                    .split_whitespace()
+                    .nth(1)
+                    .ok_or_else(|| "DESKTOP_AUTH_CALLBACK_INVALID".to_string())?;
+                if !target.starts_with(AUTH_CALLBACK_PATH) {
+                    callback_response(&mut stream, "404 Not Found", "Invalid callback");
+                    continue;
+                }
+                let returned_state = query_value(target, "state")?
+                    .ok_or_else(|| "DESKTOP_AUTH_STATE_MISSING".to_string())?;
+                if returned_state != expected_state {
+                    callback_response(&mut stream, "400 Bad Request", "Authentication state mismatch");
+                    return Err("DESKTOP_AUTH_STATE_MISMATCH".to_string());
+                }
+                if let Some(error) = query_value(target, "error")? {
+                    callback_response(&mut stream, "400 Bad Request", "Authentication failed");
+                    return Err(format!("DESKTOP_AUTH_PROVIDER_{}", error.to_uppercase()));
+                }
+                let code = query_value(target, "code")?
+                    .ok_or_else(|| "DESKTOP_AUTH_CODE_MISSING".to_string())?;
+                callback_response(&mut stream, "200 OK", "Authentication complete");
+                return Ok(code);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                thread::sleep(StdDuration::from_millis(100));
+            }
+            Err(_) => return Err("DESKTOP_AUTH_CALLBACK_FAILED".to_string()),
+        }
+    }
+    Err("DESKTOP_AUTH_TIMEOUT".to_string())
+}
+
+fn begin_authentication_blocking() -> Result<DesktopAuthSession, String> {
+    set_auth_state("AUTHENTICATING", None, None);
+    emit_info("AUTH_STARTED", "begin_authentication", "START", None);
+    let result = (|| {
+        attest_health()?;
+        let profile = deployment_profile()?;
+        let discovery = discover_oidc(&profile)?;
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .map_err(|_| "DESKTOP_AUTH_CALLBACK_BIND_FAILED".to_string())?;
+        let port = listener
+            .local_addr()
+            .map_err(|_| "DESKTOP_AUTH_CALLBACK_BIND_FAILED".to_string())?
+            .port();
+        let redirect_uri = format!("http://127.0.0.1:{port}{AUTH_CALLBACK_PATH}");
+        let verifier = random_base64url(32)?;
+        let challenge = base64url_encode(&Sha256::digest(verifier.as_bytes()));
+        let state = random_base64url(24)?;
+        let nonce = random_base64url(24)?;
+        let scope = profile.oidc.scopes.join(" ");
+        let auth_url = format!(
+            "{}?response_type=code&client_id={}&redirect_uri={}&scope={}&state={}&nonce={}&code_challenge={}&code_challenge_method=S256&audience={}",
+            discovery.authorization_endpoint,
+            url_encode(&profile.oidc.client_id),
+            url_encode(&redirect_uri),
+            url_encode(&scope),
+            url_encode(&state),
+            url_encode(&nonce),
+            url_encode(&challenge),
+            url_encode(&profile.api.audience),
+        );
+        launch_system_browser(&auth_url)?;
+        let code = wait_for_authorisation_code(listener, &state)?;
+        let response = client()?
+            .post(discovery.token_endpoint)
+            .form(&[
+                ("grant_type", "authorization_code"),
+                ("code", code.as_str()),
+                ("redirect_uri", redirect_uri.as_str()),
+                ("client_id", profile.oidc.client_id.as_str()),
+                ("code_verifier", verifier.as_str()),
+            ])
+            .send()
+            .map_err(|_| "DESKTOP_AUTH_TOKEN_EXCHANGE_FAILED".to_string())?;
+        if !response.status().is_success() {
+            return Err("DESKTOP_AUTH_TOKEN_EXCHANGE_FAILED".to_string());
+        }
+        let token: TokenResponse = response
+            .json()
+            .map_err(|_| "DESKTOP_AUTH_TOKEN_RESPONSE_INVALID".to_string())?;
+        if !token.token_type.eq_ignore_ascii_case("Bearer") || token.access_token.is_empty() {
+            return Err("DESKTOP_AUTH_TOKEN_RESPONSE_INVALID".to_string());
+        }
+        if token.refresh_token.is_some() {
+            return Err("DESKTOP_REFRESH_TOKEN_NOT_AUTHORISED".to_string());
+        }
+        if token.expires_in.unwrap_or(0) == 0 {
+            return Err("DESKTOP_AUTH_TOKEN_RESPONSE_INVALID".to_string());
+        }
+        let descriptor: SessionDescriptor =
+            get_json_with_token(ApiReadOperation::AdminSession, Some(&token.access_token))?;
+        if descriptor.environment != TEST_APPLICATION_ENVIRONMENT {
+            return Err("DESKTOP_AUTH_SESSION_ENVIRONMENT_MISMATCH".to_string());
+        }
+        set_auth_state(
+            "AUTHENTICATED",
+            Some(token.access_token),
+            Some(descriptor.clone()),
+        );
+        emit_info("AUTH_SUCCEEDED", "begin_authentication", "SUCCESS", None);
+        Ok(auth_session_snapshot())
+    })();
+    if let Err(reason) = &result {
+        set_auth_state("ERROR", None, None);
+        emit_error("AUTH_FAILED", "begin_authentication", reason);
+    }
+    result
+}
+
 
 fn valid_resource_id(value: &str) -> bool {
     !value.is_empty()
@@ -511,7 +914,7 @@ fn client() -> Result<Client, String> {
         .map_err(|_| "DESKTOP_HTTP_CLIENT_ERROR".to_string())
 }
 
-fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, String> {
+fn get_json_with_token<T: DeserializeOwned>(operation: ApiReadOperation<'_>, token_override: Option<&str>) -> Result<T, String> {
     let profile = deployment_profile()?;
     let operation_name = operation.name();
     let path = operation.path();
@@ -527,9 +930,21 @@ fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, S
         state.last_reason_code = None;
     }
 
-    let response = client()?
+    let mut request = client()?
         .get(format!("{}{}", profile.api.base_url, path))
-        .header("traceparent", &trace.traceparent)
+        .header("traceparent", &trace.traceparent);
+    let owned_token = if operation.requires_authentication() && token_override.is_none() {
+        Some(current_access_token()?)
+    } else {
+        None
+    };
+    if operation.requires_authentication() {
+        let token = token_override
+            .or(owned_token.as_deref())
+            .ok_or_else(|| "DESKTOP_AUTHENTICATION_REQUIRED".to_string())?;
+        request = request.bearer_auth(token);
+    }
+    let response = request
         .send()
         .map_err(|_| {
             emit_error(
@@ -563,6 +978,15 @@ fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, S
         state.api_source_commit = header_value(&response, "x-miqo-api-source-commit");
     }
 
+    if response.status().as_u16() == 401 {
+        set_auth_state("EXPIRED", None, None);
+        emit_error("AUTH_EXPIRED", operation_name, "DESKTOP_SESSION_EXPIRED");
+        return Err("DESKTOP_SESSION_EXPIRED".to_string());
+    }
+    if response.status().as_u16() == 403 {
+        emit_error("AUTH_DENIED", operation_name, "DESKTOP_NOT_AUTHORISED");
+        return Err("DESKTOP_NOT_AUTHORISED".to_string());
+    }
     if !response.status().is_success() {
         let reason = format!("DESKTOP_API_STATUS_{}", response.status().as_u16());
         emit_error("API_REQUEST_FAILURE", operation_name, &reason);
@@ -608,6 +1032,11 @@ fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, S
     Ok(value)
 }
 
+
+fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, String> {
+    get_json_with_token(operation, None)
+}
+
 fn attest_health() -> Result<Health, String> {
     let health: Health = get_json(ApiReadOperation::Health)?;
     if health.status != "ok"
@@ -630,6 +1059,25 @@ fn attest_health() -> Result<Health, String> {
     }
     emit_info("ENV_ATTEST_PASS", "get_health", "SUCCESS", None);
     Ok(health)
+}
+
+#[tauri::command]
+fn get_auth_session() -> DesktopAuthSession {
+    auth_session_snapshot()
+}
+
+#[tauri::command]
+async fn begin_authentication() -> Result<DesktopAuthSession, String> {
+    tauri::async_runtime::spawn_blocking(begin_authentication_blocking)
+        .await
+        .map_err(|_| "DESKTOP_AUTH_TASK_FAILED".to_string())?
+}
+
+#[tauri::command]
+fn logout() -> DesktopAuthSession {
+    set_auth_state("SIGNED_OUT", None, None);
+    emit_info("AUTH_LOGOUT", "logout", "SUCCESS", None);
+    auth_session_snapshot()
 }
 
 #[tauri::command]
@@ -897,6 +1345,7 @@ pub fn run() {
         emit_error("NATIVE_PANIC", "panic", "NATIVE_PANIC");
     }));
     let _ = observability_state();
+    let _ = auth_state();
 
     let log_plugin = tauri_plugin_log::Builder::new()
         .clear_targets()
@@ -916,6 +1365,9 @@ pub fn run() {
         .plugin(log_plugin)
         .invoke_handler(tauri::generate_handler![
             get_runtime_profile,
+            get_auth_session,
+            begin_authentication,
+            logout,
             get_health,
             load_admin_profile,
             load_admin_profile_version,
@@ -1015,37 +1467,37 @@ mod tests {
             ApiReadOperation::admin_profile("PRO-SYN-001")
                 .expect("valid profile")
                 .path(),
-            "/admin/profiles/PRO-SYN-001"
+            "/desktop-admin/profiles/PRO-SYN-001"
         );
         assert_eq!(
             ApiReadOperation::admin_profile_version("RPV-SYN-001-V1")
                 .expect("valid version")
                 .path(),
-            "/admin/profile-versions/RPV-SYN-001-V1"
+            "/desktop-admin/profile-versions/RPV-SYN-001-V1"
         );
         assert_eq!(
             ApiReadOperation::admin_audit("PRO-SYN-001")
                 .expect("valid profile")
                 .path(),
-            "/admin/audit?profileId=PRO-SYN-001"
+            "/desktop-admin/audit?profileId=PRO-SYN-001"
         );
         assert_eq!(
             ApiReadOperation::admin_selection_sp4_trace("SEL-SYN-001")
                 .expect("valid selection")
                 .path(),
-            "/admin/selections/SEL-SYN-001/sp4-trace"
+            "/desktop-admin/selections/SEL-SYN-001/sp4-trace"
         );
         assert_eq!(
             ApiReadOperation::discrepancies("PRO-SYN-001")
                 .expect("valid profile")
                 .path(),
-            "/profiles/PRO-SYN-001/discrepancies"
+            "/desktop-admin/profiles/PRO-SYN-001/discrepancies"
         );
         assert_eq!(
             ApiReadOperation::raw_provider_response("QREQ-SYN-001")
                 .expect("valid quote request")
                 .path(),
-            "/quote-requests/QREQ-SYN-001/raw-response"
+            "/desktop-admin/quote-requests/QREQ-SYN-001/raw-response"
         );
     }
 

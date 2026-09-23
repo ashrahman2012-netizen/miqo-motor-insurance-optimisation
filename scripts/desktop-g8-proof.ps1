@@ -190,6 +190,14 @@ function Start-G8Stub {
 
   @'
 import http from "node:http";
+import {createHash, randomBytes} from "node:crypto";
+
+const accessToken = "miqos-g8-installed-access-token";
+const codes = new Map();
+const b64url = value => Buffer.from(value).toString("base64url");
+const sha256 = value => createHash("sha256").update(value).digest("base64url");
+const json = (res,status,body) => { const data=JSON.stringify(body); res.writeHead(status,{"content-type":"application/json","content-length":Buffer.byteLength(data),"x-miqo-request-id":"g8-request","x-miqo-api-version":"0.1.0","x-miqo-api-build-id":process.env.GITHUB_RUN_ID??"g8","x-miqo-api-source-commit":process.env.GITHUB_SHA??"g8"}); res.end(data); };
+const readBody = req => new Promise(resolve => { let body=""; req.on("data",c=>body+=c); req.on("end",()=>resolve(body)); });
 
 const auditEvent = {
   auditEventId: "AUD-G8-INSTALLED-001",
@@ -201,38 +209,42 @@ const auditEvent = {
   metadataJson: {versionId: "RPV-SYN-001-V1"}
 };
 
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url ?? "/", "http://127.0.0.1:4000");
-  res.setHeader("content-type", "application/json");
-
-  if (req.method === "GET" && url.pathname === "/health") {
-    res.end(JSON.stringify({
-      status: "ok",
-      dataClassification: "SYNTHETIC",
-      liveProvidersEnabled: false
-    }));
-    return;
-  }
-
-  if (req.method === "GET" && url.pathname === "/admin/audit" && url.searchParams.get("profileId") === "PRO-SYN-001") {
-    res.end(JSON.stringify({items: [auditEvent]}));
-    return;
-  }
-
-  if (req.method === "GET" && url.pathname === "/profiles/PRO-SYN-001/discrepancies") {
-    res.end(JSON.stringify({items: []}));
-    return;
-  }
-
-  res.statusCode = 404;
-  res.end(JSON.stringify({error: "G8_STUB_NOT_FOUND"}));
+const api = http.createServer((req,res)=>{
+  const url=new URL(req.url??"/","http://127.0.0.1:4000");
+  const traceparent=String(req.headers.traceparent??"");
+  const traceId=traceparent.split("-")[1]??"g8-trace";
+  res.setHeader("x-miqo-trace-id",traceId);
+  if(req.method==="GET"&&url.pathname==="/health")return json(res,200,{status:"ok",dataClassification:"SYNTHETIC",liveProvidersEnabled:false});
+  if(!url.pathname.startsWith("/desktop-admin/"))return json(res,404,{error:"G8_STUB_NOT_FOUND"});
+  if(req.headers.authorization!=="Bearer "+accessToken)return json(res,401,{error:"ADMIN_AUTHENTICATION_REQUIRED"});
+  if(req.method==="GET"&&url.pathname==="/desktop-admin/session")return json(res,200,{subjectId:"USR-SYN-ADMIN-001",displayName:"Synthetic Admin",environment:"SYNTHETIC",permissions:["miqos.admin.profile.read","miqos.admin.audit.read","miqos.admin.trace.read","miqos.admin.discrepancy.read","miqos.admin.integrity.read","miqos.admin.raw-evidence.read","miqos.admin.system.read"],sessionExpiresAt:new Date(Date.now()+300000).toISOString(),authenticationContext:{issuer:"http://127.0.0.1:4100",protocol:"OIDC_AUTHORIZATION_CODE_PKCE",credentialLocation:"NATIVE_PROCESS_MEMORY"}});
+  if(req.method==="GET"&&url.pathname==="/desktop-admin/audit"&&url.searchParams.get("profileId")==="PRO-SYN-001")return json(res,200,{items:[auditEvent]});
+  if(req.method==="GET"&&url.pathname==="/desktop-admin/profiles/PRO-SYN-001/discrepancies")return json(res,200,{items:[]});
+  return json(res,404,{error:"G8_STUB_NOT_FOUND"});
 });
 
-server.listen(4000, "127.0.0.1", () => {
-  console.log("G8_STUB_READY");
+const idp=http.createServer(async(req,res)=>{
+  const issuer="http://127.0.0.1:4100";
+  const url=new URL(req.url??"/",issuer);
+  if(req.method==="GET"&&url.pathname==="/.well-known/openid-configuration")return json(res,200,{issuer,authorization_endpoint:issuer+"/authorize",token_endpoint:issuer+"/token",jwks_uri:issuer+"/jwks"});
+  if(req.method==="GET"&&url.pathname==="/authorize"){
+    const redirect=url.searchParams.get("redirect_uri"), state=url.searchParams.get("state"), challenge=url.searchParams.get("code_challenge");
+    if(url.searchParams.get("client_id")!=="miqos-admin-test-public"||url.searchParams.get("audience")!=="miqos-api-test"||!redirect?.startsWith("http://127.0.0.1:")||!state||!challenge||url.searchParams.get("code_challenge_method")!=="S256")return json(res,400,{error:"invalid_request"});
+    const code=b64url(randomBytes(18));codes.set(code,{redirect,challenge});
+    const target=new URL(redirect);target.searchParams.set("code",code);target.searchParams.set("state",state);res.writeHead(302,{location:target.toString()});return res.end();
+  }
+  if(req.method==="POST"&&url.pathname==="/token"){
+    const body=new URLSearchParams(await readBody(req));const code=body.get("code");const record=code?codes.get(code):null;
+    if(!record||body.get("client_id")!=="miqos-admin-test-public"||body.get("redirect_uri")!==record.redirect||sha256(body.get("code_verifier")??"")!==record.challenge)return json(res,400,{error:"invalid_grant"});
+    codes.delete(code);return json(res,200,{access_token:accessToken,token_type:"Bearer",expires_in:300,scope:"openid profile"});
+  }
+  return json(res,404,{error:"not_found"});
 });
 
-process.on("SIGTERM", () => server.close(() => process.exit(0)));
+api.listen(4000,"127.0.0.1",()=>console.log("G8_API_READY"));
+idp.listen(4100,"127.0.0.1",()=>console.log("G8_IDP_READY"));
+process.on("SIGTERM",()=>api.close(()=>idp.close(()=>process.exit(0))));
+'@
 '@ | Set-Content -LiteralPath $stubPath -Encoding UTF8
 
   $node = (Get-Command node).Source
@@ -304,6 +316,9 @@ function Assert-StaticSecurityBoundary {
   $expected = @(
     "allow-get-runtime-profile",
     "allow-get-health",
+    "allow-get-auth-session",
+    "allow-begin-authentication",
+    "allow-logout",
     "allow-load-admin-profile",
     "allow-load-admin-profile-version",
     "allow-load-admin-profile-audit",
@@ -311,7 +326,7 @@ function Assert-StaticSecurityBoundary {
     "allow-get-diagnostics",
     "allow-create-support-snapshot"
   )
-  Assert-True ($permissions.Count -eq $expected.Count) "Capability must expose exactly eight approved read/runtime/support commands."
+  Assert-True ($permissions.Count -eq $expected.Count) "Capability must expose exactly eleven approved auth/read/runtime/support commands."
   foreach ($permission in $expected) {
     Assert-True ($permissions -contains $permission) "Missing native permission '$permission'."
   }
@@ -366,16 +381,16 @@ try {
   if ($_.Exception.Message -like "Port 4000 was unexpectedly occupied*") { throw }
 }
 
+$stub = Start-G8Stub
 $app = Start-InstalledApp $installedExe
 $root = Wait-MainWindow $app
-$failureNames = Wait-UiText $root "Synthetic Admin API unavailable" 35
-Assert-True (($failureNames -join "`n").Contains("Retry safe read")) "Controlled failure UI did not expose the safe retry action."
-
-$stub = Start-G8Stub
 try {
-  Invoke-UiButton $root "Retry safe read"
-  $successNames = Wait-UiText $root "Profile created" 30
+  $signedOutNames = Wait-UiText $root "Sign in required" 30
+  Assert-True (($signedOutNames -join "`n").Contains("Sign in")) "Signed-out UI did not expose native sign-in."
+  Invoke-UiButton $root "Sign in"
+  $successNames = Wait-UiText $root "Profile created" 45
   $successText = $successNames -join "`n"
+  Assert-True ($successText.Contains("AUTHENTICATED")) "Installed UI did not expose authenticated session state."
   Assert-True ($successText.Contains("SYNTHETIC")) "Installed success UI did not expose SYNTHETIC identity."
   Assert-True ($successText.Contains("ATTESTED")) "Installed success UI did not expose successful environment attestation."
   Assert-True ($successText.Contains("PRO-SYN-001")) "Installed success UI did not expose the representative profile reference."
@@ -401,6 +416,8 @@ do {
 Assert-True ($logText.Contains('"eventCode":"APP_START"')) "Structured log is missing APP_START."
 Assert-True ($logText.Contains('"eventCode":"API_REQUEST_FAILURE"')) "Structured log is missing the controlled API failure."
 Assert-True ($logText.Contains('"eventCode":"ENV_ATTEST_PASS"')) "Structured log is missing environment attestation."
+Assert-True ($logText.Contains('"eventCode":"AUTH_STARTED"')) "Structured log is missing authentication start."
+Assert-True ($logText.Contains('"eventCode":"AUTH_SUCCEEDED"')) "Structured log is missing authentication success."
 Assert-True ($logText.Contains('"eventCode":"API_REQUEST_COMPLETE"')) "Structured log is missing representative read completion."
 Assert-True (-not $logText.Contains("Bearer ")) "Operational log contains bearer material."
 Assert-True (-not $logText.Contains("refresh_token")) "Operational log contains refresh-token material."
@@ -490,8 +507,10 @@ $evidence = [ordered]@{
   machineUninstallRegistrationAbsent = $true
   installedLaunch = "PASS"
   windowTitle = $ProductName
-  controlledFailureRendered = "PASS"
-  retrySafeReadInvoked = "PASS"
+  controlledFailureRendered = "INHERITED_PRE_DB_G7"
+  retrySafeReadInvoked = "NOT_APPLICABLE_DB_G7"
+  nativeOidcPkceAuthentication = "PASS"
+  bearerTokenRendererExposure = "ABSENT"
   syntheticSuccessRendered = "PASS"
   environmentAttestation = "PASS"
   representativeAdminAuditRead = "PASS"

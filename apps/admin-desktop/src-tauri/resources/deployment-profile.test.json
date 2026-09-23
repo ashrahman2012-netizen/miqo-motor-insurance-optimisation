@@ -8,7 +8,7 @@
     "audience": "miqos-api-test"
   },
   "oidc": {
-    "issuer": "https://identity.test.invalid",
+    "issuer": "http://127.0.0.1:4100",
     "clientId": "miqos-admin-test-public",
     "scopes": ["openid", "profile"]
   },

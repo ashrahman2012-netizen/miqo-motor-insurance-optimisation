@@ -16,11 +16,41 @@ export interface DesktopRuntimeProfile {
   readonly applicationEnvironment: "SYNTHETIC";
   readonly apiService: string;
   readonly apiAudience: string;
-  readonly authenticationMode: "NON_PRODUCTION_STUB";
+  readonly authenticationMode: "NATIVE_OIDC_PKCE";
   readonly buildVersion: string;
   readonly buildId: string;
   readonly sourceCommit: string;
   readonly deploymentProfileSha256: string;
+}
+
+
+export type DesktopSessionState =
+  | "SIGNED_OUT"
+  | "AUTHENTICATING"
+  | "AUTHENTICATED"
+  | "REAUTH_REQUIRED"
+  | "NOT_AUTHORISED"
+  | "EXPIRED"
+  | "ERROR";
+
+export interface DesktopSessionDescriptor {
+  readonly subjectId: string;
+  readonly displayName: string;
+  readonly environment: string;
+  readonly permissions: ReadonlyArray<string>;
+  readonly sessionExpiresAt: string;
+  readonly authenticationContext: Readonly<Record<string, unknown>>;
+}
+
+export interface DesktopAuthSession {
+  readonly state: DesktopSessionState;
+  readonly descriptor: DesktopSessionDescriptor | null;
+}
+
+export interface DesktopAuthTransport {
+  getAuthSession(): Promise<DesktopAuthSession>;
+  beginAuthentication(): Promise<DesktopAuthSession>;
+  logout(): Promise<DesktopAuthSession>;
 }
 
 export interface DesktopHealth {

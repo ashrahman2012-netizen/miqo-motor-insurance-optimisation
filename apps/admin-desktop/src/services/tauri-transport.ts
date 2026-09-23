@@ -10,11 +10,41 @@ import type {
   DesktopDiagnostics,
   DesktopSupportSnapshot,
   DesktopSupportTransport,
+  DesktopAuthSession,
+  DesktopAuthTransport,
 } from "./contracts";
 
-export class TauriDesktopApiTransport implements DesktopApiTransport, DesktopSupportTransport {
+function errorText(reason: unknown) {
+  return reason instanceof Error ? reason.message : String(reason);
+}
+
+async function invokeProtected<T>(command: string, args?: Record<string, unknown>) {
+  try {
+    return await invoke<T>(command, args);
+  } catch (reason) {
+    const text = errorText(reason);
+    if (text.includes("DESKTOP_SESSION_EXPIRED") || text.includes("DESKTOP_AUTHENTICATION_REQUIRED")) {
+      window.dispatchEvent(new Event("miqos-session-changed"));
+    }
+    throw new Error(text);
+  }
+}
+
+export class TauriDesktopApiTransport implements DesktopApiTransport, DesktopSupportTransport, DesktopAuthTransport {
   getRuntimeProfile() {
     return invoke<DesktopRuntimeProfile>("get_runtime_profile");
+  }
+
+  getAuthSession() {
+    return invoke<DesktopAuthSession>("get_auth_session");
+  }
+
+  beginAuthentication() {
+    return invoke<DesktopAuthSession>("begin_authentication");
+  }
+
+  logout() {
+    return invoke<DesktopAuthSession>("logout");
   }
 
   getHealth() {
@@ -22,19 +52,19 @@ export class TauriDesktopApiTransport implements DesktopApiTransport, DesktopSup
   }
 
   loadAdminProfile(profileId: string) {
-    return invoke<DesktopAdminProfileEvidence>("load_admin_profile", {profileId});
+    return invokeProtected<DesktopAdminProfileEvidence>("load_admin_profile", {profileId});
   }
 
   loadAdminProfileVersion(versionId: string) {
-    return invoke<DesktopAdminProfileVersionEvidence>("load_admin_profile_version", {versionId});
+    return invokeProtected<DesktopAdminProfileVersionEvidence>("load_admin_profile_version", {versionId});
   }
 
   loadAdminProfileAudit(profileId: string) {
-    return invoke<DesktopAdminProfileAuditEvidence>("load_admin_profile_audit", {profileId});
+    return invokeProtected<DesktopAdminProfileAuditEvidence>("load_admin_profile_audit", {profileId});
   }
 
   loadAdminSelectionTrace(selectionId: string) {
-    return invoke<DesktopAdminSelectionTraceEvidence>("load_admin_selection_trace", {selectionId});
+    return invokeProtected<DesktopAdminSelectionTraceEvidence>("load_admin_selection_trace", {selectionId});
   }
 
   getDiagnostics() {

@@ -5,9 +5,10 @@ import {
   PageState,
   createApplicationEnvironmentVM,
 } from "@miqo/ui";
-import type {DesktopRuntimeProfile} from "../services/contracts";
+import type {DesktopAuthSession, DesktopRuntimeProfile} from "../services/contracts";
 import {TauriDesktopApiTransport} from "../services/tauri-transport";
 import {CommandBar} from "../components/CommandBar";
+import {SessionControl} from "../components/SessionControl";
 import {AuditRoute} from "../routes/AuditRoute";
 import {CasesRoute} from "../routes/CasesRoute";
 import {DashboardRoute} from "../routes/DashboardRoute";
@@ -26,6 +27,10 @@ export function DesktopApp() {
   const {path, navigate} = useDesktopRouter();
   const [runtime, setRuntime] = useState<DesktopRuntimeProfile | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
+  const [session, setSession] = useState<DesktopAuthSession>({state: "SIGNED_OUT", descriptor: null});
+  const [sessionReady, setSessionReady] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -42,6 +47,50 @@ export function DesktopApp() {
       });
     return () => { active = false; };
   }, [transport]);
+
+
+  const refreshSession = () => {
+    void transport.getAuthSession()
+      .then(value => {
+        setSession(value);
+        setSessionReady(true);
+      })
+      .catch(reason => {
+        setAuthError(reason instanceof Error ? reason.message : String(reason));
+        setSession({state: "ERROR", descriptor: null});
+        setSessionReady(true);
+      });
+  };
+
+  useEffect(() => {
+    refreshSession();
+    const handler = () => refreshSession();
+    window.addEventListener("miqos-session-changed", handler);
+    return () => window.removeEventListener("miqos-session-changed", handler);
+  }, [transport]);
+
+  function signIn() {
+    setAuthBusy(true);
+    setAuthError(null);
+    void transport.beginAuthentication()
+      .then(value => setSession(value))
+      .catch(reason => {
+        setAuthError(reason instanceof Error ? reason.message : String(reason));
+        refreshSession();
+      })
+      .finally(() => setAuthBusy(false));
+  }
+
+  function signOut() {
+    setAuthBusy(true);
+    void transport.logout()
+      .then(value => {
+        setSession(value);
+        setAuthError(null);
+      })
+      .catch(reason => setAuthError(reason instanceof Error ? reason.message : String(reason)))
+      .finally(() => setAuthBusy(false));
+  }
 
   const environment = runtime?.applicationEnvironment === "SYNTHETIC"
     ? createApplicationEnvironmentVM("SYNTHETIC")
@@ -69,6 +118,13 @@ export function DesktopApp() {
         currentPath={path}
       >
         <CommandBar items={ADMIN_NAVIGATION} onNavigate={navigate} />
+        <SessionControl
+          session={session}
+          busy={authBusy}
+          error={authError}
+          onSignIn={signIn}
+          onSignOut={signOut}
+        />
 
         {runtimeError ? (
           <div className="desktop-runtime-warning">
@@ -81,7 +137,11 @@ export function DesktopApp() {
           </div>
         ) : null}
 
-        {route.path === "/" ? (
+        {!sessionReady ? (
+          <PageState state="LOADING" title="Resolving Admin session" message="Checking native authentication state." />
+        ) : route.path !== "/admin/system" && session.state !== "AUTHENTICATED" ? (
+          <PageState state="NOT_AUTHORISED" title="Protected Admin evidence unavailable" message="Sign in above to access read-only Admin evidence." />
+        ) : route.path === "/" ? (
           <DashboardRoute transport={transport} runtime={runtime} />
         ) : route.path === "/admin/cases" ? (
           <CasesRoute onNavigate={navigate} />
