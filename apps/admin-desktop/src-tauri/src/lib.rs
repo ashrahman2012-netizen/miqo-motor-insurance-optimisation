@@ -458,8 +458,8 @@ fn load_admin_selection_trace(selection_id: String) -> Result<AdminSelectionTrac
         get_json(ApiReadOperation::admin_audit(&profile_id)?).inspect_err(|reason| {
             emit_error("API_REQUEST_FAILURE", "load_admin_selection_trace", reason);
         })?;
-    let discrepancies: ItemsEnvelope =
-        get_json(ApiReadOperation::discrepancies(&profile_id)?).inspect_err(|reason| {
+    let discrepancies: ItemsEnvelope = get_json(ApiReadOperation::discrepancies(&profile_id)?)
+        .inspect_err(|reason| {
             emit_error("API_REQUEST_FAILURE", "load_admin_selection_trace", reason);
         })?;
     let raw_provider_response = match quote_request_id {
