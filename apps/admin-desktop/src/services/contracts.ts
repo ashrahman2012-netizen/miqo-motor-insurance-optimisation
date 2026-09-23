@@ -1,6 +1,8 @@
 import type {
   AdminAuditEventApi,
   AdminDiscrepancyApi,
+  AdminRawProviderResponseApi,
+  AdminSprint4TraceApi,
   ProfileDiscrepancyApi,
   ProfileSnapshotApi,
   ProfileVersionApi,
@@ -41,16 +43,31 @@ export interface DesktopAdminProfileAuditEvidence {
   readonly discrepancies: ReadonlyArray<AdminDiscrepancyApi>;
 }
 
+export interface DesktopAdminSelectionTraceEvidence {
+  readonly trace: AdminSprint4TraceApi;
+  readonly auditEvents: ReadonlyArray<AdminAuditEventApi>;
+  readonly discrepancies: ReadonlyArray<AdminDiscrepancyApi>;
+  readonly rawProviderResponse: AdminRawProviderResponseApi | null;
+}
+
 export interface DesktopApiTransport {
   getRuntimeProfile(): Promise<DesktopRuntimeProfile>;
   getHealth(): Promise<DesktopHealth>;
   loadAdminProfile(profileId: string): Promise<DesktopAdminProfileEvidence>;
   loadAdminProfileVersion(versionId: string): Promise<DesktopAdminProfileVersionEvidence>;
   loadAdminProfileAudit(profileId: string): Promise<DesktopAdminProfileAuditEvidence>;
+  loadAdminSelectionTrace(selectionId: string): Promise<DesktopAdminSelectionTraceEvidence>;
 }
 
 export interface DesktopAuditProof {
   readonly runtime: DesktopRuntimeProfile;
   readonly health: DesktopHealth;
+  readonly viewModel: AdminAuditTracePageVM;
+}
+
+export interface DesktopDecisionTraceProof {
+  readonly runtime: DesktopRuntimeProfile;
+  readonly health: DesktopHealth;
+  readonly trace: AdminSprint4TraceApi;
   readonly viewModel: AdminAuditTracePageVM;
 }

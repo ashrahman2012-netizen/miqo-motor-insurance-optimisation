@@ -2,6 +2,7 @@ import {invoke} from "@tauri-apps/api/core";
 import type {
   DesktopAdminProfileAuditEvidence,
   DesktopAdminProfileEvidence,
+  DesktopAdminSelectionTraceEvidence,
   DesktopAdminProfileVersionEvidence,
   DesktopApiTransport,
   DesktopHealth,
@@ -27,5 +28,9 @@ export class TauriDesktopApiTransport implements DesktopApiTransport {
 
   loadAdminProfileAudit(profileId: string) {
     return invoke<DesktopAdminProfileAuditEvidence>("load_admin_profile_audit", {profileId});
+  }
+
+  loadAdminSelectionTrace(selectionId: string) {
+    return invoke<DesktopAdminSelectionTraceEvidence>("load_admin_selection_trace", {selectionId});
   }
 }
