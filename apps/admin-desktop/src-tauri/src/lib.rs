@@ -89,13 +89,24 @@ struct AdminProfileAuditEvidence {
     discrepancies: Vec<Value>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AdminSelectionTraceEvidence {
+    trace: Value,
+    audit_events: Vec<Value>,
+    discrepancies: Vec<Value>,
+    raw_provider_response: Option<Value>,
+}
+
 #[derive(Debug)]
 enum ApiReadOperation<'a> {
     Health,
     AdminProfile { profile_id: &'a str },
     AdminProfileVersion { version_id: &'a str },
     AdminAudit { profile_id: &'a str },
+    AdminSelectionSp4Trace { selection_id: &'a str },
     Discrepancies { profile_id: &'a str },
+    RawProviderResponse { quote_request_id: &'a str },
 }
 
 impl<'a> ApiReadOperation<'a> {
@@ -114,9 +125,19 @@ impl<'a> ApiReadOperation<'a> {
         Ok(Self::AdminAudit { profile_id })
     }
 
+    fn admin_selection_sp4_trace(selection_id: &'a str) -> Result<Self, String> {
+        validate_selection_id(selection_id)?;
+        Ok(Self::AdminSelectionSp4Trace { selection_id })
+    }
+
     fn discrepancies(profile_id: &'a str) -> Result<Self, String> {
         validate_profile_id(profile_id)?;
         Ok(Self::Discrepancies { profile_id })
+    }
+
+    fn raw_provider_response(quote_request_id: &'a str) -> Result<Self, String> {
+        validate_quote_request_id(quote_request_id)?;
+        Ok(Self::RawProviderResponse { quote_request_id })
     }
 
     fn path(&self) -> String {
@@ -129,8 +150,14 @@ impl<'a> ApiReadOperation<'a> {
             Self::AdminAudit { profile_id } => {
                 format!("/admin/audit?profileId={profile_id}")
             }
+            Self::AdminSelectionSp4Trace { selection_id } => {
+                format!("/admin/selections/{selection_id}/sp4-trace")
+            }
             Self::Discrepancies { profile_id } => {
                 format!("/profiles/{profile_id}/discrepancies")
+            }
+            Self::RawProviderResponse { quote_request_id } => {
+                format!("/quote-requests/{quote_request_id}/raw-response")
             }
         }
     }
@@ -268,6 +295,62 @@ fn validate_version_id(version_id: &str) -> Result<(), String> {
     }
 }
 
+fn validate_selection_id(selection_id: &str) -> Result<(), String> {
+    if valid_resource_id(selection_id) {
+        Ok(())
+    } else {
+        Err("DESKTOP_INVALID_SELECTION_ID".to_string())
+    }
+}
+
+fn validate_quote_request_id(quote_request_id: &str) -> Result<(), String> {
+    if valid_resource_id(quote_request_id) {
+        Ok(())
+    } else {
+        Err("DESKTOP_INVALID_QUOTE_REQUEST_ID".to_string())
+    }
+}
+
+fn trace_profile_id(trace: &Value) -> Result<String, String> {
+    let profile_id = trace
+        .pointer("/profile/profileId")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "DESKTOP_TRACE_PROFILE_ID_MISSING".to_string())?;
+    validate_profile_id(profile_id)?;
+    Ok(profile_id.to_string())
+}
+
+fn surfaced_quote_request_id(trace: &Value) -> Result<Option<String>, String> {
+    let surfaced = match trace
+        .pointer("/recommendation/surfacedNormalisedQuoteId")
+        .and_then(Value::as_str)
+    {
+        Some(value) => value,
+        None => return Ok(None),
+    };
+
+    let quotes = trace
+        .pointer("/marketRouteQuotes")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "DESKTOP_TRACE_ROUTE_QUOTES_MISSING".to_string())?;
+
+    for item in quotes {
+        let normalised_quote_id = item
+            .pointer("/normalisedQuote/normalisedQuoteId")
+            .and_then(Value::as_str);
+        if normalised_quote_id == Some(surfaced) {
+            let quote_request_id = item
+                .pointer("/quoteRequest/quoteRequestId")
+                .and_then(Value::as_str)
+                .ok_or_else(|| "DESKTOP_TRACE_QUOTE_REQUEST_ID_MISSING".to_string())?;
+            validate_quote_request_id(quote_request_id)?;
+            return Ok(Some(quote_request_id.to_string()));
+        }
+    }
+
+    Err("DESKTOP_TRACE_SURFACED_QUOTE_NOT_FOUND".to_string())
+}
+
 fn client() -> Result<Client, String> {
     Client::builder()
         .timeout(StdDuration::from_secs(5))
@@ -361,6 +444,49 @@ fn load_admin_profile_version(version_id: String) -> Result<Value, String> {
 }
 
 #[tauri::command]
+fn load_admin_selection_trace(selection_id: String) -> Result<AdminSelectionTraceEvidence, String> {
+    let trace_operation = ApiReadOperation::admin_selection_sp4_trace(&selection_id)?;
+    attest_health()?;
+
+    let trace: Value = get_json(trace_operation).inspect_err(|reason| {
+        emit_error("API_REQUEST_FAILURE", "load_admin_selection_trace", reason);
+    })?;
+    let profile_id = trace_profile_id(&trace)?;
+    let quote_request_id = surfaced_quote_request_id(&trace)?;
+
+    let audit: ItemsEnvelope =
+        get_json(ApiReadOperation::admin_audit(&profile_id)?).inspect_err(|reason| {
+            emit_error("API_REQUEST_FAILURE", "load_admin_selection_trace", reason);
+        })?;
+    let discrepancies: ItemsEnvelope =
+        get_json(ApiReadOperation::discrepancies(&profile_id)?).inspect_err(|reason| {
+            emit_error("API_REQUEST_FAILURE", "load_admin_selection_trace", reason);
+        })?;
+    let raw_provider_response = match quote_request_id {
+        Some(ref value) => Some(
+            get_json(ApiReadOperation::raw_provider_response(value)?).inspect_err(|reason| {
+                emit_error("API_REQUEST_FAILURE", "load_admin_selection_trace", reason);
+            })?,
+        ),
+        None => None,
+    };
+
+    emit_info(
+        "API_REQUEST_COMPLETE",
+        "load_admin_selection_trace",
+        "SUCCESS",
+        None,
+    );
+
+    Ok(AdminSelectionTraceEvidence {
+        trace,
+        audit_events: audit.items,
+        discrepancies: discrepancies.items,
+        raw_provider_response,
+    })
+}
+
+#[tauri::command]
 fn load_admin_profile_audit(profile_id: String) -> Result<AdminProfileAuditEvidence, String> {
     let audit_operation = ApiReadOperation::admin_audit(&profile_id)?;
     let discrepancy_operation = ApiReadOperation::discrepancies(&profile_id)?;
@@ -438,7 +564,8 @@ pub fn run() {
             get_health,
             load_admin_profile,
             load_admin_profile_version,
-            load_admin_profile_audit
+            load_admin_profile_audit,
+            load_admin_selection_trace
         ])
         .setup(|app| {
             if let Ok(log_dir) = app.path().app_log_dir() {
@@ -546,10 +673,52 @@ mod tests {
             "/admin/audit?profileId=PRO-SYN-001"
         );
         assert_eq!(
+            ApiReadOperation::admin_selection_sp4_trace("SEL-SYN-001")
+                .expect("valid selection")
+                .path(),
+            "/admin/selections/SEL-SYN-001/sp4-trace"
+        );
+        assert_eq!(
             ApiReadOperation::discrepancies("PRO-SYN-001")
                 .expect("valid profile")
                 .path(),
             "/profiles/PRO-SYN-001/discrepancies"
+        );
+        assert_eq!(
+            ApiReadOperation::raw_provider_response("QREQ-SYN-001")
+                .expect("valid quote request")
+                .path(),
+            "/quote-requests/QREQ-SYN-001/raw-response"
+        );
+    }
+
+    #[test]
+    fn selection_trace_helpers_preserve_authoritative_links() {
+        let trace = json!({
+            "profile": {"profileId": "PRO-SYN-001"},
+            "recommendation": {"surfacedNormalisedQuoteId": "NQ-SYN-001"},
+            "marketRouteQuotes": [{
+                "quoteRequest": {"quoteRequestId": "QREQ-SYN-001"},
+                "normalisedQuote": {"normalisedQuoteId": "NQ-SYN-001"}
+            }]
+        });
+        assert_eq!(trace_profile_id(&trace), Ok("PRO-SYN-001".to_string()));
+        assert_eq!(
+            surfaced_quote_request_id(&trace),
+            Ok(Some("QREQ-SYN-001".to_string()))
+        );
+    }
+
+    #[test]
+    fn selection_trace_helpers_fail_closed_on_mismatched_surface() {
+        let trace = json!({
+            "profile": {"profileId": "PRO-SYN-001"},
+            "recommendation": {"surfacedNormalisedQuoteId": "NQ-MISSING"},
+            "marketRouteQuotes": []
+        });
+        assert_eq!(
+            surfaced_quote_request_id(&trace),
+            Err("DESKTOP_TRACE_SURFACED_QUOTE_NOT_FOUND".to_string())
         );
     }
 
@@ -569,5 +738,37 @@ mod tests {
             );
         }
         assert_eq!(validate_version_id("RPV-SYN_001-V1"), Ok(()));
+    }
+
+    #[test]
+    fn deep_trace_identifiers_cannot_escape_route_templates() {
+        for invalid in [
+            "",
+            "SEL/SYN",
+            "SEL?x=1",
+            "SEL#fragment",
+            "SEL SYN",
+            "../SEL",
+        ] {
+            assert_eq!(
+                validate_selection_id(invalid),
+                Err("DESKTOP_INVALID_SELECTION_ID".to_string())
+            );
+        }
+        for invalid in [
+            "",
+            "QREQ/SYN",
+            "QREQ?x=1",
+            "QREQ#fragment",
+            "QREQ SYN",
+            "../QREQ",
+        ] {
+            assert_eq!(
+                validate_quote_request_id(invalid),
+                Err("DESKTOP_INVALID_QUOTE_REQUEST_ID".to_string())
+            );
+        }
+        assert_eq!(validate_selection_id("SEL-SYN_001"), Ok(()));
+        assert_eq!(validate_quote_request_id("QREQ-SYN_001"), Ok(()));
     }
 }

@@ -306,9 +306,10 @@ function Assert-StaticSecurityBoundary {
     "allow-get-health",
     "allow-load-admin-profile",
     "allow-load-admin-profile-version",
-    "allow-load-admin-profile-audit"
+    "allow-load-admin-profile-audit",
+    "allow-load-admin-selection-trace"
   )
-  Assert-True ($permissions.Count -eq $expected.Count) "Capability must expose exactly three approved read/runtime commands."
+  Assert-True ($permissions.Count -eq $expected.Count) "Capability must expose exactly six approved read/runtime commands."
   foreach ($permission in $expected) {
     Assert-True ($permissions -contains $permission) "Missing native permission '$permission'."
   }
