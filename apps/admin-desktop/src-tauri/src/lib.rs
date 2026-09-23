@@ -247,9 +247,9 @@ fn runtime_profile() -> Result<RuntimeProfile, String> {
 fn valid_resource_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 100
-        && value
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_')
+        && value.chars().all(|character| {
+            character.is_ascii_alphanumeric() || character == '-' || character == '_'
+        })
 }
 
 fn validate_profile_id(profile_id: &str) -> Result<(), String> {
@@ -555,7 +555,14 @@ mod tests {
 
     #[test]
     fn profile_version_identifiers_cannot_escape_route_templates() {
-        for invalid in ["", "RPV/SYN", "RPV?x=1", "RPV#fragment", "RPV SYN", "../RPV"] {
+        for invalid in [
+            "",
+            "RPV/SYN",
+            "RPV?x=1",
+            "RPV#fragment",
+            "RPV SYN",
+            "../RPV",
+        ] {
             assert_eq!(
                 validate_version_id(invalid),
                 Err("DESKTOP_INVALID_PROFILE_VERSION_ID".to_string())
