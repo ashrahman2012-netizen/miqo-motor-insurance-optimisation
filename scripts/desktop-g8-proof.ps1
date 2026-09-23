@@ -468,7 +468,7 @@ Assert-True ($installedExe.StartsWith($env:LOCALAPPDATA, [System.StringCompariso
 $baselineExecutableVersion = [string](Get-Item -LiteralPath $installedExe).VersionInfo.ProductVersion
 Assert-True (-not [string]::IsNullOrWhiteSpace($baselineExecutableVersion)) "Installed baseline executable does not expose a product version."
 
-$shortcuts = Get-ProductShortcuts
+$shortcuts = @(Get-ProductShortcuts)
 Assert-True ($shortcuts.Count -ge 1) "Current-user install did not create the required Start Menu shortcut."
 Assert-NoUnapprovedWindowsSideEffects
 
@@ -596,7 +596,7 @@ do {
 
 Assert-True (-not (Get-ProductEntry)) "Uninstall registration remains after uninstall."
 Assert-True (-not (Test-Path -LiteralPath $installedAfterUpgrade)) "Installed executable remains after uninstall."
-Assert-True ((Get-ProductShortcuts).Count -eq 0) "Start Menu shortcut remains after uninstall."
+Assert-True (@(Get-ProductShortcuts).Count -eq 0) "Start Menu shortcut remains after uninstall."
 Assert-NoUnapprovedWindowsSideEffects
 
 $webViewPath = Join-Path ${env:ProgramFiles(x86)} "Microsoft\EdgeWebView\Application"
