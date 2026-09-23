@@ -34,7 +34,7 @@ function audienceMatches(actual:unknown, expected:string){
   return Array.isArray(actual)&&actual.some(value=>value===expected);
 }
 
-export function createAdminSecurity(args:{dataClassification:string}){
+export function createAdminSecurity(config:{dataClassification:string}){
   const issuer=process.env.MIQO_ADMIN_AUTH_ISSUER??"";
   const audience=process.env.MIQO_ADMIN_AUTH_AUDIENCE??"";
   const jwksUrl=process.env.MIQO_ADMIN_AUTH_JWKS_URL??"";
@@ -106,7 +106,7 @@ export function createAdminSecurity(args:{dataClassification:string}){
   function securityAudit(request:any,args:{principal?:Principal|null;permission?:string;resourceType:string;resourceId?:string;outcome:string;reasonCode:string;sensitiveRead?:boolean}){
     request.log.info({
       eventCode:"SECURITY_ACCESS",
-      environment:args.dataClassification??undefined,
+      environment:config.dataClassification,
       subjectId:args.principal?.subjectId??null,
       operation:String(request.method)+" "+String(request.routeOptions?.url??request.url),
       resourceType:args.resourceType,
@@ -157,7 +157,7 @@ export function createAdminSecurity(args:{dataClassification:string}){
     return {
       subjectId:principal.subjectId,
       displayName:principal.displayName,
-      environment:args.dataClassification,
+      environment:config.dataClassification,
       permissions:principal.permissions,
       sessionExpiresAt:new Date(principal.expiresAt*1000).toISOString(),
       authenticationContext:{

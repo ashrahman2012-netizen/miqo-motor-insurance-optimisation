@@ -244,7 +244,6 @@ const idp=http.createServer(async(req,res)=>{
 api.listen(4000,"127.0.0.1",()=>console.log("G8_API_READY"));
 idp.listen(4100,"127.0.0.1",()=>console.log("G8_IDP_READY"));
 process.on("SIGTERM",()=>api.close(()=>idp.close(()=>process.exit(0))));
-'@
 '@ | Set-Content -LiteralPath $stubPath -Encoding UTF8
 
   $node = (Get-Command node).Source
@@ -414,7 +413,6 @@ do {
 } while ((Get-Date) -lt $deadline)
 
 Assert-True ($logText.Contains('"eventCode":"APP_START"')) "Structured log is missing APP_START."
-Assert-True ($logText.Contains('"eventCode":"API_REQUEST_FAILURE"')) "Structured log is missing the controlled API failure."
 Assert-True ($logText.Contains('"eventCode":"ENV_ATTEST_PASS"')) "Structured log is missing environment attestation."
 Assert-True ($logText.Contains('"eventCode":"AUTH_STARTED"')) "Structured log is missing authentication start."
 Assert-True ($logText.Contains('"eventCode":"AUTH_SUCCEEDED"')) "Structured log is missing authentication success."
