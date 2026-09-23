@@ -831,16 +831,15 @@ fn create_support_snapshot(app: tauri::AppHandle) -> Result<SupportSnapshot, Str
         &serde_json::to_string(&unsigned)
             .map_err(|_| "DESKTOP_SUPPORT_SNAPSHOT_SERIALISATION_FAILED".to_string())?,
     );
-    let snapshot: SupportSnapshot = serde_json::from_value(json!({
-        "schemaVersion": "miqos-desktop-support-snapshot-v1",
-        "createdAtUtc": unsigned["createdAtUtc"],
-        "supportReference": unsigned["supportReference"],
-        "evidenceScope": unsigned["evidenceScope"],
-        "diagnostics": unsigned["diagnostics"],
-        "excludedCategories": unsigned["excludedCategories"],
-        "sha256": sha256,
-    }))
-    .map_err(|_| "DESKTOP_SUPPORT_SNAPSHOT_SERIALISATION_FAILED".to_string())?;
+    let snapshot = SupportSnapshot {
+        schema_version: "miqos-desktop-support-snapshot-v1".to_string(),
+        created_at_utc: unsigned["createdAtUtc"].as_str().unwrap_or_default().to_string(),
+        support_reference: unsigned["supportReference"].as_str().unwrap_or_default().to_string(),
+        evidence_scope: unsigned["evidenceScope"].as_str().unwrap_or_default().to_string(),
+        diagnostics,
+        excluded_categories,
+        sha256,
+    };
     emit_info(
         "SUPPORT_SNAPSHOT_CREATED",
         "create_support_snapshot",
