@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import pg from "pg";
 import {buildApp} from "../src/server.ts";
+import {adminHeaders} from "./admin-auth-test-helper.ts";
 import {createDatabase,createPool} from "../../../packages/db/src/client.ts";
 import {selectShortlistedQuote} from "../src/selection-service.ts";
 
