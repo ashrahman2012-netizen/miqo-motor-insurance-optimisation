@@ -145,6 +145,18 @@ export async function listDiscrepancies(db:MiqoDatabase,profileId:string) {
   return db.select().from(discrepancy).where(eq(discrepancy.riskProfileVersionId,v.riskProfileVersionId));
 }
 
+export async function listCustomerLifecycleAudit(db:MiqoDatabase,profileId:string) {
+  const events=await auditEvents(db,profileId);
+  return events
+    .filter(event=>event.eventType==="profile_validated")
+    .map(event=>({
+      eventType:event.eventType,
+      entityId:event.entityId,
+      metadataJson:event.metadataJson,
+      occurredAt:event.occurredAt,
+    }));
+}
+
 export async function listCustomerDiscrepancies(db:MiqoDatabase,profileId:string) {
   const items=await listDiscrepancies(db,profileId);
   return items.map(item=>({

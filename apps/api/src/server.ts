@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
 import { ConflictError, FinalIntegrityError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
-import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listCustomerDiscrepancies, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
+import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listCustomerDiscrepancies, listCustomerLifecycleAudit, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
 import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
 import { getPreparedQuoteRequest, listPreQuoteIntegritySignals, prepareQuoteRequest } from "./quote-service.ts";
@@ -85,7 +85,7 @@ export async function buildApp() {
   app.get("/profiles/:profileId/discrepancies",async(req:any)=>({items:await listCustomerDiscrepancies(db,req.params.profileId)}));
   app.post("/profiles/:profileId/lock",async(req:any)=>lockProfile(db,req.params.profileId));
   app.post("/profiles/:profileId/corrections",async(req:any,reply)=>reply.code(201).send(await createCorrectionDraft(db,{profileId:req.params.profileId,fieldId:(req.body as any).fieldId,value:(req.body as any).value})));
-  app.get("/profiles/:profileId/snapshot",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId)}));
+  app.get("/profiles/:profileId/snapshot",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await listCustomerLifecycleAudit(db,req.params.profileId)}));
 
   app.put("/profile-versions/:versionId/facts/:fieldId",async(req:any)=>{
     const v=await currentVersion(db,(await profileSnapshotByVersion(db,req.params.versionId)).profileId);

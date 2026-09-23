@@ -82,6 +82,22 @@ test("DB-G7-R1 keeps the customer discrepancy contract narrower than Admin evide
   );
   await client.end();
 
+  await app.inject({method:"POST",url:"/profiles/"+created.profileId+"/validate"});
+  const customerSnapshot=await app.inject({
+    method:"GET",url:"/profiles/"+created.profileId+"/snapshot",
+  });
+  assert.equal(customerSnapshot.statusCode,200);
+  const customerAudit=JSON.parse(customerSnapshot.body).audit;
+  assert.equal(customerAudit.length,1);
+  assert.equal(customerAudit[0].eventType,"profile_validated");
+  assert.deepEqual(
+    Object.keys(customerAudit[0]).sort(),
+    ["entityId","eventType","metadataJson","occurredAt"].sort(),
+  );
+  assert.equal("auditEventId" in customerAudit[0],false);
+  assert.equal("traceId" in customerAudit[0],false);
+  assert.equal("entityType" in customerAudit[0],false);
+
   const customer=await app.inject({
     method:"GET",url:"/profiles/"+created.profileId+"/discrepancies",
   });
