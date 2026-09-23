@@ -74,3 +74,18 @@ No DB-G7-R1 blocker remains.
 - Exact-head proof: push CI #779 / `35911924171`, PR CI #780 / `35911928818`, Desktop G7 #265 / `35911928952`, Desktop G8 #85 / `35911928870` — all SUCCESS.
 
 External dependencies remain open: real public-client IdP registration, non-synthetic environment authority and production signing/release proof.
+
+
+## DB-G8 execution — Remaining Admin Areas & Capability Closure
+
+No DB-G8 blocker remains.
+
+- Entry/control head: `bf18e27425bcd192b7454e73c4ae8debe78fd592`.
+- Providers and Certification were the only canonical navigation areas still represented as reserved/foundation placeholders.
+- No authoritative global provider-status resource or certification artefact/resource exists in the admitted Desktop contract. Their absence was closed explicitly as DEFERRED; no backend endpoint or status was invented.
+- Optimisation, Scenarios, Market Routes, Quote Runs, Recommendation Sets and Integrity remain exact-Selection trace-derived/read-only surfaces.
+- Native capability review confirmed exactly eleven implemented/permissioned auth, read, runtime and support commands with no speculative authority.
+- Final accepted executable source: `7e11769cf78c0d3e70082226d231316cee1b765c`.
+- Exact-head proof: push CI #785 / `35919625253`, PR CI #786 / `35919631131`, Desktop G7 #268 / `35919630984`, Desktop G8 #88 / `35919630817` — all SUCCESS.
+
+Real IdP registration, non-synthetic environment authority, organisation signing and production release remain downstream dependencies and were not required for DB-G8.

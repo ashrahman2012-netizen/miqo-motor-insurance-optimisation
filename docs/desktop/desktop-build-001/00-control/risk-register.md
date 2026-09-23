@@ -34,7 +34,7 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 
 | R-DB-G4-001 | Reusing customer profile adapter could leak mutation affordances into Admin. | CONTROLLED | Desktop read model strips editable/action properties; unit test proves absence |
 | R-DB-G4-002 | Exact-ID lookup could drift into implied global search. | CONTROLLED | local identifier validation + explicit UI copy; no search endpoint |
-| R-DB-G4-003 | Native command expansion could become generic transport. | CONTROLLED / PROOF PENDING | two typed enum operations only; exact Tauri permission list + Rust tests |
+| R-DB-G4-003 | Native command expansion could become generic transport. | **CONTROLLED / TEST CLOSED BY DB-G8** | exact eleven-command Tauri capability is matched to implemented auth/read/runtime/support commands; no generic HTTP/shell/fs permission |
 | R-DB-G4-004 | Historical discrepancy evidence may be incomplete because current API discrepancy resource is current-version oriented. | CONTROLLED | profile view labels current-version discrepancy evidence; no fabricated history |
 
 
@@ -45,7 +45,7 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G5-001 | Displayed persisted ordinal/comparison/integrity could be mistaken for Desktop computation. | CONTROLLED | explicit UI copy + adapter composition only; no calculation code |
 | R-DB-G5-002 | Raw provider response could be associated with the wrong quote request. | CONTROLLED | native derives surfaced request from trace; service verifies response correlation |
 | R-DB-G5-003 | Raw provider payload could leak through logging/export/caching. | CONTROLLED / HARDEN DB-G10 | exact protected trace/raw-evidence views only; no default export/cache; operational logs exclude payload/token material |
-| R-DB-G5-004 | Native deep-trace command could evolve into generic multi-resource transport. | CONTROLLED / PROOF PENDING | one typed command; typed operation enum; exact six-permission G8 assertion |
+| R-DB-G5-004 | Native deep-trace command could evolve into generic multi-resource transport. | **CONTROLLED / TEST CLOSED BY DB-G8** | typed selection-trace operation remains allow-listed inside the exact eleven-command capability; G7/G8 package proof is green |
 | R-DB-G5-005 | Global decision-data search/list could be implied by top-level routes. | CONTROLLED | exact Selection ID entry and explicit no-global-search copy |
 
 
@@ -72,3 +72,14 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G7-005 | Narrowing customer audit evidence could remove legitimate customer journey milestones. | **CLOSED BY DB-G7-R1** | customer-safe allowlist preserves validation, lock, objective, scenario-exploration and result/explanation milestones; BUILD-001H browser proof passes |
 | R-DB-G7-006 | Deterministic TEST OIDC authority could be mistaken for production identity certification. | CONTROLLED / EXTERNAL DEPENDENCY OPEN | exact loopback TEST issuer only; D-G3-IDP-001 and CC-G5-001 remain open for real/non-synthetic operation |
 | R-DB-G7-007 | Renderer/native clients could bypass the governed Admin route set. | CONTROLLED / HARDEN DB-G10 | typed native operations and same-origin Admin Web proxy; no generic arbitrary URL transport admitted |
+
+
+## DB-G8 risks
+
+| ID | Risk | State | Control / target |
+|---|---|---|---|
+| R-DB-G8-001 | Trace-linked provider identity could be misrepresented as a global provider status/health/activation state. | **CLOSED BY DB-G8** | Providers route is explicit DEFERRED; only exact persisted decision-trace provider/route evidence is available |
+| R-DB-G8-002 | TEST/SYNTHETIC CI, package or identity evidence could be misrepresented as production/provider certification. | **CLOSED BY DB-G8** | Certification route is explicit DEFERRED and states engineering proof is not certification |
+| R-DB-G8-003 | Reserved/foundation placeholders could imply unsupported capability exists downstream. | **CLOSED BY DB-G8** | every canonical navigation route now has an implemented/read/trace/deferred disposition; no RESERVED route remains |
+| R-DB-G8-004 | Capability closure could add speculative native permissions for future provider/certification features. | **CLOSED BY DB-G8** | no new native/API resource; exact eleven implemented commands remain the complete capability set |
+| R-DB-G8-005 | A later gateway could silently convert a deferred area into authority without admission. | CONTROLLED | DB-G1 new-consumption admission remains mandatory; endpoint reachability is not authorisation |
