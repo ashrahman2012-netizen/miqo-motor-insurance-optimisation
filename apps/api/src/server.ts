@@ -224,7 +224,7 @@ export async function buildApp() {
     return adminSecurity.sessionDescriptor(principal);
   });
   app.get("/desktop-admin/profiles/:profileId",async(req:any,reply)=>{
-    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.profileRead],"profile",req.params.profileId);
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.profileRead,ADMIN_PERMISSIONS.auditRead,ADMIN_PERMISSIONS.discrepancyRead],"profile",req.params.profileId);
     if(!principal)return;
     return {versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)};
   });

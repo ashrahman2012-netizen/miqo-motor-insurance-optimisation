@@ -50,6 +50,9 @@ test("DB-G7-R1 removes legacy Admin evidence aliases and fails closed on protect
     method:"GET",url:"/desktop-admin/audit?profileId=PRO-SYN-NOT-USED",headers:limited,
   })).statusCode,403);
   assert.equal((await app.inject({
+    method:"GET",url:"/desktop-admin/profiles/PRO-SYN-NOT-USED",headers:limited,
+  })).statusCode,403);
+  assert.equal((await app.inject({
     method:"GET",url:"/desktop-admin/selections/SEL-SYN-NOT-USED/sp4-trace",headers:limited,
   })).statusCode,403);
   assert.equal((await app.inject({
