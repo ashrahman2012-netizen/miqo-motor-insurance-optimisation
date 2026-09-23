@@ -281,6 +281,98 @@ function Get-UninstallerPath {
   throw "NSIS uninstaller was not found."
 }
 
+
+function Get-ProductShortcuts {
+  $root = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
+  if (-not (Test-Path -LiteralPath $root)) { return @() }
+  return @(Get-ChildItem -LiteralPath $root -Filter "*.lnk" -File -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -like "*MIQOS*Admin*" })
+}
+
+function Assert-NoUnapprovedWindowsSideEffects {
+  $services = @(Get-Service -ErrorAction SilentlyContinue | Where-Object {
+    $_.Name -like "*miqo*" -or $_.DisplayName -like "*MIQO*"
+  })
+  Assert-True ($services.Count -eq 0) "MIQOS package installed an unauthorised Windows service."
+
+  if (Get-Command Get-NetFirewallRule -ErrorAction SilentlyContinue) {
+    $rules = @(Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object {
+      $_.DisplayName -like "*MIQO*" -or $_.Name -like "*miqo*"
+    })
+    Assert-True ($rules.Count -eq 0) "MIQOS package installed an unauthorised firewall rule."
+  }
+
+  $runPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+  if (Test-Path $runPath) {
+    $runValues = (Get-ItemProperty $runPath -ErrorAction SilentlyContinue).PSObject.Properties |
+      Where-Object { $_.MemberType -eq "NoteProperty" }
+    foreach ($value in $runValues) {
+      $text = [string]$value.Value
+      Assert-True (-not ($value.Name -like "*MIQO*" -or $text -like "*miqos-admin*" -or $text -like "*MIQOS Admin*")) "MIQOS package installed an unauthorised auto-start entry."
+    }
+  }
+
+  $startup = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
+  if (Test-Path $startup) {
+    $startupItems = @(Get-ChildItem -LiteralPath $startup -File -ErrorAction SilentlyContinue | Where-Object {
+      $_.Name -like "*MIQO*"
+    })
+    Assert-True ($startupItems.Count -eq 0) "MIQOS package installed an unauthorised Startup item."
+  }
+
+  foreach ($classKey in @(
+    "HKCU:\Software\Classes\miqos",
+    "HKCU:\Software\Classes\$Identifier"
+  )) {
+    Assert-True (-not (Test-Path $classKey)) "MIQOS package installed an unauthorised protocol/file-association class '$classKey'."
+  }
+
+  $machineEnvironment = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+  if (Test-Path $machineEnvironment) {
+    $machineValues = (Get-ItemProperty $machineEnvironment -ErrorAction SilentlyContinue).PSObject.Properties |
+      Where-Object { $_.MemberType -eq "NoteProperty" -and $_.Name -like "MIQO*" }
+    Assert-True (@($machineValues).Count -eq 0) "MIQOS package installed a machine-wide environment variable."
+  }
+}
+
+function Assert-PackageInspection {
+  param([string]$InstallDirectory)
+
+  $forbiddenNames = @(
+    ".env","id_rsa","id_ed25519","signing.key","private.key",
+    "node.exe","npm.cmd","rustc.exe","cargo.exe","postgres.exe","pg_ctl.exe","libpq.dll",
+    "git.exe","cl.exe","msbuild.exe","devenv.exe"
+  )
+  foreach ($name in $forbiddenNames) {
+    $found = @(Get-ChildItem -Path $InstallDirectory -Filter $name -File -Recurse -ErrorAction SilentlyContinue)
+    Assert-True ($found.Count -eq 0) "Forbidden packaged file '$name' was found."
+  }
+
+  $secretExtensions = @(".pem",".key",".pfx",".p12")
+  $secretFiles = @(Get-ChildItem -Path $InstallDirectory -File -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $secretExtensions -contains $_.Extension.ToLowerInvariant() })
+  Assert-True ($secretFiles.Count -eq 0) "Potential private-key/certificate container was packaged."
+
+  $textExtensions = @(".json",".txt",".log",".config",".toml",".yaml",".yml",".js",".css",".html")
+  $patterns = @(
+    "-----BEGIN PRIVATE KEY-----",
+    "-----BEGIN RSA PRIVATE KEY-----",
+    "client_secret",
+    "postgresql://",
+    "DATABASE_PASSWORD=",
+    "PROVIDER_API_KEY=",
+    "SIGNING_PRIVATE_KEY="
+  )
+  foreach ($file in Get-ChildItem -Path $InstallDirectory -File -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $textExtensions -contains $_.Extension.ToLowerInvariant() }) {
+    $content = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction SilentlyContinue
+    if ($null -eq $content) { continue }
+    foreach ($pattern in $patterns) {
+      Assert-True (-not $content.Contains($pattern)) "Packaged text file '$($file.Name)' contains prohibited sensitive material marker '$pattern'."
+    }
+  }
+}
+
 function Assert-StaticSecurityBoundary {
   $config = Get-Content "apps/admin-desktop/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
   $capabilityPath = "apps/admin-desktop/src-tauri/capabilities/admin-read.json"
@@ -346,6 +438,14 @@ Assert-StaticSecurityBoundary
 Assert-True (Test-Path -LiteralPath $BaselineInstaller) "G8 baseline NSIS installer is missing."
 $baselineInstallerHash = (Get-FileHash -LiteralPath $BaselineInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
 $profileHash = (Get-FileHash -LiteralPath $ProfilePath -Algorithm SHA256).Hash.ToLowerInvariant()
+$buildManifestPath = "dist/desktop/build-manifest.json"
+Assert-True (Test-Path -LiteralPath $buildManifestPath) "Desktop build manifest is missing."
+$buildManifest = Get-Content -LiteralPath $buildManifestPath -Raw | ConvertFrom-Json
+Assert-True ([string]$buildManifest.sha256 -eq $baselineInstallerHash) "Build manifest checksum does not match the installer."
+Assert-True ([string]$buildManifest.sourceCommit -eq [string]$env:GITHUB_SHA) "Build manifest source SHA does not match this workflow revision."
+Assert-True ([string]$buildManifest.architecture -eq "x64") "Build manifest architecture is not x64."
+Assert-True ([string]$buildManifest.installer -eq "NSIS") "Build manifest installer is not NSIS."
+$signatureState = [string]$buildManifest.authentiCodeStatus
 
 $existing = Get-ProductEntry
 if ($existing) {
@@ -365,13 +465,23 @@ $entry = Wait-ProductEntry $BaselineVersion
 Assert-True (@(Get-MachineProductEntry).Count -eq 0) "Current-user package unexpectedly registered in HKLM."
 $installedExe = Find-InstalledExecutable $entry
 Assert-True ($installedExe.StartsWith($env:LOCALAPPDATA, [System.StringComparison]::OrdinalIgnoreCase)) "Current-user package was not installed under LocalAppData."
+$baselineExecutableVersion = [string](Get-Item -LiteralPath $installedExe).VersionInfo.ProductVersion
+Assert-True (-not [string]::IsNullOrWhiteSpace($baselineExecutableVersion)) "Installed baseline executable does not expose a product version."
 
-$forbiddenRuntimeFiles = @("node.exe","npm.cmd","rustc.exe","cargo.exe","postgres.exe","libpq.dll")
+$shortcuts = Get-ProductShortcuts
+Assert-True ($shortcuts.Count -ge 1) "Current-user install did not create the required Start Menu shortcut."
+Assert-NoUnapprovedWindowsSideEffects
+
+$forbiddenRuntimeFiles = @("node.exe","npm.cmd","rustc.exe","cargo.exe","postgres.exe","pg_ctl.exe","libpq.dll","git.exe","cl.exe","msbuild.exe","devenv.exe")
 $installDir = Split-Path $installedExe -Parent
 foreach ($name in $forbiddenRuntimeFiles) {
   $found = Get-ChildItem -Path $installDir -Filter $name -File -Recurse -ErrorAction SilentlyContinue
   Assert-True (@($found).Count -eq 0) "Forbidden runtime dependency '$name' was packaged."
 }
+Assert-PackageInspection $installDir
+$localAuthoritativeStores = @(Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA $Identifier) -File -Recurse -ErrorAction SilentlyContinue |
+  Where-Object { $_.Extension.ToLowerInvariant() -in @(".db",".sqlite",".sqlite3",".mdb") })
+Assert-True ($localAuthoritativeStores.Count -eq 0) "Local authoritative MIQOS datastore material was found."
 
 try {
   $existingHealth = Invoke-RestMethod -Uri "http://127.0.0.1:4000/health" -TimeoutSec 1
@@ -461,13 +571,18 @@ Assert-True (Test-Path -LiteralPath $upgradeInstallerPath) "Copied 0.1.1 upgrade
 $upgradeExit = Invoke-Executable (Resolve-Path -LiteralPath $upgradeInstallerPath).Path @("/S")
 Assert-True ($upgradeExit -eq 0) "0.1.1 upgrade installation failed."
 $upgradeEntry = Wait-ProductEntry $UpgradeVersion
+$installedAfterUpgrade = Find-InstalledExecutable $upgradeEntry
+$upgradeExecutableVersion = [string](Get-Item -LiteralPath $installedAfterUpgrade).VersionInfo.ProductVersion
+Assert-True (-not [string]::IsNullOrWhiteSpace($upgradeExecutableVersion)) "Upgraded executable does not expose a product version."
+Assert-True ($upgradeExecutableVersion -ne $baselineExecutableVersion) "Installed executable version identity did not change after upgrade."
+Assert-True (Test-Path -LiteralPath $logDir) "Approved local log ownership did not survive the controlled upgrade."
+Assert-NoUnapprovedWindowsSideEffects
 
 $downgradeExit = Invoke-Executable $baselineCopy @("/S")
 Start-Sleep -Seconds 1
 $postDowngrade = Get-ProductEntry
 Assert-True ($postDowngrade -and [string]$postDowngrade.DisplayVersion -eq $UpgradeVersion) "Older installer replaced the 0.1.1 package; downgrade protection failed."
 
-$installedAfterUpgrade = Find-InstalledExecutable $upgradeEntry
 $uninstaller = Get-UninstallerPath $upgradeEntry $installedAfterUpgrade
 $uninstallExit = Invoke-Executable $uninstaller @("/S")
 Assert-True ($uninstallExit -eq 0) "NSIS uninstall failed."
@@ -481,6 +596,8 @@ do {
 
 Assert-True (-not (Get-ProductEntry)) "Uninstall registration remains after uninstall."
 Assert-True (-not (Test-Path -LiteralPath $installedAfterUpgrade)) "Installed executable remains after uninstall."
+Assert-True ((Get-ProductShortcuts).Count -eq 0) "Start Menu shortcut remains after uninstall."
+Assert-NoUnapprovedWindowsSideEffects
 
 $webViewPath = Join-Path ${env:ProgramFiles(x86)} "Microsoft\EdgeWebView\Application"
 $webViewVersion = if (Test-Path $webViewPath) {
@@ -503,6 +620,18 @@ $evidence = [ordered]@{
   installScope = "currentUser"
   installedUnderLocalAppData = $true
   machineUninstallRegistrationAbsent = $true
+  startMenuShortcut = "PASS"
+  autoStartAbsent = "PASS"
+  windowsServiceAbsent = "PASS"
+  firewallRuleAbsent = "PASS"
+  protocolAssociationAbsent = "PASS"
+  machineEnvironmentMutationAbsent = "PASS"
+  packageInspection = "PASS"
+  productionSecretsAbsent = "PASS"
+  localAuthoritativeDatastoreAbsent = "PASS"
+  signatureState = $signatureState
+  baselineExecutableVersion = $baselineExecutableVersion
+  upgradeExecutableVersion = $upgradeExecutableVersion
   installedLaunch = "PASS"
   windowTitle = $ProductName
   controlledFailureRendered = "INHERITED_PRE_DB_G7"
