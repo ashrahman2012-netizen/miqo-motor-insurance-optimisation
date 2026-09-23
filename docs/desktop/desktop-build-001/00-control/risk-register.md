@@ -13,7 +13,7 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G1-004 | Dashboard visuals cause fabricated KPIs/counts. | CONTROLLED | DB-G2 dashboard uses no fabricated aggregates |
 | R-DB-G1-005 | Status colour becomes sole meaning carrier. | CONTROLLED | shared semantic text/status components |
 | R-DB-G1-006 | Desktop components fragment shared design system. | CONTROLLED | DB-G2 reuses `@miqo/ui`; no shared fork |
-| R-DB-G1-007 | Raw provider evidence leakage. | CONTROLLED / PROOF PENDING | DB-G5/6/7 |
+| R-DB-G1-007 | Raw provider evidence leakage. | **CONTROLLED / TEST CLOSED BY DB-G7-R1** | raw evidence is protected by explicit permission, sensitive-read logging and customer-route redaction; production hardening remains DB-G10/release gated |
 | R-DB-G1-008 | Visual nuance not fully captured in text. | ACCEPTED / CONTROLLED | hashed external reference retained |
 | R-DB-G1-009 | Catalogue entries mistaken for runtime components. | CONTROLLED | runtime export distinction retained |
 | R-DB-G2-001 | Packaged in-app routing could escape local application navigation. | CONTROLLED / PROOF PENDING | intercept only internal absolute links; remote executable UI still prohibited; harden DB-G3/10 |
@@ -44,7 +44,7 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 |---|---|---|---|
 | R-DB-G5-001 | Displayed persisted ordinal/comparison/integrity could be mistaken for Desktop computation. | CONTROLLED | explicit UI copy + adapter composition only; no calculation code |
 | R-DB-G5-002 | Raw provider response could be associated with the wrong quote request. | CONTROLLED | native derives surfaced request from trace; service verifies response correlation |
-| R-DB-G5-003 | Raw provider payload could leak through logging/export/caching. | CONTROLLED / HARDEN DB-G6/7/10 | exact trace view only; no default export/cache; operational logs exclude payload/token material |
+| R-DB-G5-003 | Raw provider payload could leak through logging/export/caching. | CONTROLLED / HARDEN DB-G10 | exact protected trace/raw-evidence views only; no default export/cache; operational logs exclude payload/token material |
 | R-DB-G5-004 | Native deep-trace command could evolve into generic multi-resource transport. | CONTROLLED / PROOF PENDING | one typed command; typed operation enum; exact six-permission G8 assertion |
 | R-DB-G5-005 | Global decision-data search/list could be implied by top-level routes. | CONTROLLED | exact Selection ID entry and explicit no-global-search copy |
 
@@ -56,6 +56,19 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G6-001 | Correlation identifiers could be conflated with business/audit identity. | CONTROLLED | distinct session/trace/request labels; no business-authority semantics |
 | R-DB-G6-002 | API build headers could leak configuration/secrets. | CONTROLLED | fixed semantic version/build/source fields only; no environment dump |
 | R-DB-G6-003 | Support evidence could become a payload/log exfiltration mechanism. | CONTROLLED | fixed typed diagnostics struct; no log-content/raw-payload fields; no export/upload permission |
-| R-DB-G6-004 | Operational logs could capture credential or business payload material. | CONTROLLED / HARDEN DB-G7/10 | structured code/reference fields only; G8 asserts no Bearer/refresh_token |
+| R-DB-G6-004 | Operational logs could capture credential or business payload material. | CONTROLLED / HARDEN DB-G10 | structured code/reference fields only; DB-G7/G8 proof retains no Bearer/refresh_token material |
 | R-DB-G6-005 | Installed UI path for support-snapshot generation is not directly exercised by G8 automation. | ACCEPTED / HARDEN DB-G10 | native command exactly permissioned/compiled; closed metadata construction; add installed UI exercise during hardening |
 | R-DB-G6-006 | In-memory diagnostics may report only the most recent API operation rather than a full support timeline. | ACCEPTED | intentional bounded current-session summary; logs remain bounded chronological evidence |
+
+
+## DB-G7 / DB-G7-R1 risks
+
+| ID | Risk | State | Control / target |
+|---|---|---|---|
+| R-DB-G7-001 | Admin evidence could remain reachable through an unauthenticated legacy alias. | **CLOSED BY DB-G7-R1 for TEST/SYNTHETIC** | legacy `/admin/**` and unprotected raw-response aliases return 404; supported reads use `/desktop-admin/**` |
+| R-DB-G7-002 | Authenticated principal could read evidence outside granted permissions. | CONTROLLED | server-side group-to-permission mapping; 401 unauthenticated / 403 insufficient permission; combined profile evidence requires all constituent permissions |
+| R-DB-G7-003 | Raw provider evidence could be read without a security audit event. | CONTROLLED | explicit `miqos.admin.raw-evidence.read` check with sensitive-read access logging |
+| R-DB-G7-004 | Customer-facing routes could expose Admin audit/discrepancy lineage merely because Admin authentication was added elsewhere. | CONTROLLED | separate narrowed customer contracts; Admin-only audit IDs, trace IDs, entity type and internal discrepancy lineage omitted |
+| R-DB-G7-005 | Narrowing customer audit evidence could remove legitimate customer journey milestones. | **CLOSED BY DB-G7-R1** | customer-safe allowlist preserves validation, lock, objective, scenario-exploration and result/explanation milestones; BUILD-001H browser proof passes |
+| R-DB-G7-006 | Deterministic TEST OIDC authority could be mistaken for production identity certification. | CONTROLLED / EXTERNAL DEPENDENCY OPEN | exact loopback TEST issuer only; D-G3-IDP-001 and CC-G5-001 remain open for real/non-synthetic operation |
+| R-DB-G7-007 | Renderer/native clients could bypass the governed Admin route set. | CONTROLLED / HARDEN DB-G10 | typed native operations and same-origin Admin Web proxy; no generic arbitrary URL transport admitted |

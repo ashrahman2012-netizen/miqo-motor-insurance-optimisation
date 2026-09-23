@@ -1,18 +1,25 @@
 # MIQOS-DESKTOP-BUILD-001 — Execution status
 
 **Date:** 2026-09-23  
-**Gateway:** DB-G6 — Observability, Diagnostics & Supportability  
+**Gateway:** DB-G7 — Identity, Authentication & Authorisation  
+**Execution:** DB-G7-R1 — Admin API Security Convergence  
 **Status:** PASS  
 **Branch:** `miqos/desktop-build-001`  
-**DB-G6 entry:** `2751bc19f852c577f7e794495e903b6cbf33610d`  
-**Accepted executable source:** `b7c1931aa2e1ef291036ece8eadfa043465d5389`
+**DB-G7-R1 entry:** `2ba388950d30da032a32feeb4bc4c93ee9d503cc`  
+**Accepted executable source:** `c2b1158e6c2ce5a3b1ed17cb64fc03a0f55ad844`
 
-DB-G0 through DB-G6 are PASS.
+DB-G0 through DB-G7 are PASS.
 
-DB-G6 implements validated trace context, independent server request IDs, safe API build/source identity, correlated structured native logging, System diagnostics and metadata-only redacted support snapshots. `CC-G6-001` is closed for the current TEST/SYNTHETIC stack.
+DB-G7-R1 converges Admin evidence reads onto authenticated `/desktop-admin/**` routes, removes legacy unauthenticated aliases, enforces server-side bearer validation and permission checks, audits sensitive raw-evidence reads, migrates Admin Web to the authenticated same-origin proxy/PKCE flow, and keeps customer-facing audit/discrepancy contracts structurally narrower than Admin evidence.
 
-Accepted executable source is green under CI #711/#712, Windows G7 #231 and Windows/API G8 #51.
+`CC-G3-001` is closed for the current TEST/SYNTHETIC stack only. Real IdP registration, non-synthetic environment authority, signing and production release remain separately gated.
 
-Next controlled gateway: **DB-G7 — Identity, Authentication & Authorisation**.
+Exact accepted-source proof:
+- push CI #779 / `35911924171` — SUCCESS;
+- PR CI #780 / `35911928818` — SUCCESS;
+- Desktop G7 #265 / `35911928952` — SUCCESS;
+- Desktop G8 #85 / `35911928870` — SUCCESS.
 
-DB-G7 through DB-G11 remain NOT STARTED. Production release, real IdP/RBAC proof, real environments, provider activation and signing remain separately gated.
+Next controlled gateway: **DB-G8 — Remaining Admin Areas & Capability Closure**.
+
+DB-G8 through DB-G11 remain NOT STARTED. No DB-G7 PASS authorises production release, real-provider activation or non-synthetic operation.

@@ -18,9 +18,9 @@ None. DB-G2 source passed repository CI, Windows full package proof, API integra
 | D-G3-IDP-001 | real native/public-client IdP registration; UI-IDP | real-environment auth proof | OPEN |
 | D-G4-SIGN-001 | organisation Authenticode identity; UI-SIGN | production signing/release proof | OPEN |
 | D-G5-ENV-001 | approved real API/IdP/profile values; UI-ENV | non-synthetic operation | OPEN |
-| CC-G3-001 | API authentication, permissions, sensitive-read audit, 401/403 | DB-G7 | OPEN / CONTROLLED |
+| CC-G3-001 | API authentication, permissions, sensitive-read audit, 401/403 | DB-G7 | **CLOSED BY DB-G7-R1 for TEST/SYNTHETIC**; real IdP/non-synthetic proof remains separately gated |
 | CC-G5-001 | certification/production environment authority | non-synthetic activation | OPEN / CONTROLLED |
-| CC-G6-001 | validated trace context/API build identity | DB-G6 | OPEN / CONTROLLED |
+| CC-G6-001 | validated trace context/API build identity | DB-G6 | **CLOSED BY DB-G6** for current TEST/SYNTHETIC stack |
 | R-G7-008 | inherited moderate npm findings | dependency assessment before closeout/release | OPEN |
 
 Production secrets remain outside source/chat/ordinary artefacts.
@@ -58,3 +58,19 @@ No DB-G6 blocker remains.
 - B-DB-G6-003: `b7c1931aa2e1ef291036ece8eadfa043465d5389` applied formatter-prescribed layout only and passed repository CI, G7 package proof and G8 API/installed lifecycle proof.
 
 No production identity, environment, signing or provider input was required for DB-G6.
+
+
+## DB-G7-R1 execution — Admin API Security Convergence
+
+No DB-G7-R1 blocker remains.
+
+- Entry/base assessment: `2ba388950d30da032a32feeb4bc4c93ee9d503cc`.
+- Legacy unauthenticated Admin evidence aliases were removed; supported Admin evidence reads converge on protected `/desktop-admin/**` routes.
+- API bearer validation, group-to-permission mapping, 401/403 enforcement and sensitive raw-evidence access logging are active for the deterministic TEST/SYNTHETIC IdP.
+- Admin Web callers now use the authenticated same-origin proxy/PKCE path rather than direct unauthenticated evidence URLs.
+- Customer-facing profile snapshot/discrepancy responses were narrowed so Admin-only audit identifiers, trace identifiers and internal discrepancy lineage are not exposed.
+- During convergence, the narrowed customer activity projection initially omitted the safe `sp4_scenario_exploration_generated` milestone. Revision `9caca465...` therefore failed the BUILD-001H Playwright expectation for “Scenarios generated”. The projection was repaired without exposing low-level provider events and the final source is green.
+- Final accepted executable source: `c2b1158e6c2ce5a3b1ed17cb64fc03a0f55ad844`.
+- Exact-head proof: push CI #779 / `35911924171`, PR CI #780 / `35911928818`, Desktop G7 #265 / `35911928952`, Desktop G8 #85 / `35911928870` — all SUCCESS.
+
+External dependencies remain open: real public-client IdP registration, non-synthetic environment authority and production signing/release proof.
