@@ -144,3 +144,15 @@ export async function listDiscrepancies(db:MiqoDatabase,profileId:string) {
   const v=await currentVersion(db,profileId); if(!v) throw new ValidationError("Profile not found");
   return db.select().from(discrepancy).where(eq(discrepancy.riskProfileVersionId,v.riskProfileVersionId));
 }
+
+export async function listCustomerDiscrepancies(db:MiqoDatabase,profileId:string) {
+  const items=await listDiscrepancies(db,profileId);
+  return items.map(item=>({
+    discrepancyId:item.discrepancyId,
+    fieldId:item.fieldId,
+    declaredValueJson:item.declaredValueJson,
+    verifiedValueJson:item.verifiedValueJson,
+    state:item.state,
+    blocking:item.blocking,
+  }));
+}

@@ -42,13 +42,11 @@ export interface ProfileSnapshotApi {
 
 export interface ProfileDiscrepancyApi {
   readonly discrepancyId:string;
-  readonly riskProfileVersionId:string;
   readonly fieldId:string;
   readonly declaredValueJson:unknown;
   readonly verifiedValueJson:unknown;
   readonly state:string;
   readonly blocking:boolean;
-  readonly createdAt:string;
 }
 
 const FIELD_LABELS:Record<string,string>={
