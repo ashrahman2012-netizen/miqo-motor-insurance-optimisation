@@ -1,15 +1,21 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "admin-read",
-  "description": "DB-G5 main-window capability. Only the approved MIQOS runtime and read-only Admin evidence commands are granted.",
-  "windows": ["main"],
-  "platforms": ["windows"],
+  "description": "DB-G6 main-window capability. Approved runtime, read-only Admin evidence and redacted diagnostics/support-snapshot commands only.",
+  "windows": [
+    "main"
+  ],
+  "platforms": [
+    "windows"
+  ],
   "permissions": [
     "allow-get-runtime-profile",
     "allow-get-health",
     "allow-load-admin-profile",
     "allow-load-admin-profile-version",
     "allow-load-admin-profile-audit",
-    "allow-load-admin-selection-trace"
+    "allow-load-admin-selection-trace",
+    "allow-get-diagnostics",
+    "allow-create-support-snapshot"
   ]
 }

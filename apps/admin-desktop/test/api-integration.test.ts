@@ -106,6 +106,20 @@ class FastifyProofTransport implements DesktopApiTransport {
 describe.skipIf(!apiUrl)("G8 Desktop application service against certified Fastify API", () => {
   const baseUrl = apiUrl as string;
 
+  it("returns validated trace/request correlation and safe API build identity", async () => {
+    const traceId = "0123456789abcdef0123456789abcdef";
+    const response = await fetch(baseUrl + "/health", {
+      headers: {traceparent: "00-" + traceId + "-0123456789abcdef-01"},
+    });
+    expect(response.ok).toBe(true);
+    expect(response.headers.get("x-miqo-trace-id")).toBe(traceId);
+    expect(response.headers.get("x-miqo-request-id")).toBeTruthy();
+    expect(response.headers.get("x-miqo-api-version")).toBe("0.1.0");
+    expect(response.headers.get("x-miqo-api-build-id")).toBeTruthy();
+    expect(response.headers.get("x-miqo-api-source-commit")).toBeTruthy();
+  });
+
+
   it("attests SYNTHETIC and composes the existing Admin Audit ViewModel", async () => {
     const created = await fetch(baseUrl + "/profiles", {method: "POST"});
     expect(created.status).toBe(201);

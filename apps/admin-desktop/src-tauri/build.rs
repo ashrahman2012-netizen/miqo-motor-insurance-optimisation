@@ -7,6 +7,8 @@ fn main() {
             "load_admin_profile_version",
             "load_admin_profile_audit",
             "load_admin_selection_trace",
+            "get_diagnostics",
+            "create_support_snapshot",
         ]),
     ))
     .expect("failed to build MIQOS Admin Tauri manifest");

@@ -294,3 +294,20 @@ body,
   padding-top: 1rem;
   border-top: 1px solid var(--miqos-border-subtle);
 }
+
+.desktop-support-action {
+  margin-top: 0.75rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--miqo-border-strong);
+  border-radius: 0.45rem;
+  background: var(--miqo-surface-raised);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.desktop-support-action:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}

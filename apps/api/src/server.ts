@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
@@ -25,9 +26,54 @@ const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
 if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw new Error("Prototype boundary violation");
 
+const apiServiceVersion="0.1.0";
+const apiBuildId=process.env.MIQO_API_BUILD_ID??process.env.GITHUB_RUN_ID??"local";
+const apiSourceCommit=process.env.MIQO_SOURCE_COMMIT??process.env.GITHUB_SHA??"local";
+
+function validHex(value:string,length:number){
+  return value.length===length && /^[0-9a-f]+$/i.test(value) && !/^0+$/.test(value);
+}
+
+function traceIdFromTraceparent(value:unknown){
+  if(typeof value!=="string")return null;
+  const parts=value.trim().split("-");
+  if(parts.length!==4 || parts[0]!=="00" || !validHex(parts[1],32) || !validHex(parts[2],16) || !/^[0-9a-f]{2}$/i.test(parts[3]))return null;
+  return parts[1].toLowerCase();
+}
+
+function serverTraceId(requestId:string){
+  return createHash("sha256").update("miqos-api:"+requestId).digest("hex").slice(0,32);
+}
+
 export async function buildApp() {
   const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true});
   await app.register(cors,{origin:[process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000",process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001"],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+
+  app.addHook("onRequest",async(req:any)=>{
+    const incoming=traceIdFromTraceparent(req.headers.traceparent);
+    req.miqoTraceId=incoming??serverTraceId(String(req.id));
+    req.log.info({
+      eventCode:"API_REQUEST_START",
+      requestId:String(req.id),
+      traceId:req.miqoTraceId,
+    },"MIQO API request");
+  });
+  app.addHook("onSend",async(req:any,reply:any,payload:any)=>{
+    reply.header("x-miqo-request-id",String(req.id));
+    reply.header("x-miqo-trace-id",String(req.miqoTraceId));
+    reply.header("x-miqo-api-version",apiServiceVersion);
+    reply.header("x-miqo-api-build-id",apiBuildId);
+    reply.header("x-miqo-api-source-commit",apiSourceCommit);
+    return payload;
+  });
+  app.addHook("onResponse",async(req:any,reply:any)=>{
+    req.log.info({
+      eventCode:"API_REQUEST_COMPLETE",
+      requestId:String(req.id),
+      traceId:req.miqoTraceId,
+      statusCode:reply.statusCode,
+    },"MIQO API request complete");
+  });
   app.addHook("onClose",async()=>pool.end());
 
   app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));

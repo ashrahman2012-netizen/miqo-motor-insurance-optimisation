@@ -102,7 +102,7 @@ export function DesktopApp() {
         ) : route.path === "/admin/audit" ? (
           <AuditRoute transport={transport} onNavigate={navigate} />
         ) : route.path === "/admin/system" ? (
-          <SystemRoute runtime={runtime} />
+          <SystemRoute runtime={runtime} transport={transport} />
         ) : (
           <RouteStatePage route={route} />
         )}

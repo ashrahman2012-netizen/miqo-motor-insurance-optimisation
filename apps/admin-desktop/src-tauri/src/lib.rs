@@ -7,7 +7,12 @@ use sha2::{Digest, Sha256};
 use std::{
     fs,
     path::Path,
-    time::{Duration as StdDuration, SystemTime},
+    process,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Mutex, OnceLock,
+    },
+    time::{Duration as StdDuration, SystemTime, UNIX_EPOCH},
 };
 use tauri::Manager;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
@@ -77,6 +82,69 @@ struct Health {
     live_providers_enabled: bool,
 }
 
+#[derive(Debug, Clone)]
+struct ObservabilityState {
+    session_correlation_id: String,
+    last_trace_id: Option<String>,
+    last_server_request_id: Option<String>,
+    last_operation: Option<String>,
+    last_reason_code: Option<String>,
+    api_service_version: Option<String>,
+    api_build_id: Option<String>,
+    api_source_commit: Option<String>,
+    api_health_status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DesktopDiagnostics {
+    product_name: String,
+    app_version: String,
+    build_id: String,
+    source_commit: String,
+    package_architecture: String,
+    deployment_stage: String,
+    application_environment: String,
+    deployment_profile_id: String,
+    deployment_profile_sha256: String,
+    api_service: String,
+    api_health_status: String,
+    api_service_version: Option<String>,
+    api_build_id: Option<String>,
+    api_source_commit: Option<String>,
+    session_correlation_id: String,
+    last_trace_id: Option<String>,
+    last_server_request_id: Option<String>,
+    last_operation: Option<String>,
+    last_reason_code: Option<String>,
+    log_directory_status: String,
+    log_file_count: usize,
+    log_total_bytes: u64,
+    log_retention_max_files: usize,
+    log_retention_max_age_days: u64,
+    support_snapshot_available: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SupportSnapshot {
+    schema_version: String,
+    created_at_utc: String,
+    support_reference: String,
+    evidence_scope: String,
+    diagnostics: DesktopDiagnostics,
+    excluded_categories: Vec<String>,
+    sha256: String,
+}
+
+struct TraceContext {
+    trace_id: String,
+    traceparent: String,
+}
+
+static OBSERVABILITY_STATE: OnceLock<Mutex<ObservabilityState>> = OnceLock::new();
+static TRACE_COUNTER: AtomicU64 = AtomicU64::new(1);
+
 #[derive(Debug, Deserialize)]
 struct ItemsEnvelope {
     items: Vec<Value>,
@@ -140,6 +208,18 @@ impl<'a> ApiReadOperation<'a> {
         Ok(Self::RawProviderResponse { quote_request_id })
     }
 
+    fn name(&self) -> &'static str {
+        match self {
+            Self::Health => "health",
+            Self::AdminProfile { .. } => "admin_profile",
+            Self::AdminProfileVersion { .. } => "admin_profile_version",
+            Self::AdminAudit { .. } => "admin_audit",
+            Self::AdminSelectionSp4Trace { .. } => "admin_selection_sp4_trace",
+            Self::Discrepancies { .. } => "discrepancies",
+            Self::RawProviderResponse { .. } => "raw_provider_response",
+        }
+    }
+
     fn path(&self) -> String {
         match self {
             Self::Health => "/health".to_string(),
@@ -169,7 +249,66 @@ fn timestamp_utc() -> String {
         .unwrap_or_else(|_| "1970-01-01T00:00:00Z".to_string())
 }
 
+fn digest_hex(seed: &str) -> String {
+    format!("{:x}", Sha256::digest(seed.as_bytes()))
+}
+
+fn correlation_seed(label: &str) -> String {
+    let epoch_nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or_default();
+    let counter = TRACE_COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("{label}:{epoch_nanos}:{}:{counter}", process::id())
+}
+
+fn session_correlation_id() -> String {
+    digest_hex(&correlation_seed("session"))[..16].to_string()
+}
+
+fn observability_state() -> &'static Mutex<ObservabilityState> {
+    OBSERVABILITY_STATE.get_or_init(|| {
+        Mutex::new(ObservabilityState {
+            session_correlation_id: session_correlation_id(),
+            last_trace_id: None,
+            last_server_request_id: None,
+            last_operation: None,
+            last_reason_code: None,
+            api_service_version: None,
+            api_build_id: None,
+            api_source_commit: None,
+            api_health_status: "UNKNOWN".to_string(),
+        })
+    })
+}
+
+fn state_snapshot() -> ObservabilityState {
+    observability_state()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone()
+}
+
+fn new_trace_context() -> TraceContext {
+    let digest = digest_hex(&correlation_seed("trace"));
+    let trace_id = digest[..32].to_string();
+    let span_id = digest[32..48].to_string();
+    TraceContext {
+        trace_id: trace_id.clone(),
+        traceparent: format!("00-{trace_id}-{span_id}-01"),
+    }
+}
+
+fn header_value(response: &reqwest::blocking::Response, name: &str) -> Option<String> {
+    response
+        .headers()
+        .get(name)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string)
+}
+
 fn emit_info(code: &str, operation: &str, outcome: &str, reason: Option<&str>) {
+    let correlation = state_snapshot();
     info!(
         "{}",
         json!({
@@ -184,12 +323,22 @@ fn emit_info(code: &str, operation: &str, outcome: &str, reason: Option<&str>) {
             "buildId": option_env!("MIQO_BUILD_ID").unwrap_or("local"),
             "sourceCommit": option_env!("MIQO_SOURCE_COMMIT").unwrap_or("local"),
             "deploymentStage": TEST_DEPLOYMENT_STAGE,
-            "applicationEnvironment": TEST_APPLICATION_ENVIRONMENT
+            "applicationEnvironment": TEST_APPLICATION_ENVIRONMENT,
+            "sessionCorrelationId": correlation.session_correlation_id,
+            "traceId": correlation.last_trace_id,
+            "serverRequestId": correlation.last_server_request_id
         })
     );
 }
 
 fn emit_error(code: &str, operation: &str, reason: &str) {
+    {
+        let mut state = observability_state()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.last_reason_code = Some(reason.to_string());
+    }
+    let correlation = state_snapshot();
     error!(
         "{}",
         json!({
@@ -204,7 +353,10 @@ fn emit_error(code: &str, operation: &str, reason: &str) {
             "buildId": option_env!("MIQO_BUILD_ID").unwrap_or("local"),
             "sourceCommit": option_env!("MIQO_SOURCE_COMMIT").unwrap_or("local"),
             "deploymentStage": TEST_DEPLOYMENT_STAGE,
-            "applicationEnvironment": TEST_APPLICATION_ENVIRONMENT
+            "applicationEnvironment": TEST_APPLICATION_ENVIRONMENT,
+            "sessionCorrelationId": correlation.session_correlation_id,
+            "traceId": correlation.last_trace_id,
+            "serverRequestId": correlation.last_server_request_id
         })
     );
 }
@@ -361,30 +513,95 @@ fn client() -> Result<Client, String> {
 
 fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, String> {
     let profile = deployment_profile()?;
+    let operation_name = operation.name();
     let path = operation.path();
+    let trace = new_trace_context();
+
+    {
+        let mut state = observability_state()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.last_trace_id = Some(trace.trace_id.clone());
+        state.last_server_request_id = None;
+        state.last_operation = Some(operation_name.to_string());
+        state.last_reason_code = None;
+    }
 
     let response = client()?
         .get(format!("{}{}", profile.api.base_url, path))
+        .header("traceparent", &trace.traceparent)
         .send()
-        .map_err(|_| "DESKTOP_API_UNAVAILABLE".to_string())?;
+        .map_err(|_| {
+            emit_error("API_REQUEST_FAILURE", operation_name, "DESKTOP_API_UNAVAILABLE");
+            "DESKTOP_API_UNAVAILABLE".to_string()
+        })?;
+
+    let server_request_id = header_value(&response, "x-miqo-request-id");
+    let returned_trace_id = header_value(&response, "x-miqo-trace-id");
+    if let Some(returned_trace_id) = returned_trace_id.as_deref() {
+        if returned_trace_id != trace.trace_id {
+            emit_error(
+                "API_TRACE_MISMATCH",
+                operation_name,
+                "DESKTOP_TRACE_RESPONSE_MISMATCH",
+            );
+            return Err("DESKTOP_TRACE_RESPONSE_MISMATCH".to_string());
+        }
+    }
+
+    {
+        let mut state = observability_state()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.last_server_request_id = server_request_id;
+        state.api_service_version = header_value(&response, "x-miqo-api-version");
+        state.api_build_id = header_value(&response, "x-miqo-api-build-id");
+        state.api_source_commit = header_value(&response, "x-miqo-api-source-commit");
+    }
 
     if !response.status().is_success() {
-        return Err(format!("DESKTOP_API_STATUS_{}", response.status().as_u16()));
+        let reason = format!("DESKTOP_API_STATUS_{}", response.status().as_u16());
+        emit_error("API_REQUEST_FAILURE", operation_name, &reason);
+        return Err(reason);
     }
 
     if response.content_length().unwrap_or(0) > MAX_RESPONSE_BYTES {
+        emit_error(
+            "API_REQUEST_FAILURE",
+            operation_name,
+            "DESKTOP_API_RESPONSE_TOO_LARGE",
+        );
         return Err("DESKTOP_API_RESPONSE_TOO_LARGE".to_string());
     }
 
-    let body = response
-        .bytes()
-        .map_err(|_| "DESKTOP_API_RESPONSE_READ_FAILED".to_string())?;
+    let body = response.bytes().map_err(|_| {
+        emit_error(
+            "API_REQUEST_FAILURE",
+            operation_name,
+            "DESKTOP_API_RESPONSE_READ_FAILED",
+        );
+        "DESKTOP_API_RESPONSE_READ_FAILED".to_string()
+    })?;
 
     if body.len() as u64 > MAX_RESPONSE_BYTES {
+        emit_error(
+            "API_REQUEST_FAILURE",
+            operation_name,
+            "DESKTOP_API_RESPONSE_TOO_LARGE",
+        );
         return Err("DESKTOP_API_RESPONSE_TOO_LARGE".to_string());
     }
 
-    serde_json::from_slice(&body).map_err(|_| "DESKTOP_API_RESPONSE_INVALID".to_string())
+    let value = serde_json::from_slice(&body).map_err(|_| {
+        emit_error(
+            "API_REQUEST_FAILURE",
+            operation_name,
+            "DESKTOP_API_RESPONSE_INVALID",
+        );
+        "DESKTOP_API_RESPONSE_INVALID".to_string()
+    })?;
+    emit_info("API_REQUEST_COMPLETE", operation_name, "SUCCESS", None);
+    Ok(value)
 }
 
 fn attest_health() -> Result<Health, String> {
@@ -401,6 +618,12 @@ fn attest_health() -> Result<Health, String> {
         return Err("DESKTOP_ENVIRONMENT_ATTESTATION_FAILED".to_string());
     }
 
+    {
+        let mut state = observability_state()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.api_health_status = "ATTESTED".to_string();
+    }
     emit_info("ENV_ATTEST_PASS", "get_health", "SUCCESS", None);
     Ok(health)
 }
@@ -512,6 +735,121 @@ fn load_admin_profile_audit(profile_id: String) -> Result<AdminProfileAuditEvide
     })
 }
 
+fn log_directory_stats(app: &tauri::AppHandle) -> (String, usize, u64) {
+    let log_dir = match app.path().app_log_dir() {
+        Ok(path) => path,
+        Err(_) => return ("UNAVAILABLE".to_string(), 0, 0),
+    };
+    if fs::create_dir_all(&log_dir).is_err() {
+        return ("UNAVAILABLE".to_string(), 0, 0);
+    }
+    let mut count = 0usize;
+    let mut total = 0u64;
+    if let Ok(entries) = fs::read_dir(log_dir) {
+        for entry in entries.filter_map(Result::ok) {
+            if let Ok(metadata) = entry.metadata() {
+                if metadata.is_file() {
+                    count += 1;
+                    total = total.saturating_add(metadata.len());
+                }
+            }
+        }
+    }
+    ("AVAILABLE".to_string(), count, total)
+}
+
+#[tauri::command]
+fn get_diagnostics(app: tauri::AppHandle) -> Result<DesktopDiagnostics, String> {
+    let runtime = runtime_profile()?;
+    if let Err(reason) = attest_health() {
+        let mut state = observability_state()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.api_health_status != "FAILED_ATTESTATION" {
+            state.api_health_status = "UNAVAILABLE".to_string();
+        }
+        state.last_reason_code = Some(reason);
+    }
+    let state = state_snapshot();
+    let (log_directory_status, log_file_count, log_total_bytes) = log_directory_stats(&app);
+
+    Ok(DesktopDiagnostics {
+        product_name: "MIQOS Admin".to_string(),
+        app_version: runtime.build_version,
+        build_id: runtime.build_id,
+        source_commit: runtime.source_commit,
+        package_architecture: std::env::consts::ARCH.to_string(),
+        deployment_stage: runtime.deployment_stage,
+        application_environment: runtime.application_environment,
+        deployment_profile_id: runtime.profile_id,
+        deployment_profile_sha256: runtime.deployment_profile_sha256,
+        api_service: runtime.api_service,
+        api_health_status: state.api_health_status,
+        api_service_version: state.api_service_version,
+        api_build_id: state.api_build_id,
+        api_source_commit: state.api_source_commit,
+        session_correlation_id: state.session_correlation_id,
+        last_trace_id: state.last_trace_id,
+        last_server_request_id: state.last_server_request_id,
+        last_operation: state.last_operation,
+        last_reason_code: state.last_reason_code,
+        log_directory_status,
+        log_file_count,
+        log_total_bytes,
+        log_retention_max_files: MAX_LOG_FILES,
+        log_retention_max_age_days: MAX_LOG_AGE.as_secs() / (24 * 60 * 60),
+        support_snapshot_available: true,
+    })
+}
+
+#[tauri::command]
+fn create_support_snapshot(app: tauri::AppHandle) -> Result<SupportSnapshot, String> {
+    let diagnostics = get_diagnostics(app)?;
+    let created_at_utc = timestamp_utc();
+    let reference_seed = format!(
+        "{}:{}:{}",
+        diagnostics.session_correlation_id, created_at_utc, diagnostics.build_id
+    );
+    let support_reference = digest_hex(&reference_seed)[..12].to_string();
+    let evidence_scope = "REDACTED_DIAGNOSTIC_METADATA_ONLY".to_string();
+    let excluded_categories = vec![
+        "TOKENS_AND_CREDENTIALS".to_string(),
+        "RAW_PROVIDER_PAYLOADS".to_string(),
+        "PROFILE_AND_CUSTOMER_PAYLOADS".to_string(),
+        "DATABASE_AND_PRIVATE_KEYS".to_string(),
+        "MEMORY_DUMPS".to_string(),
+    ];
+    let unsigned = json!({
+        "schemaVersion": "miqos-desktop-support-snapshot-v1",
+        "createdAtUtc": created_at_utc,
+        "supportReference": support_reference,
+        "evidenceScope": evidence_scope,
+        "diagnostics": diagnostics,
+        "excludedCategories": excluded_categories,
+    });
+    let sha256 = digest_hex(
+        &serde_json::to_string(&unsigned)
+            .map_err(|_| "DESKTOP_SUPPORT_SNAPSHOT_SERIALISATION_FAILED".to_string())?,
+    );
+    let snapshot: SupportSnapshot = serde_json::from_value(json!({
+        "schemaVersion": "miqos-desktop-support-snapshot-v1",
+        "createdAtUtc": unsigned["createdAtUtc"],
+        "supportReference": unsigned["supportReference"],
+        "evidenceScope": unsigned["evidenceScope"],
+        "diagnostics": unsigned["diagnostics"],
+        "excludedCategories": unsigned["excludedCategories"],
+        "sha256": sha256,
+    }))
+    .map_err(|_| "DESKTOP_SUPPORT_SNAPSHOT_SERIALISATION_FAILED".to_string())?;
+    emit_info(
+        "SUPPORT_SNAPSHOT_CREATED",
+        "create_support_snapshot",
+        "SUCCESS",
+        None,
+    );
+    Ok(snapshot)
+}
+
 fn prune_logs(log_dir: &Path) {
     let now = SystemTime::now();
     let mut entries = match fs::read_dir(log_dir) {
@@ -543,6 +881,11 @@ fn prune_logs(log_dir: &Path) {
 }
 
 pub fn run() {
+    std::panic::set_hook(Box::new(|_| {
+        emit_error("NATIVE_PANIC", "panic", "NATIVE_PANIC");
+    }));
+    let _ = observability_state();
+
     let log_plugin = tauri_plugin_log::Builder::new()
         .clear_targets()
         .targets([
@@ -565,7 +908,9 @@ pub fn run() {
             load_admin_profile,
             load_admin_profile_version,
             load_admin_profile_audit,
-            load_admin_selection_trace
+            load_admin_selection_trace,
+            get_diagnostics,
+            create_support_snapshot
         ])
         .setup(|app| {
             if let Ok(log_dir) = app.path().app_log_dir() {

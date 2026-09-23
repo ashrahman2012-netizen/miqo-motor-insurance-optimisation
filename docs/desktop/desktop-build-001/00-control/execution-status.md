@@ -1,18 +1,15 @@
 # MIQOS-DESKTOP-BUILD-001 — Execution status
 
 **Date:** 2026-09-23  
-**Gateway:** DB-G5 — Deep Audit, Trace & Decision-Evidence Surfaces  
-**Status:** PASS  
+**Gateway:** DB-G6 — Observability, Diagnostics & Supportability  
+**Status:** IN PROGRESS — IMPLEMENTATION COMMITTED, EXACT-SHA PROOF PENDING  
 **Branch:** `miqos/desktop-build-001`  
-**DB-G5 entry:** `4194504c0c007bae86612a5c11f9a1ea750129f0`  
-**Accepted executable source:** `1be0f6480d9a516daf0df93effcf4a66997bb67c`
+**DB-G6 entry:** `2751bc19f852c577f7e794495e903b6cbf33610d`
 
 DB-G0 through DB-G5 are PASS.
 
-DB-G5 implements read-only exact-selection decision lineage across scenario exploration, market routes, quote requests, raw provider responses, normalised quotations, recommendation/explanation evidence, persisted integrity evidence and append-only audit context. Desktop renders supplied decisions and does not calculate ranking, comparability, recommendation or integrity.
+DB-G6 candidate adds safe W3C trace correlation, distinct server request IDs, safe API build/source identity, correlated native structured logging, System diagnostics and metadata-only redacted support snapshots. No business payload contract, domain authority, database authority, production identity/environment or provider capability changes.
 
-Accepted executable source is green under CI #703/#704, Windows G7 #227 and Windows/API G8 #47.
+DB-G6 remains IN PROGRESS until exact-source repository CI, Windows G7 and Windows/API G8 prove the candidate.
 
-Next controlled gateway: **DB-G6 — Observability, Diagnostics & Supportability**.
-
-DB-G6 through DB-G11 remain NOT STARTED. Production release, real IdP/RBAC, real environments, provider activation and signing remain separately gated.
+DB-G7 through DB-G11 remain NOT STARTED.

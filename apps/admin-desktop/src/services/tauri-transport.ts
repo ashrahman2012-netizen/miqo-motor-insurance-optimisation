@@ -7,9 +7,12 @@ import type {
   DesktopApiTransport,
   DesktopHealth,
   DesktopRuntimeProfile,
+  DesktopDiagnostics,
+  DesktopSupportSnapshot,
+  DesktopSupportTransport,
 } from "./contracts";
 
-export class TauriDesktopApiTransport implements DesktopApiTransport {
+export class TauriDesktopApiTransport implements DesktopApiTransport, DesktopSupportTransport {
   getRuntimeProfile() {
     return invoke<DesktopRuntimeProfile>("get_runtime_profile");
   }
@@ -32,5 +35,13 @@ export class TauriDesktopApiTransport implements DesktopApiTransport {
 
   loadAdminSelectionTrace(selectionId: string) {
     return invoke<DesktopAdminSelectionTraceEvidence>("load_admin_selection_trace", {selectionId});
+  }
+
+  getDiagnostics() {
+    return invoke<DesktopDiagnostics>("get_diagnostics");
+  }
+
+  createSupportSnapshot() {
+    return invoke<DesktopSupportSnapshot>("create_support_snapshot");
   }
 }

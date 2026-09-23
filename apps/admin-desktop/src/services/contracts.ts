@@ -71,3 +71,46 @@ export interface DesktopDecisionTraceProof {
   readonly trace: AdminSprint4TraceApi;
   readonly viewModel: AdminAuditTracePageVM;
 }
+
+export interface DesktopDiagnostics {
+  readonly productName: string;
+  readonly appVersion: string;
+  readonly buildId: string;
+  readonly sourceCommit: string;
+  readonly packageArchitecture: string;
+  readonly deploymentStage: string;
+  readonly applicationEnvironment: string;
+  readonly deploymentProfileId: string;
+  readonly deploymentProfileSha256: string;
+  readonly apiService: string;
+  readonly apiHealthStatus: string;
+  readonly apiServiceVersion: string | null;
+  readonly apiBuildId: string | null;
+  readonly apiSourceCommit: string | null;
+  readonly sessionCorrelationId: string;
+  readonly lastTraceId: string | null;
+  readonly lastServerRequestId: string | null;
+  readonly lastOperation: string | null;
+  readonly lastReasonCode: string | null;
+  readonly logDirectoryStatus: string;
+  readonly logFileCount: number;
+  readonly logTotalBytes: number;
+  readonly logRetentionMaxFiles: number;
+  readonly logRetentionMaxAgeDays: number;
+  readonly supportSnapshotAvailable: boolean;
+}
+
+export interface DesktopSupportSnapshot {
+  readonly schemaVersion: "miqos-desktop-support-snapshot-v1";
+  readonly createdAtUtc: string;
+  readonly supportReference: string;
+  readonly evidenceScope: "REDACTED_DIAGNOSTIC_METADATA_ONLY";
+  readonly diagnostics: DesktopDiagnostics;
+  readonly excludedCategories: ReadonlyArray<string>;
+  readonly sha256: string;
+}
+
+export interface DesktopSupportTransport {
+  getDiagnostics(): Promise<DesktopDiagnostics>;
+  createSupportSnapshot(): Promise<DesktopSupportSnapshot>;
+}
