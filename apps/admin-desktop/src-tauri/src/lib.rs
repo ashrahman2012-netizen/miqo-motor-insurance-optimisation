@@ -268,7 +268,6 @@ impl<'a> ApiReadOperation<'a> {
         }
     }
 
-
     fn requires_authentication(&self) -> bool {
         !matches!(self, Self::Health)
     }
@@ -477,7 +476,6 @@ fn runtime_profile() -> Result<RuntimeProfile, String> {
     })
 }
 
-
 fn auth_state() -> &'static Mutex<AuthState> {
     AUTH_STATE.get_or_init(|| {
         Mutex::new(AuthState {
@@ -498,7 +496,11 @@ fn auth_session_snapshot() -> DesktopAuthSession {
     }
 }
 
-fn set_auth_state(state_name: &str, access_token: Option<String>, descriptor: Option<SessionDescriptor>) {
+fn set_auth_state(
+    state_name: &str,
+    access_token: Option<String>,
+    descriptor: Option<SessionDescriptor>,
+) {
     let mut state = auth_state()
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
@@ -597,7 +599,9 @@ fn url_encode(value: &str) -> String {
     let mut out = String::new();
     for byte in value.as_bytes() {
         match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => out.push(*byte as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                out.push(*byte as char)
+            }
             _ => out.push_str(&format!("%{:02X}", byte)),
         }
     }
@@ -688,7 +692,9 @@ fn launch_system_browser(_url: &str) -> Result<(), String> {
 }
 
 fn callback_response(stream: &mut TcpStream, status: &str, message: &str) {
-    let body = format!("<html><body><h1>{message}</h1><p>You can return to MIQOS Admin.</p></body></html>");
+    let body = format!(
+        "<html><body><h1>{message}</h1><p>You can return to MIQOS Admin.</p></body></html>"
+    );
     let response = format!(
         "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
         body.len(),
@@ -697,7 +703,10 @@ fn callback_response(stream: &mut TcpStream, status: &str, message: &str) {
     let _ = stream.write_all(response.as_bytes());
 }
 
-fn wait_for_authorisation_code(listener: TcpListener, expected_state: &str) -> Result<String, String> {
+fn wait_for_authorisation_code(
+    listener: TcpListener,
+    expected_state: &str,
+) -> Result<String, String> {
     listener
         .set_nonblocking(true)
         .map_err(|_| "DESKTOP_AUTH_CALLBACK_FAILED".to_string())?;
@@ -726,7 +735,11 @@ fn wait_for_authorisation_code(listener: TcpListener, expected_state: &str) -> R
                 let returned_state = query_value(target, "state")?
                     .ok_or_else(|| "DESKTOP_AUTH_STATE_MISSING".to_string())?;
                 if returned_state != expected_state {
-                    callback_response(&mut stream, "400 Bad Request", "Authentication state mismatch");
+                    callback_response(
+                        &mut stream,
+                        "400 Bad Request",
+                        "Authentication state mismatch",
+                    );
                     return Err("DESKTOP_AUTH_STATE_MISMATCH".to_string());
                 }
                 if let Some(error) = query_value(target, "error")? {
@@ -825,7 +838,6 @@ fn begin_authentication_blocking() -> Result<DesktopAuthSession, String> {
     result
 }
 
-
 fn valid_resource_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 100
@@ -914,7 +926,10 @@ fn client() -> Result<Client, String> {
         .map_err(|_| "DESKTOP_HTTP_CLIENT_ERROR".to_string())
 }
 
-fn get_json_with_token<T: DeserializeOwned>(operation: ApiReadOperation<'_>, token_override: Option<&str>) -> Result<T, String> {
+fn get_json_with_token<T: DeserializeOwned>(
+    operation: ApiReadOperation<'_>,
+    token_override: Option<&str>,
+) -> Result<T, String> {
     let profile = deployment_profile()?;
     let operation_name = operation.name();
     let path = operation.path();
@@ -944,16 +959,14 @@ fn get_json_with_token<T: DeserializeOwned>(operation: ApiReadOperation<'_>, tok
             .ok_or_else(|| "DESKTOP_AUTHENTICATION_REQUIRED".to_string())?;
         request = request.bearer_auth(token);
     }
-    let response = request
-        .send()
-        .map_err(|_| {
-            emit_error(
-                "API_REQUEST_FAILURE",
-                operation_name,
-                "DESKTOP_API_UNAVAILABLE",
-            );
-            "DESKTOP_API_UNAVAILABLE".to_string()
-        })?;
+    let response = request.send().map_err(|_| {
+        emit_error(
+            "API_REQUEST_FAILURE",
+            operation_name,
+            "DESKTOP_API_UNAVAILABLE",
+        );
+        "DESKTOP_API_UNAVAILABLE".to_string()
+    })?;
 
     let server_request_id = header_value(&response, "x-miqo-request-id");
     let returned_trace_id = header_value(&response, "x-miqo-trace-id");
@@ -1031,7 +1044,6 @@ fn get_json_with_token<T: DeserializeOwned>(operation: ApiReadOperation<'_>, tok
     emit_info("API_REQUEST_COMPLETE", operation_name, "SUCCESS", None);
     Ok(value)
 }
-
 
 fn get_json<T: DeserializeOwned>(operation: ApiReadOperation<'_>) -> Result<T, String> {
     get_json_with_token(operation, None)
