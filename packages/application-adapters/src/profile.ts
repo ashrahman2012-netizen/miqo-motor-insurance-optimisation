@@ -40,6 +40,16 @@ export interface ProfileSnapshotApi {
   readonly audit:ReadonlyArray<ProfileAuditApi>;
 }
 
+export type CustomerProfileAuditApi = Pick<
+  ProfileAuditApi,
+  "eventType"|"entityId"|"metadataJson"|"occurredAt"
+>;
+
+export interface CustomerProfileSnapshotApi {
+  readonly versions:ReadonlyArray<ProfileVersionApi>;
+  readonly audit:ReadonlyArray<CustomerProfileAuditApi>;
+}
+
 export interface ProfileDiscrepancyApi {
   readonly discrepancyId:string;
   readonly riskProfileVersionId:string;
@@ -50,6 +60,11 @@ export interface ProfileDiscrepancyApi {
   readonly blocking:boolean;
   readonly createdAt:string;
 }
+
+export type CustomerProfileDiscrepancyApi = Pick<
+  ProfileDiscrepancyApi,
+  "discrepancyId"|"fieldId"|"declaredValueJson"|"verifiedValueJson"|"state"|"blocking"
+>;
 
 const FIELD_LABELS:Record<string,string>={
   main_driver_id:"Main driver",
@@ -75,7 +90,7 @@ function action(state:ActionAvailabilityVM["state"],reason:string|null):ActionAv
   return {state,reason};
 }
 
-function validationFromAudit(snapshot:ProfileSnapshotApi,current:ProfileVersionApi){
+function validationFromAudit(snapshot:CustomerProfileSnapshotApi,current:ProfileVersionApi){
   const event=latestByTime(snapshot.audit.filter(item=>
     item.eventType==="profile_validated"&&item.entityId===current.versionId
   ));
@@ -140,14 +155,14 @@ function buildJourney(args:{
   return [capture,validation,discrepancies,confirmation,lock];
 }
 
-export function selectCurrentProfileLifecycleVersion(snapshot:ProfileSnapshotApi):ProfileVersionApi|null {
+export function selectCurrentProfileLifecycleVersion(snapshot:Pick<ProfileSnapshotApi,"versions">):ProfileVersionApi|null {
   return [...snapshot.versions].sort((a,b)=>b.versionNo-a.versionNo||b.versionId.localeCompare(a.versionId))[0]??null;
 }
 
 export function composeProfileLifecycleVM(args:{
   profileId:string;
-  snapshot:ProfileSnapshotApi;
-  discrepancies:ReadonlyArray<ProfileDiscrepancyApi>;
+  snapshot:CustomerProfileSnapshotApi;
+  discrepancies:ReadonlyArray<CustomerProfileDiscrepancyApi>;
 }):ProfileLifecycleVM {
   const current=selectCurrentProfileLifecycleVersion(args.snapshot);
   if(!current)throw new Error("PROFILE_VERSION_NOT_FOUND");

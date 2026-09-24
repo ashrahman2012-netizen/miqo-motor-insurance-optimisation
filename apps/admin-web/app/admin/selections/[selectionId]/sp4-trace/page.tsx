@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../../lib";
+import {adminApiFetch} from "../../../../admin-api";
 
 function value(input:unknown){return typeof input==="string"?input:JSON.stringify(input);}
 
@@ -10,7 +10,7 @@ export default function Sprint4SelectionTrace({params}:{params:Promise<{selectio
   const [error,setError]=useState("");
 
   useEffect(()=>{(async()=>{
-    const response=await fetch(API_URL+"/admin/selections/"+selectionId+"/sp4-trace");
+    const response=await adminApiFetch("/selections/"+selectionId+"/sp4-trace");
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to load Sprint 4 trace");return;}
     setTrace(body);

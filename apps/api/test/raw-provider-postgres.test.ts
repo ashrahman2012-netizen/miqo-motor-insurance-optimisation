@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import pg from "pg";
 import { buildApp } from "../src/server.ts";
+import {adminHeaders} from "./admin-auth-test-helper.ts";
 
 const {Client}=pg;
 
@@ -54,7 +55,7 @@ test("SP2 mock provider execution is deterministic, idempotent and captures exac
   assert.equal(two.item.payloadText,one.item.payloadText);
   assert.equal(two.item.payloadSha256,one.item.payloadSha256);
 
-  const fetched=await app.inject({method:"GET",url:`/quote-requests/${p.quoteRequestId}/raw-response`});
+  const fetched=await app.inject({method:"GET",url:`/desktop-admin/quote-requests/${p.quoteRequestId}/raw-response`,headers:await adminHeaders()});
   assert.equal(fetched.statusCode,200);
   assert.equal(JSON.parse(fetched.body).payloadText,one.item.payloadText);
 

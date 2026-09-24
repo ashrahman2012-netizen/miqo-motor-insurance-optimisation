@@ -14,9 +14,9 @@ import type {
 } from "@miqo/application-contracts";
 
 export interface CustomerActivityAuditEventApi {
-  readonly auditEventId:string;
+  readonly auditEventId?:string;
   readonly eventType:string;
-  readonly entityType:string;
+  readonly entityType?:string;
   readonly entityId:string;
   readonly occurredAt:string;
   readonly metadataJson?:unknown;
@@ -174,14 +174,15 @@ export function composeCustomerActivityPageVM(args:{
   const events=args.auditEvents.flatMap((event):CustomerActivityEventVM[]=>{
     const presentation=ACTIVITY_PRESENTATION[event.eventType];
     if(!presentation)return [];
+    const activityId="activity:"+event.eventType+":"+event.entityId+":"+event.occurredAt;
     return [{
-      activityId:"activity:"+event.auditEventId,
+      activityId,
       occurredAt:event.occurredAt,
       category:presentation.category,
       title:presentation.title,
       detail:presentation.detail,
       status:status(presentation.statusCode,presentation.statusLabel,presentation.semanticFamily),
-      sourceAuditEventId:event.auditEventId,
+      sourceAuditEventId:event.auditEventId??"REDACTED",
     }];
   }).sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt)||b.activityId.localeCompare(a.activityId));
 

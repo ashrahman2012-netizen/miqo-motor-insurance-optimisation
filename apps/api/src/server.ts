@@ -1,9 +1,10 @@
 import Fastify from "fastify";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
 import { ConflictError, FinalIntegrityError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
-import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
+import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listCustomerDiscrepancies, listCustomerLifecycleAudit, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
 import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
 import { getPreparedQuoteRequest, listPreQuoteIntegritySignals, prepareQuoteRequest } from "./quote-service.ts";
@@ -20,24 +21,71 @@ import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupatio
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
 import { getSprint4ObjectiveQuoteComparison } from "./sprint4-comparison-service.ts";
+import {ADMIN_PERMISSIONS, createAdminSecurity} from "./admin-security.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
 if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw new Error("Prototype boundary violation");
 
+const apiServiceVersion="0.1.0";
+const apiBuildId=process.env.MIQO_API_BUILD_ID??process.env.GITHUB_RUN_ID??"local";
+const apiSourceCommit=process.env.MIQO_SOURCE_COMMIT??process.env.GITHUB_SHA??"local";
+
+function validHex(value:string,length:number){
+  return value.length===length && /^[0-9a-f]+$/i.test(value) && !/^0+$/.test(value);
+}
+
+function traceIdFromTraceparent(value:unknown){
+  if(typeof value!=="string")return null;
+  const parts=value.trim().split("-");
+  if(parts.length!==4 || parts[0]!=="00" || !validHex(parts[1],32) || !validHex(parts[2],16) || !/^[0-9a-f]{2}$/i.test(parts[3]))return null;
+  return parts[1].toLowerCase();
+}
+
+function serverTraceId(requestId:string){
+  return createHash("sha256").update("miqos-api:"+requestId).digest("hex").slice(0,32);
+}
+
 export async function buildApp() {
   const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true});
   await app.register(cors,{origin:[process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000",process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001"],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+  const adminSecurity=createAdminSecurity({dataClassification:classification});
+
+  app.addHook("onRequest",async(req:any)=>{
+    const incoming=traceIdFromTraceparent(req.headers.traceparent);
+    req.miqoTraceId=incoming??serverTraceId(String(req.id));
+    req.log.info({
+      eventCode:"API_REQUEST_START",
+      requestId:String(req.id),
+      traceId:req.miqoTraceId,
+    },"MIQO API request");
+  });
+  app.addHook("onSend",async(req:any,reply:any,payload:any)=>{
+    reply.header("x-miqo-request-id",String(req.id));
+    reply.header("x-miqo-trace-id",String(req.miqoTraceId));
+    reply.header("x-miqo-api-version",apiServiceVersion);
+    reply.header("x-miqo-api-build-id",apiBuildId);
+    reply.header("x-miqo-api-source-commit",apiSourceCommit);
+    return payload;
+  });
+  app.addHook("onResponse",async(req:any,reply:any)=>{
+    req.log.info({
+      eventCode:"API_REQUEST_COMPLETE",
+      requestId:String(req.id),
+      traceId:req.miqoTraceId,
+      statusCode:reply.statusCode,
+    },"MIQO API request complete");
+  });
   app.addHook("onClose",async()=>pool.end());
 
   app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));
   app.post("/profiles",async(_req,reply)=>reply.code(201).send(await createProfile(db)));
   app.get("/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId)}));
   app.post("/profiles/:profileId/validate",async(req:any)=>validateProfile(db,req.params.profileId));
-  app.get("/profiles/:profileId/discrepancies",async(req:any)=>({items:await listDiscrepancies(db,req.params.profileId)}));
+  app.get("/profiles/:profileId/discrepancies",async(req:any)=>({items:await listCustomerDiscrepancies(db,req.params.profileId)}));
   app.post("/profiles/:profileId/lock",async(req:any)=>lockProfile(db,req.params.profileId));
   app.post("/profiles/:profileId/corrections",async(req:any,reply)=>reply.code(201).send(await createCorrectionDraft(db,{profileId:req.params.profileId,fieldId:(req.body as any).fieldId,value:(req.body as any).value})));
-  app.get("/profiles/:profileId/snapshot",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId)}));
+  app.get("/profiles/:profileId/snapshot",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await listCustomerLifecycleAudit(db,req.params.profileId)}));
 
   app.put("/profile-versions/:versionId/facts/:fieldId",async(req:any)=>{
     const v=await currentVersion(db,(await profileSnapshotByVersion(db,req.params.versionId)).profileId);
@@ -147,7 +195,6 @@ export async function buildApp() {
     const result=await executePreparedQuoteRequest(db,req.params.quoteRequestId);
     return reply.code(result.created?201:200).send(result);
   });
-  app.get("/quote-requests/:quoteRequestId/raw-response",async(req:any)=>getRawProviderResponse(db,req.params.quoteRequestId));
   app.post("/raw-provider-responses/:rawProviderResponseId/normalise",async(req:any,reply)=>{
     const result=await normaliseRawProviderResponse(db,req.params.rawProviderResponseId);
     return reply.code(result.created?201:200).send(result);
@@ -171,11 +218,47 @@ export async function buildApp() {
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
 
-  app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
-  app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
-  app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
-  app.get("/admin/selections/:selectionId/trace",async(req:any)=>getSelectionTrace(db,req.params.selectionId));
-  app.get("/admin/selections/:selectionId/sp4-trace",async(req:any)=>getSprint4AdminSelectionTrace(db,req.params.selectionId));
+  app.get("/desktop-admin/session",async(req:any,reply)=>{
+    const principal=await adminSecurity.requireAuthentication(req,reply,"admin-session");
+    if(!principal)return;
+    return adminSecurity.sessionDescriptor(principal);
+  });
+  app.get("/desktop-admin/profiles/:profileId",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.profileRead,ADMIN_PERMISSIONS.auditRead,ADMIN_PERMISSIONS.discrepancyRead],"profile",req.params.profileId);
+    if(!principal)return;
+    return {versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)};
+  });
+  app.get("/desktop-admin/profile-versions/:versionId",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.profileRead],"profile-version",req.params.versionId);
+    if(!principal)return;
+    return profileSnapshotByVersion(db,req.params.versionId);
+  });
+  app.get("/desktop-admin/audit",async(req:any,reply)=>{
+    const profileId=String(req.query.profileId??"");
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.auditRead],"profile-audit",profileId);
+    if(!principal)return;
+    return {items:await auditEvents(db,profileId)};
+  });
+  app.get("/desktop-admin/profiles/:profileId/discrepancies",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.discrepancyRead],"profile-discrepancy",req.params.profileId);
+    if(!principal)return;
+    return {items:await listDiscrepancies(db,req.params.profileId)};
+  });
+  app.get("/desktop-admin/selections/:selectionId/trace",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.traceRead,ADMIN_PERMISSIONS.integrityRead],"selection-trace",req.params.selectionId);
+    if(!principal)return;
+    return getSelectionTrace(db,req.params.selectionId);
+  });
+  app.get("/desktop-admin/selections/:selectionId/sp4-trace",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.traceRead,ADMIN_PERMISSIONS.integrityRead],"selection-trace",req.params.selectionId);
+    if(!principal)return;
+    return getSprint4AdminSelectionTrace(db,req.params.selectionId);
+  });
+  app.get("/desktop-admin/quote-requests/:quoteRequestId/raw-response",async(req:any,reply)=>{
+    const principal=await adminSecurity.requirePermissions(req,reply,[ADMIN_PERMISSIONS.rawEvidenceRead],"raw-provider-response",req.params.quoteRequestId,true);
+    if(!principal)return;
+    return getRawProviderResponse(db,req.params.quoteRequestId);
+  });
 
   app.setErrorHandler((error:any,req:any,reply)=>{
     if(error instanceof FinalIntegrityError)return reply.code(409).send({error:error.message,selectionId:error.selectionId,signals:error.signals});

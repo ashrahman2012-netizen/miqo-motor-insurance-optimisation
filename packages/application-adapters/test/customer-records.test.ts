@@ -50,16 +50,20 @@ describe("BUILD-001H customer records, activity and support adapters",()=>{
     const vm=composeCustomerActivityPageVM({
       profileId:"PRO-001H",
       auditEvents:[
-        {auditEventId:"AUD-1",eventType:"profile_locked",entityType:"risk_profile_version",entityId:"RPV-001H",occurredAt:"2026-09-20T12:00:00Z"},
-        {auditEventId:"AUD-2",eventType:"raw_provider_response_captured",entityType:"raw_provider_response",entityId:"RAW-001H",occurredAt:"2026-09-20T12:05:00Z"},
-        {auditEventId:"AUD-3",eventType:"sp4_recommendation_set_created",entityType:"recommendation_set",entityId:"REC-001H",occurredAt:"2026-09-20T12:10:00Z"},
-        {auditEventId:"AUD-4",eventType:"final_integrity_passed",entityType:"selection",entityId:"SEL-001H",occurredAt:"2026-09-20T12:15:00Z"},
+        {eventType:"profile_locked",entityId:"RPV-001H",occurredAt:"2026-09-20T12:00:00Z"},
+        {eventType:"raw_provider_response_captured",entityId:"RAW-001H",occurredAt:"2026-09-20T12:05:00Z"},
+        {eventType:"sp4_scenario_exploration_generated",entityId:"OBJ-001H",occurredAt:"2026-09-20T12:07:00Z"},
+        {eventType:"sp4_recommendation_set_created",entityId:"REC-001H",occurredAt:"2026-09-20T12:10:00Z"},
+        {eventType:"sp4_recommendation_explanation_created",entityId:"EXP-001H",occurredAt:"2026-09-20T12:12:00Z"},
+        {eventType:"final_integrity_passed",entityId:"SEL-001H",occurredAt:"2026-09-20T12:15:00Z"},
       ],
     });
     expect(vm.events.map(item=>item.title)).toEqual([
-      "Final integrity passed","Your Results created","Profile locked",
+      "Final integrity passed","Why This Surfaced created","Your Results created","Scenarios generated","Profile locked",
     ]);
-    expect(vm.events.some(item=>item.sourceAuditEventId==="AUD-2")).toBe(false);
+    expect(new Set(vm.events.map(item=>item.activityId)).size).toBe(vm.events.length);
+    expect(vm.events.every(item=>item.sourceAuditEventId==="REDACTED")).toBe(true);
+    expect(vm.events.some(item=>item.title==="Raw provider response captured")).toBe(false);
     expect(vm.fullAuditAction.state).toBe("HIDDEN");
   });
 

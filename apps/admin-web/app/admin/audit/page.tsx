@@ -15,6 +15,8 @@ import type {
   LineageNodeVM,
   StatusVM,
 } from "@miqo/application-contracts";
+import {cookies} from "next/headers";
+import {redirect} from "next/navigation";
 import {resolveApplicationEnvironment} from "../../environment";
 import {loadAdminAuditTrace} from "./load-audit-trace";
 import styles from "./audit.module.css";
@@ -205,6 +207,16 @@ export default async function AdminAuditTrace({searchParams}:{searchParams:Promi
     return <main><PageHeader eyebrow="Administration" title="Audit & Trace Console" description="Complete provenance and append-only evidence."/><PageState state="NOT_AUTHORISED" title="Environment unavailable" message="Runtime identity could not be resolved, so administrative evidence is not presented."/></main>;
   }
   const params=await searchParams;
+  const accessToken=(await cookies()).get("miqo_admin_access")?.value;
+  if(!accessToken){
+    const returnParams=new URLSearchParams();
+    for(const [key,raw] of Object.entries(params)){
+      const value=first(raw);
+      if(value)returnParams.set(key,value);
+    }
+    const suffix=returnParams.size?"?"+returnParams.toString():"";
+    redirect("/api/auth/login?returnTo="+encodeURIComponent("/admin/audit"+suffix));
+  }
   const filters:AdminAuditTraceFiltersVM={
     profileId:clean(first(params.profileId)),
     profileVersionId:clean(first(params.profileVersionId)),

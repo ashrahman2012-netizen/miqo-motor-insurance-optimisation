@@ -14,7 +14,7 @@ const runtime: DesktopRuntimeProfile = {
   applicationEnvironment: "SYNTHETIC",
   apiService: "127.0.0.1:4000",
   apiAudience: "miqos-api-test",
-  authenticationMode: "NON_PRODUCTION_STUB",
+  authenticationMode: "NATIVE_OIDC_PKCE",
   buildVersion: "0.1.0",
   buildId: "test",
   sourceCommit: "test",
@@ -28,7 +28,10 @@ function transport(
   return {
     getRuntimeProfile: async () => runtime,
     getHealth: async () => health,
+    loadAdminProfile: async () => ({versions: [], audit: [], discrepancies: []}),
+    loadAdminProfileVersion: async () => { throw new Error("NOT_USED"); },
     loadAdminProfileAudit: async () => evidence,
+    loadAdminSelectionTrace: async () => { throw new Error("NOT_USED"); },
   };
 }
 

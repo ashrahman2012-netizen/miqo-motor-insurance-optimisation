@@ -144,3 +144,37 @@ export async function listDiscrepancies(db:MiqoDatabase,profileId:string) {
   const v=await currentVersion(db,profileId); if(!v) throw new ValidationError("Profile not found");
   return db.select().from(discrepancy).where(eq(discrepancy.riskProfileVersionId,v.riskProfileVersionId));
 }
+
+const CUSTOMER_LIFECYCLE_AUDIT_EVENTS=new Set([
+  "profile_validated",
+  "profile_locked",
+  "optimisation_catalogue_registered",
+  "customer_objective_selected",
+  "sp4_scenario_exploration_generated",
+  "sp4_recommendation_set_created",
+  "sp4_recommendation_explanation_created",
+]);
+
+export async function listCustomerLifecycleAudit(db:MiqoDatabase,profileId:string) {
+  const events=await auditEvents(db,profileId);
+  return events
+    .filter(event=>CUSTOMER_LIFECYCLE_AUDIT_EVENTS.has(event.eventType))
+    .map(event=>({
+      eventType:event.eventType,
+      entityId:event.entityId,
+      metadataJson:event.metadataJson,
+      occurredAt:event.occurredAt,
+    }));
+}
+
+export async function listCustomerDiscrepancies(db:MiqoDatabase,profileId:string) {
+  const items=await listDiscrepancies(db,profileId);
+  return items.map(item=>({
+    discrepancyId:item.discrepancyId,
+    fieldId:item.fieldId,
+    declaredValueJson:item.declaredValueJson,
+    verifiedValueJson:item.verifiedValueJson,
+    state:item.state,
+    blocking:item.blocking,
+  }));
+}

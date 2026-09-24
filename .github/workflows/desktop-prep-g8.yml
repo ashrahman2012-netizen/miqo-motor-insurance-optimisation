@@ -61,6 +61,11 @@ jobs:
       MIQO_LIVE_PROVIDERS_ENABLED: "false"
       PORT: "4000"
       MIQO_G8_API_URL: http://127.0.0.1:4000
+      MIQO_G8_IDP_URL: http://127.0.0.1:4100
+      MIQO_ADMIN_AUTH_ISSUER: http://127.0.0.1:4100
+      MIQO_ADMIN_AUTH_AUDIENCE: miqos-api-test
+      MIQO_ADMIN_AUTH_JWKS_URL: http://127.0.0.1:4100/jwks
+      MIQO_ADMIN_GROUP_PERMISSION_MAP: '{"miqos-admin-read":["miqos.admin.case.read","miqos.admin.profile.read","miqos.admin.audit.read","miqos.admin.trace.read","miqos.admin.discrepancy.read","miqos.admin.integrity.read","miqos.admin.system.read"],"miqos-admin-raw":["miqos.admin.raw-evidence.read"],"miqos-admin-profile":["miqos.admin.profile.read"]}'
 
     steps:
       - name: Checkout
@@ -79,6 +84,20 @@ jobs:
 
       - name: Migrate synthetic PostgreSQL
         run: npm run db:migrate
+
+      - name: Start synthetic OIDC authority
+        run: |
+          mkdir -p dist/g8-proof
+          node scripts/desktop-test-idp.mjs > dist/g8-proof/g8-idp.log 2>&1 &
+          echo $! > dist/g8-proof/g8-idp.pid
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4100/.well-known/openid-configuration > dist/g8-proof/g8-idp-discovery.json; then
+              exit 0
+            fi
+            sleep 0.25
+          done
+          cat dist/g8-proof/g8-idp.log
+          exit 1
 
       - name: Start certified Fastify API
         run: |
@@ -124,6 +143,8 @@ jobs:
             dist/g8-proof/g8-api-proof.json
             dist/g8-proof/g8-health.json
             dist/g8-proof/g8-api.log
+            dist/g8-proof/g8-idp.log
+            dist/g8-proof/g8-idp-discovery.json
           if-no-files-found: error
           retention-days: 14
 

@@ -25,8 +25,8 @@ describe("BUILD-001C profile lifecycle adapter",()=>{
 
   it("blocks UI lock when persisted discrepancy evidence is explicitly blocking",()=>{
     const vm=composeProfileLifecycleVM({profileId:"PRO-1",snapshot:baseSnapshot,discrepancies:[{
-      discrepancyId:"DIS-1",riskProfileVersionId:"RPV-1",fieldId:"annual_mileage",
-      declaredValueJson:8000,verifiedValueJson:9000,state:"OPEN",blocking:true,createdAt:"2026-09-20T10:06:00Z",
+      discrepancyId:"DIS-1",fieldId:"annual_mileage",
+      declaredValueJson:8000,verifiedValueJson:9000,state:"OPEN",blocking:true,
     }]});
     expect(vm.review.lockAction.state).toBe("BLOCKED");
     expect(vm.blockingDiscrepancyCount).toBe(1);

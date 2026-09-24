@@ -10,10 +10,13 @@ import type {
   AdminAuditTracePageVM,
   ApplicationEnvironment,
 } from "@miqo/application-contracts";
+import {cookies} from "next/headers";
 import {API_URL} from "../../lib";
 
 async function getJson<T>(path:string):Promise<T>{
-  const response=await fetch(API_URL+path,{cache:"no-store"});
+  const token=(await cookies()).get("miqo_admin_access")?.value;
+  if(!token)throw new Error("ADMIN_AUTHENTICATION_REQUIRED");
+  const response=await fetch(API_URL+path,{cache:"no-store",headers:{authorization:"Bearer "+token}});
   const payload=await response.json().catch(()=>({}));
   if(!response.ok){
     throw new Error(typeof payload?.error==="string"?payload.error:`Admin API request failed: ${response.status}`);
@@ -33,7 +36,7 @@ export async function loadAdminAuditTrace(args:{
 
   if(args.filters.selectionId){
     trace=await getJson<AdminSprint4TraceApi>(
-      `/admin/selections/${encodeURIComponent(args.filters.selectionId)}/sp4-trace`,
+      `/desktop-admin/selections/${encodeURIComponent(args.filters.selectionId)}/sp4-trace`,
     );
     if(profileId&&profileId!==trace.profile.profileId){
       throw new Error("ADMIN_TRACE_PROFILE_SELECTION_MISMATCH");
@@ -51,15 +54,15 @@ export async function loadAdminAuditTrace(args:{
     );
     if(selected){
       rawProviderResponse=await getJson<AdminRawProviderResponseApi>(
-        `/quote-requests/${encodeURIComponent(selected.quoteRequest.quoteRequestId)}/raw-response`,
+        `/desktop-admin/quote-requests/${encodeURIComponent(selected.quoteRequest.quoteRequestId)}/raw-response`,
       );
     }
   }
 
   if(profileId){
     const [audit,discrepancyResponse]=await Promise.all([
-      getJson<{items:ReadonlyArray<AdminAuditEventApi>}>(`/admin/audit?profileId=${encodeURIComponent(profileId)}`),
-      getJson<{items:ReadonlyArray<AdminDiscrepancyApi>}>(`/profiles/${encodeURIComponent(profileId)}/discrepancies`),
+      getJson<{items:ReadonlyArray<AdminAuditEventApi>}>(`/desktop-admin/audit?profileId=${encodeURIComponent(profileId)}`),
+      getJson<{items:ReadonlyArray<AdminDiscrepancyApi>}>(`/desktop-admin/profiles/${encodeURIComponent(profileId)}/discrepancies`),
     ]);
     auditEvents=audit.items??[];
     discrepancies=discrepancyResponse.items??[];

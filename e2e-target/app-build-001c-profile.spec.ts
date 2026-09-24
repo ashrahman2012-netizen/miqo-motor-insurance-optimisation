@@ -56,6 +56,10 @@ test("BUILD-001C renders persisted blocking discrepancy and creates correction v
   await expect(page.getByText("8,000 miles",{exact:true}).first()).toBeVisible();
   await expect(page.getByText("9,000 miles",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:"Use verified value in a new version"})).toBeVisible();
+  const customerDiscrepancies=await (await request.get(API+"/profiles/"+profile.profileId+"/discrepancies")).json();
+  expect(customerDiscrepancies.items).toHaveLength(1);
+  expect(customerDiscrepancies.items[0]).not.toHaveProperty("riskProfileVersionId");
+  expect(customerDiscrepancies.items[0]).not.toHaveProperty("createdAt");
 
   await page.getByRole("button",{name:"Use verified value in a new version"}).click();
   await expect(page.getByText("DRAFT",{exact:true}).first()).toBeVisible();

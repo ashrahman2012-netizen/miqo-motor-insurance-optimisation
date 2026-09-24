@@ -1,0 +1,24 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "admin-read",
+  "description": "DB-G7 main-window capability. Native public-client authentication, approved read-only Admin evidence and redacted diagnostics commands only.",
+  "windows": [
+    "main"
+  ],
+  "platforms": [
+    "windows"
+  ],
+  "permissions": [
+    "allow-get-runtime-profile",
+    "allow-logout",
+    "allow-begin-authentication",
+    "allow-get-auth-session",
+    "allow-get-health",
+    "allow-load-admin-profile",
+    "allow-load-admin-profile-version",
+    "allow-load-admin-profile-audit",
+    "allow-load-admin-selection-trace",
+    "allow-get-diagnostics",
+    "allow-create-support-snapshot"
+  ]
+}

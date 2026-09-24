@@ -16,6 +16,7 @@ test("SP4-G15 admin reconstructs objective through final integrity",async({page}
   await page.getByRole("button",{name:"Confirm & lock profile"}).click();
 
   await expect(page).toHaveURL(new RegExp("127\\.0\\.0\\.1:3001/admin/profiles/"+profileId));
+  await expect(page.locator("#status-v1")).toHaveText("LOCKED");
   await page.goto("http://127.0.0.1:3000/profile/"+profileId+"/recommendations");
 
   await page.getByLabel("Customer objective").selectOption("LOWEST_ANNUAL_PREMIUM");

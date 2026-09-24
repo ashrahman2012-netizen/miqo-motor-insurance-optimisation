@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import pg from "pg";
 import {buildApp} from "../src/server.ts";
+import {adminHeaders} from "./admin-auth-test-helper.ts";
 import {createDatabase,createPool} from "../../../packages/db/src/client.ts";
 import {selectShortlistedQuote} from "../src/selection-service.ts";
 
@@ -132,7 +133,7 @@ test("SP3 comparison shortlist selection final integrity completion and trace ar
   assert.equal(selection.completion.liveProviderActivity,"DISABLED");
 
   const trace=JSON.parse((await app.inject({
-    method:"GET",url:"/admin/selections/"+selected.selectionId+"/trace",
+    method:"GET",url:"/desktop-admin/selections/"+selected.selectionId+"/trace",headers:await adminHeaders(),
   })).body);
   assert.equal(trace.riskProfileVersion.riskProfileVersionId,journey.profile.versionId);
   assert.equal(trace.scenario.scenarioId,journey.scenarioId);

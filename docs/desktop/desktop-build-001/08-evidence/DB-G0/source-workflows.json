@@ -1,0 +1,127 @@
+{
+  "checkedOn": "2026-09-22",
+  "sourceBranch": "miqos/desktop-prep-001",
+  "sourceSha": "f01776e9bb98bb47a0693f43194d1d48b03b6d5e",
+  "runs": [
+    {
+      "id": 35743295434,
+      "name": "ci",
+      "head_sha": "f01776e9bb98bb47a0693f43194d1d48b03b6d5e",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 664,
+      "event": "push",
+      "html_url": "https://github.com/ashrahman2012-netizen/miqo-motor-insurance-optimisation/actions/runs/35743295434",
+      "jobs": [
+        {
+          "id": 106798314006,
+          "name": "target-stack-sprint1",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106798314409,
+          "name": "postgres-contract",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106798314556,
+          "name": "locked-dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 35743301744,
+      "name": "ci",
+      "head_sha": "f01776e9bb98bb47a0693f43194d1d48b03b6d5e",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 665,
+      "event": "pull_request",
+      "html_url": "https://github.com/ashrahman2012-netizen/miqo-motor-insurance-optimisation/actions/runs/35743301744",
+      "jobs": [
+        {
+          "id": 106798335314,
+          "name": "postgres-contract",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106798335455,
+          "name": "locked-dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106798335632,
+          "name": "target-stack-sprint1",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 35743295402,
+      "name": "desktop-prep-g7",
+      "head_sha": "f01776e9bb98bb47a0693f43194d1d48b03b6d5e",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 211,
+      "event": "push",
+      "html_url": "https://github.com/ashrahman2012-netizen/miqo-motor-insurance-optimisation/actions/runs/35743295402",
+      "jobs": [
+        {
+          "id": 106798314613,
+          "name": "Windows Desktop preflight/full",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 35743301257,
+      "name": "desktop-prep-g7",
+      "head_sha": "f01776e9bb98bb47a0693f43194d1d48b03b6d5e",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 212,
+      "event": "pull_request",
+      "html_url": "https://github.com/ashrahman2012-netizen/miqo-motor-insurance-optimisation/actions/runs/35743301257",
+      "jobs": [
+        {
+          "id": 106798334824,
+          "name": "Windows Desktop preflight/full",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 35743301349,
+      "name": "desktop-prep-g8",
+      "head_sha": "f01776e9bb98bb47a0693f43194d1d48b03b6d5e",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 32,
+      "event": "pull_request",
+      "html_url": "https://github.com/ashrahman2012-netizen/miqo-motor-insurance-optimisation/actions/runs/35743301349",
+      "jobs": [
+        {
+          "id": 106798334600,
+          "name": "Desktop service / certified API integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 106798334714,
+          "name": "Windows installed Desktop skeleton proof",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}
