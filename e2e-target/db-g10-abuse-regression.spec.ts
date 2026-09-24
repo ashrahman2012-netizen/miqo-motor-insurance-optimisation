@@ -3,6 +3,7 @@ import {test,expect} from "@playwright/test";
 test("DB-G10.6 script-like factual input is rendered as data and never executed",async({page})=>{
   await page.goto("/prototype");
   await page.getByRole("button",{name:"Start synthetic profile"}).click();
+  await expect(page).toHaveURL(/\/profile\/[^/]+\/section\/identity$/);
   const profileId=page.url().match(/\/profile\/([^/]+)\//)![1];
   const hostile='<img src=x onerror="window.__miqoXss=1">';
   await page.getByLabel("Main driver ID").fill(hostile);
