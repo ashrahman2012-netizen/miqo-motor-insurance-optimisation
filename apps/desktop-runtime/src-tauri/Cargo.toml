@@ -10,6 +10,7 @@ publish = false
 tauri-build = { version = "=2.6.3", features = [] }
 
 [dependencies]
+libc = "=0.2.189"
 log = "=0.4.34"
 reqwest = { version = "=0.13.5", features = ["blocking", "json"] }
 serde = { version = "=1.0.229", features = ["derive"] }
