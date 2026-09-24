@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.1",
   "engines": {
-    "node": "22.16.0"
+    "node": "22.23.3"
   },
   "workspaces": [
     "apps/*",
@@ -40,7 +40,7 @@
     "test:security": "npm run test:security:api && npm run test:security:browser"
   },
   "type": "module",
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@10.9.9",
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "typescript": "5.9.2",

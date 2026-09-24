@@ -84,7 +84,7 @@ const adminServer=await stageNext("admin","apps/admin-web");
 
 const manifest={
   version:1,
-  nodeVersion:"22.16.0",
+  nodeVersion:"22.23.3",
   api:"api/server.cjs",
   pgliteMigration:"api/migrate-pglite.mjs",
   pgliteVersion:"0.5.8",

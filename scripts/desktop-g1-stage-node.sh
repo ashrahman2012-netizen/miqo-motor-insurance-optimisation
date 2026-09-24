@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="22.16.0"
+VERSION="22.23.3"
 OUT="$ROOT/dist/desktop-g1/runtime/node"
 TMP="$ROOT/dist/desktop-g1/node-download"
 mkdir -p "$OUT" "$TMP"

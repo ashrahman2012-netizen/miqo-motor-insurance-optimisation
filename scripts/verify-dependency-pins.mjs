@@ -20,8 +20,8 @@ for (const [file, section, names] of checks) {
   }
 }
 const root = JSON.parse(readFileSync("package.json", "utf8"));
-if (root.engines?.node !== "22.16.0") failures.push(`Node runtime not pinned to 22.16.0`);
-if (root.packageManager !== "npm@10.9.2") failures.push(`npm runtime not pinned to 10.9.2`);
+if (root.engines?.node !== "22.23.3") failures.push(`Node runtime not pinned to 22.23.3`);
+if (root.packageManager !== "npm@10.9.9") failures.push(`npm runtime not pinned to 10.9.9`);
 
 if (failures.length) {
   console.error("Dependency pin verification FAILED");

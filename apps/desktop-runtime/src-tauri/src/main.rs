@@ -22,7 +22,7 @@ const API_URL: &str = "http://127.0.0.1:4000";
 const CUSTOMER_URL: &str = "http://127.0.0.1:3000/prototype";
 const ADMIN_URL: &str = "http://127.0.0.1:3001";
 const ADMIN_KEY: &str = "DB-G10-SYNTHETIC-ADMIN";
-const EXPECTED_NODE_VERSION: &str = "v22.16.0";
+const EXPECTED_NODE_VERSION: &str = "v22.23.3";
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -165,7 +165,7 @@ fn read_manifest(runtime_root: &Path) -> Result<RuntimeManifest, Box<dyn Error>>
 
 fn validate_manifest(manifest: &RuntimeManifest) -> Result<(), Box<dyn Error>> {
     if manifest.version != 1
-        || manifest.node_version != "22.16.0"
+        || manifest.node_version != "22.23.3"
         || manifest.pglite_version != "0.5.8"
         || manifest.runtime_boundary != "SYNTHETIC_ONLY"
     {

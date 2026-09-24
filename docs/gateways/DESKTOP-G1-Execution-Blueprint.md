@@ -11,7 +11,7 @@
 Use Next.js standalone production output. Static export is rejected because MIQO relies on runtime dynamic routes and admin middleware.
 
 ### Node runtime
-The distributable stages an exact Node 22.16.0 executable. Runtime proof must start API/customer/admin without the repository root `node_modules` tree.
+The distributable stages an exact Node 22.23.3 executable. Runtime proof must start API/customer/admin without the repository root `node_modules` tree.
 
 ### API
 The existing Fastify API is bundled with esbuild for Node 22. Domain/services remain authoritative.
