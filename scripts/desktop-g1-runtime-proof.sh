@@ -24,8 +24,8 @@ bash scripts/desktop-g1-stage-node.sh
 NODE="$RUNTIME/node/node"
 test "$("$NODE" --version)" = "v22.16.0"
 
-CUSTOMER_SERVER="$(find "$RUNTIME/customer" -name server.js -type f | head -n 1)"
-ADMIN_SERVER="$(find "$RUNTIME/admin" -name server.js -type f | head -n 1)"
+CUSTOMER_SERVER="$RUNTIME/customer/apps/customer-web/server.js"
+ADMIN_SERVER="$RUNTIME/admin/apps/admin-web/server.js"
 test -n "$CUSTOMER_SERVER"
 test -n "$ADMIN_SERVER"
 
