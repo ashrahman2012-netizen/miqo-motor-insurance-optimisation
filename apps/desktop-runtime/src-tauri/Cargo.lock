@@ -2050,6 +2050,7 @@ dependencies = [
 name = "miqo-desktop-runtime"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "log",
  "reqwest",
  "serde",

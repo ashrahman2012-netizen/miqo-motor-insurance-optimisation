@@ -85,3 +85,57 @@ jobs:
           path: dist/desktop-g1-pglite-proof/**
           if-no-files-found: warn
           retention-days: 14
+
+  tauri-distributable:
+    needs: embedded-pglite
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22.16.0, cache: npm}
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+      - name: Build customer standalone output
+        run: npm run build -w @miqo/customer-web
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
+          NEXT_PUBLIC_ADMIN_WEB_URL: http://127.0.0.1:3001
+          NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE: DB-G10-SYNTHETIC-ADMIN
+      - name: Build admin standalone output
+        run: npm run build -w @miqo/admin-web
+        env:
+          MIQO_DATA_CLASSIFICATION: SYNTHETIC
+          MIQO_SYNTHETIC_ADMIN_GATE: DB-G10-SYNTHETIC-ADMIN
+          NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY: DB-G10-SYNTHETIC-ADMIN
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
+      - run: node scripts/desktop-g1-stage-runtime.mjs
+      - run: bash scripts/desktop-g1-stage-node.sh
+      - name: Install Tauri Linux prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             libwebkit2gtk-4.1-dev             build-essential             curl             wget             file             libxdo-dev             libssl-dev             libayatana-appindicator3-dev             librsvg2-dev             xvfb
+      - name: Select exact Rust toolchain
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+      - name: Build resource-backed Tauri runtime
+        run: cargo build --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --locked
+      - run: npx playwright install --with-deps chromium
+      - name: Prove Tauri packaged-runtime independence
+        run: bash scripts/desktop-g1-tauri-proof.sh
+      - name: Upload G1 Tauri evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g1-tauri-${{ github.sha }}
+          path: dist/desktop-g1-tauri-proof/**
+          if-no-files-found: warn
+          retention-days: 14
