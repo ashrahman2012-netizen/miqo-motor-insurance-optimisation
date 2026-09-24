@@ -238,7 +238,7 @@ try {
     appSignature = $appSignature
     installMode = "currentUser"
     webviewInstallMode = "embedBootstrapper"
-    bundleVCRuntime = $true
+    rustStaticVCRuntime = $true
     loopbackOnly = $true
     packagedNodeVersion = "22.23.3"
     databaseBackend = "pglite"
