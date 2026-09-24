@@ -4,7 +4,8 @@
   "type": "module",
   "dependencies": {
     "drizzle-orm": "0.45.2",
-    "pg": "8.23.0"
+    "pg": "8.23.0",
+    "@electric-sql/pglite": "0.5.8"
   },
   "devDependencies": {
     "drizzle-kit": "0.31.10",

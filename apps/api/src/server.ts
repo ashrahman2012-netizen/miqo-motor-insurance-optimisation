@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
-import { createDatabase, createPool } from "../../../packages/db/src/client.ts";
+import { createDatabaseRuntime } from "../../../packages/db/src/client.ts";
 import { ConflictError, FinalIntegrityError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
 import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
@@ -27,7 +27,7 @@ if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw
 export function internalErrorPayload(requestId:string){return {error:"internal_error",requestId};}
 
 export async function buildApp() {
-  const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true,bodyLimit:131_072});
+  const runtime=await createDatabaseRuntime(); const db=runtime.db; const app=Fastify({logger:true,bodyLimit:131_072});
   const customerOrigin=process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000";
   const adminOrigin=process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001";
   const allowedOrigins=new Set([customerOrigin,adminOrigin]);
@@ -65,9 +65,9 @@ export async function buildApp() {
     reply.header("cache-control","no-store");
     return payload;
   });
-  app.addHook("onClose",async()=>pool.end());
+  app.addHook("onClose",async()=>runtime.close());
 
-  app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));
+  app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false,databaseBackend:runtime.backend}));
   app.post("/profiles",async(_req,reply)=>reply.code(201).send(await createProfile(db)));
   app.get("/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId)}));
   app.post("/profiles/:profileId/validate",async(req:any)=>validateProfile(db,req.params.profileId));
