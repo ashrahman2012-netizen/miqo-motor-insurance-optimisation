@@ -1,0 +1,106 @@
+name: desktop-g2
+
+on:
+  push:
+    branches: [miqo/desktop-g2]
+  pull_request:
+    paths:
+      - "apps/desktop-runtime/**"
+      - "apps/customer-web/**"
+      - "apps/admin-web/**"
+      - "apps/api/**"
+      - "packages/db/**"
+      - "scripts/desktop-g1-*"
+      - "scripts/desktop-g2-*"
+      - ".github/workflows/desktop-g2.yml"
+      - "docs/gateways/DESKTOP-G2-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-x64-installer:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.3
+          cache: npm
+
+      - name: Verify Node and npm pins
+        shell: pwsh
+        run: |
+          if ((node --version) -ne "v22.23.3") { throw "Node pin mismatch" }
+          if ((npm --version) -ne "10.9.9") { throw "npm pin mismatch" }
+
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+
+      - name: Build customer standalone output
+        shell: pwsh
+        run: |
+          $env:NEXT_PUBLIC_API_URL="http://127.0.0.1:4000"
+          $env:NEXT_PUBLIC_ADMIN_WEB_URL="http://127.0.0.1:3001"
+          $env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE="DB-G10-SYNTHETIC-ADMIN"
+          npm run build -w @miqo/customer-web
+
+      - name: Build admin standalone output
+        shell: pwsh
+        run: |
+          $env:MIQO_DATA_CLASSIFICATION="SYNTHETIC"
+          $env:MIQO_SYNTHETIC_ADMIN_GATE="DB-G10-SYNTHETIC-ADMIN"
+          $env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY="DB-G10-SYNTHETIC-ADMIN"
+          $env:NEXT_PUBLIC_API_URL="http://127.0.0.1:4000"
+          npm run build -w @miqo/admin-web
+
+      - run: node scripts/desktop-g1-stage-runtime.mjs
+
+      - name: Stage verified Windows Node runtime
+        shell: pwsh
+        run: ./scripts/desktop-g2-stage-node.ps1
+
+      - name: Select exact Rust toolchain
+        shell: pwsh
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+
+      - name: Install pinned Tauri CLI
+        run: cargo install tauri-cli --version 2.11.4 --locked
+
+      - name: Build unsigned Windows x64 NSIS installer
+        shell: pwsh
+        run: |
+          Push-Location apps/desktop-runtime/src-tauri
+          cargo tauri build --config tauri.windows-g2.conf.json --bundles nsis
+          Pop-Location
+
+      - run: npx playwright install chromium
+
+      - name: Execute installed clean-machine lifecycle proof
+        shell: pwsh
+        run: ./scripts/desktop-g2-windows-proof.ps1
+
+      - name: Upload Windows installer and G2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g2-windows-x64-${{ github.sha }}
+          path: |
+            apps/desktop-runtime/src-tauri/target/release/bundle/nsis/*-setup.exe
+            dist/desktop-g2/node-stage.json
+            dist/desktop-g2-proof/**
+          if-no-files-found: warn
+          retention-days: 14
