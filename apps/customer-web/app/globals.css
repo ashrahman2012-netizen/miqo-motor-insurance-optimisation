@@ -1,0 +1,10 @@
+html { color-scheme: light; }
+body { margin: 0; background: Canvas; color: CanvasText; }
+main { box-sizing: border-box; width: 100%; }
+button, input, select, textarea { font: inherit; }
+button, input, select, textarea, a { max-width: 100%; }
+:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+table { max-width: 100%; border-collapse: collapse; }
+th, td { padding: 0.35rem; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+p, li, dd, dt, h1, h2, h3 { overflow-wrap: anywhere; }
+@media (max-width: 480px) { main { margin: 0 !important; padding: 16px !important; } }

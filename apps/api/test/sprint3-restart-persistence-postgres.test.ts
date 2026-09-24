@@ -4,6 +4,8 @@ import pg from "pg";
 import {buildApp} from "../src/server.ts";
 
 const {Client}=pg;
+const ADMIN_HEADERS={"x-miqo-synthetic-admin":"DB-G10-SYNTHETIC-ADMIN"};
+process.env.MIQO_SYNTHETIC_ADMIN_KEY="DB-G10-SYNTHETIC-ADMIN";
 
 async function reset(){
   const c=new Client({connectionString:process.env.DATABASE_URL});
@@ -95,10 +97,12 @@ async function createCompletedSprint3Journey(app:any){
   })).body);
   const trace=JSON.parse((await app.inject({
     method:"GET",
+    headers:ADMIN_HEADERS,
     url:"/admin/selections/"+selected.selectionId+"/trace",
   })).body);
   const audit=JSON.parse((await app.inject({
     method:"GET",
+    headers:ADMIN_HEADERS,
     url:"/admin/audit?profileId="+encodeURIComponent(profile.profileId),
   })).body);
 
@@ -170,10 +174,12 @@ test("SP3 completed journey survives API restart with exact selection integrity 
   })).body);
   const afterTrace=JSON.parse((await app.inject({
     method:"GET",
+    headers:ADMIN_HEADERS,
     url:"/admin/selections/"+before.selected.selectionId+"/trace",
   })).body);
   const afterAudit=JSON.parse((await app.inject({
     method:"GET",
+    headers:ADMIN_HEADERS,
     url:"/admin/audit?profileId="+encodeURIComponent(before.profile.profileId),
   })).body);
 

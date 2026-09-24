@@ -33,7 +33,11 @@
     "dev:admin": "npm run dev -w @miqo/admin-web",
     "test:api:postgres": "node --experimental-strip-types --test --test-concurrency=1 apps/api/test/*.test.ts",
     "test:sp1:immutability": "node --experimental-strip-types --test apps/api/test/immutability-postgres.test.ts",
-    "test:e2e:target": "playwright test -c playwright.target.config.ts"
+    "test:e2e:target": "playwright test -c playwright.target.config.ts",
+    "test:a11y": "playwright test -c playwright.target.config.ts db-g10-accessibility.spec.ts",
+    "test:security:api": "node --experimental-strip-types --test --test-concurrency=1 apps/api/test/db-g10-security-postgres.test.ts",
+    "test:security:browser": "playwright test -c playwright.target.config.ts db-g10-browser-security.spec.ts db-g10-synthetic-admin.spec.ts db-g10-abuse-regression.spec.ts",
+    "test:security": "npm run test:security:api && npm run test:security:browser"
   },
   "type": "module",
   "packageManager": "npm@10.9.2",

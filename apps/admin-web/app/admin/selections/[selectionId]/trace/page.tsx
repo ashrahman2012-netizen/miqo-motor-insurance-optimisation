@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../../lib";
+import {API_URL,ADMIN_API_HEADERS} from "../../../../lib";
 
 function value(value:unknown){return typeof value==="string"?value:JSON.stringify(value);}
 
@@ -10,7 +10,7 @@ export default function SelectionTrace({params}:{params:Promise<{selectionId:str
   const [error,setError]=useState("");
 
   useEffect(()=>{(async()=>{
-    const response=await fetch(API_URL+"/admin/selections/"+selectionId+"/trace");
+    const response=await fetch(API_URL+"/admin/selections/"+selectionId+"/trace",{headers:ADMIN_API_HEADERS});
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to load trace");return;}
     setTrace(body);

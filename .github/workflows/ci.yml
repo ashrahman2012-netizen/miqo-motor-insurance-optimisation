@@ -15,6 +15,7 @@ jobs:
       - run: test "$(npm --version)" = "10.9.2"
       - run: test -f package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: npm run verify:pins
       - run: npm run verify:boundary
         env: {MIQO_DATA_CLASSIFICATION: SYNTHETIC, MIQO_LIVE_PROVIDERS_ENABLED: "false"}
@@ -71,6 +72,42 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-occupation-vehicle-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-recommendation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-explainability-commercial-independence-contract.sql
+
+
+  db-g10-hardening:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_DB: miqo, POSTGRES_USER: miqo, POSTGRES_PASSWORD: miqo}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U miqo -d miqo"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://miqo:miqo@127.0.0.1:5432/miqo
+      PGPASSWORD: miqo
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      MIQO_SYNTHETIC_ADMIN_KEY: DB-G10-SYNTHETIC-ADMIN
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22.16.0, cache: npm}
+      - run: test "$(node --version)" = "v22.16.0"
+      - run: test "$(npm --version)" = "10.9.2"
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+      - run: npm run db:migrate
+      - run: npm run db:seed:syn001
+      - run: npm run test:security:api
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:a11y
+      - run: npm run test:security:browser
+      - run: npm run test:e2e:target
+      - run: npm run build
 
   target-stack-sprint1:
     runs-on: ubuntu-latest

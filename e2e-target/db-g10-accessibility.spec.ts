@@ -1,0 +1,35 @@
+import {test,expect} from "@playwright/test";
+import {scanAccessibility,expectVisibleKeyboardFocus,DB_G10_A11Y_SCANNER_VERSION} from "./db-g10-a11y-scanner";
+
+test("DB-G10.1 customer/admin critical path satisfies deterministic accessibility scanner",async({page})=>{
+  await page.setViewportSize({width:320,height:800});
+  await page.goto("/prototype");
+  await expect(page.getByText("MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY")).toBeVisible();
+  await scanAccessibility(page);
+  await expectVisibleKeyboardFocus(page);
+  await page.getByRole("button",{name:"Start synthetic profile"}).click();
+  await expect(page).toHaveURL(/\/profile\/[^/]+\/section\/identity$/);
+  const profileId=page.url().match(/\/profile\/([^/]+)\//)![1];
+  await scanAccessibility(page);
+  await page.getByLabel("Main driver ID").fill("DRV-SYN-DB-G10-A11Y");
+  await page.getByLabel("Annual mileage").fill("8000");
+  await page.getByLabel("Licence held since").fill("2018-04-16");
+  await page.getByRole("button",{name:"Save & continue"}).click();
+  await expect(page.locator("#validation-pass")).toContainText("PASS");
+  await scanAccessibility(page);
+  await page.getByRole("button",{name:"Continue to confirmation"}).click();
+  await page.waitForLoadState("networkidle");
+  await page.getByLabel("I confirm").check();
+  const lockButton=page.getByRole("button",{name:"Confirm & lock profile"});
+  await expect(lockButton).toBeEnabled();
+  await scanAccessibility(page);
+  await expect(lockButton).toBeEnabled();
+  await lockButton.click();
+  await expect(page).toHaveURL(new RegExp("127\\.0\\.0\\.1:3001/admin/profiles/"+profileId));
+  await expect(page.getByRole("heading",{name:new RegExp("Profile inspector")})).toBeVisible();
+  await scanAccessibility(page);
+  await page.goto("http://127.0.0.1:3000/profile/"+profileId+"/optimisation");
+  await expect(page.locator("#locked-version")).toContainText("LOCKED");
+  await scanAccessibility(page);
+  expect(DB_G10_A11Y_SCANNER_VERSION).toBe("db-g10-a11y-v1");
+});
