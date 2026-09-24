@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import pg from "pg";
 import {buildApp} from "../src/server.ts";
 
-const {Client}=pg;\nconst ADMIN_HEADERS={"x-miqo-synthetic-admin":"DB-G10-SYNTHETIC-ADMIN"};\nprocess.env.MIQO_SYNTHETIC_ADMIN_KEY="DB-G10-SYNTHETIC-ADMIN";
+const {Client}=pg;
+const ADMIN_HEADERS={"x-miqo-synthetic-admin":"DB-G10-SYNTHETIC-ADMIN"};
+process.env.MIQO_SYNTHETIC_ADMIN_KEY="DB-G10-SYNTHETIC-ADMIN";
 
 async function reset(){
   const c=new Client({connectionString:process.env.DATABASE_URL});
