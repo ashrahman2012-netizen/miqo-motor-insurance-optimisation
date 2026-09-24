@@ -24,6 +24,8 @@ const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
 if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw new Error("Prototype boundary violation");
 
+export function internalErrorPayload(requestId:string){return {error:"internal_error",requestId};}
+
 export async function buildApp() {
   const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true,bodyLimit:131_072});
   const customerOrigin=process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000";
@@ -220,7 +222,7 @@ export async function buildApp() {
     }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
     if(String(error?.message??error).includes("LOCKED_PROFILE_IMMUTABLE"))return reply.code(409).send({error:"LOCKED_PROFILE_IMMUTABLE"});
-    app.log.error({err:error,requestId:req.id},"Unhandled request error"); return reply.code(500).send({error:"internal_error",requestId:req.id});
+    app.log.error({err:error,requestId:req.id},"Unhandled request error"); return reply.code(500).send(internalErrorPayload(req.id));
   });
   return app;
 }
