@@ -15,7 +15,7 @@ Convert the certified G1 distributable runtime into a genuinely installable Wind
 
 - Tauri 2 NSIS bundle.
 - Current-user install; MIQO installer does not require administrator privileges.
-- Bundled Visual C++ runtime enabled.
+- Rust/Tauri executable uses the Windows MSVC static C runtime setting; Node remains the official packaged Node Windows binary.
 - WebView2 bootstrapper embedded and invoked silently if required.
 - Code signing deliberately absent in this gateway.
 - G1 packaged Node/Next/Fastify/PGlite runtime included as Tauri resources.
