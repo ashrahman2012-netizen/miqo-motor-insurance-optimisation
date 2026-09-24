@@ -22,7 +22,7 @@ node scripts/desktop-g1-stage-runtime.mjs
 bash scripts/desktop-g1-stage-node.sh
 
 NODE="$RUNTIME/node/node"
-test "$("$NODE" --version)" = "v22.16.0"
+test "$("$NODE" --version)" = "v22.23.3"
 
 CUSTOMER_SERVER="$RUNTIME/customer/apps/customer-web/server.js"
 ADMIN_SERVER="$RUNTIME/admin/apps/admin-web/server.js"
@@ -80,7 +80,7 @@ grep -q '"liveProvidersEnabled":false' "$PROOF/api-health.json"
 
 # Runtime startup succeeded without the repository dependency tree.
 test ! -d "$ROOT/node_modules"
-printf '{"rootNodeModulesPresent":false,"stagedNode":"v22.16.0","customerStandalone":true,"adminStandalone":true,"apiBundle":true}\n' > "$PROOF/runtime-independence.json"
+printf '{"rootNodeModulesPresent":false,"stagedNode":"v22.23.3","customerStandalone":true,"adminStandalone":true,"apiBundle":true}\n' > "$PROOF/runtime-independence.json"
 
 restore_modules
 

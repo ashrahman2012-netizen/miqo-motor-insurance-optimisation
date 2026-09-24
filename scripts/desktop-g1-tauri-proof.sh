@@ -25,7 +25,7 @@ EOF
 done
 
 test -x "$RUNTIME/node/node"
-test "$("$RUNTIME/node/node" --version)" = "v22.16.0"
+test "$("$RUNTIME/node/node" --version)" = "v22.23.3"
 test -x "$BIN"
 
 mv "$ROOT/node_modules" "$ROOT/node_modules.dev-only"
