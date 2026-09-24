@@ -24,8 +24,8 @@ node scripts/desktop-g1-stage-runtime.mjs
 bash scripts/desktop-g1-stage-node.sh
 
 NODE="$RUNTIME/node/node"
-CUSTOMER_SERVER="$(find "$RUNTIME/customer" -name server.js -type f | head -n 1)"
-ADMIN_SERVER="$(find "$RUNTIME/admin" -name server.js -type f | head -n 1)"
+CUSTOMER_SERVER="$RUNTIME/customer/apps/customer-web/server.js"
+ADMIN_SERVER="$RUNTIME/admin/apps/admin-web/server.js"
 
 mv "$ROOT/node_modules" "$ROOT/node_modules.dev-only"
 RESTORED=0
