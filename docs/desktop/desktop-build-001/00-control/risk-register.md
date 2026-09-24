@@ -83,3 +83,15 @@ Original PREP risks remain inherited through DB-G0 and the certified PREP regist
 | R-DB-G8-003 | Reserved/foundation placeholders could imply unsupported capability exists downstream. | **CLOSED BY DB-G8** | every canonical navigation route now has an implemented/read/trace/deferred disposition; no RESERVED route remains |
 | R-DB-G8-004 | Capability closure could add speculative native permissions for future provider/certification features. | **CLOSED BY DB-G8** | no new native/API resource; exact eleven implemented commands remain the complete capability set |
 | R-DB-G8-005 | A later gateway could silently convert a deferred area into authority without admission. | CONTROLLED | DB-G1 new-consumption admission remains mandatory; endpoint reachability is not authorisation |
+
+
+## DB-G9 risks
+
+| ID | Risk | State | Control / target |
+|---|---|---|---|
+| R-DB-G9-001 | Current-user package could silently acquire machine-wide install side effects. | **CLOSED BY DB-G9 for TEST package** | machine uninstall registration absent; no service, firewall, protocol/file association, auto-start or machine environment mutation |
+| R-DB-G9-002 | Installed application could rely on developer/runtime tooling not present on end-user machines. | **CLOSED BY DB-G9** | package inspection excludes Node/npm/Rust/Cargo/PostgreSQL/Git/Visual Studio runtime files; installed app launches with restricted PATH |
+| R-DB-G9-003 | Package could contain secrets, signing material or a local authoritative MIQOS datastore. | **CLOSED BY DB-G9 for inspected TEST package** | secret/private-key marker scan PASS; local database extensions absent; production signing key remains external |
+| R-DB-G9-004 | Upgrade could regress package identity or silently allow downgrade. | **CLOSED BY DB-G9** | 0.1.0→0.1.1 upgrade PASS; older installer rejected with exit code 1638; registered/executable higher version retained |
+| R-DB-G9-005 | Uninstall could leave application-owned system artefacts. | **CLOSED BY DB-G9 for tested package** | uninstall registration, executable and Start Menu shortcut removed; system side-effect assertions remain clean |
+| R-DB-G9-006 | Unsigned TEST lifecycle proof could be mistaken for production release readiness. | CONTROLLED / EXTERNAL DEPENDENCY OPEN | proof records `NotSigned`; production Authenticode and release remain D-G4-SIGN-001 / DB-G11 controlled |

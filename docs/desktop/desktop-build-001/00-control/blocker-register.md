@@ -89,3 +89,18 @@ No DB-G8 blocker remains.
 - Exact-head proof: push CI #785 / `35919625253`, PR CI #786 / `35919631131`, Desktop G7 #268 / `35919630984`, Desktop G8 #88 / `35919630817` — all SUCCESS.
 
 Real IdP registration, non-synthetic environment authority, organisation signing and production release remain downstream dependencies and were not required for DB-G8.
+
+
+## DB-G9 execution — Installed Windows Application & Package Lifecycle Proof
+
+No DB-G9 blocker remains.
+
+- Programme entry: `c1fb5ad5349186030e10140deb5fd04ce7916f80`.
+- Accepted executable predecessor: `7e11769cf78c0d3e70082226d231316cee1b765c`.
+- Initial lifecycle implementation `85d97b635c820933ed155d3b4bd5903a15ec005c` introduced the dedicated DB-G9 workflow and strengthened package proof.
+- The first strengthened G8/DB-G9 run exposed proof-harness issues around Start Menu shortcut enumeration/package identity; these were repaired without changing package authority or installer architecture.
+- Final accepted executable source: `1903298c897e3aadb2ed89fbbd9309e24d68005a`.
+- Exact-head proof: CI #794/#795, Desktop G7 #272, Desktop G8 #92 and dedicated DB-G9 #4/#5 — all SUCCESS.
+- DB-G9 machine-readable proof records installer SHA-256 `ad37a064b7258985ae8c6e8d3b446d90f61bbb3cbf6612e1a1420a9c32a15d98`, current-user install, runtime prerequisite/package inspection PASS, upgrade PASS, downgrade rejection PASS and uninstall PASS.
+
+External dependencies remain open: production Authenticode identity (`D-G4-SIGN-001`), real IdP registration, non-synthetic environment authority and release/deployment governance.
