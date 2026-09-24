@@ -44,11 +44,11 @@ await rm(path.join(root,"dist","desktop-g1"),{recursive:true,force:true});
 await mkdir(path.join(out,"api"),{recursive:true});
 
 await build({
-  entryPoints:[path.join(root,"apps","api","src","server.ts")],
-  outfile:path.join(out,"api","server.mjs"),
+  entryPoints:[path.join(root,"scripts","desktop-api-entry.ts")],
+  outfile:path.join(out,"api","server.cjs"),
   bundle:true,
   platform:"node",
-  format:"esm",
+  format:"cjs",
   target:"node22",
   sourcemap:false,
   external:["pg-native","@electric-sql/pglite"],
@@ -66,9 +66,18 @@ await build({
   external:["@electric-sql/pglite"],
   logLevel:"info"
 });
+
 await mkdir(path.join(out,"api","node_modules","@electric-sql"),{recursive:true});
-await cp(path.join(root,"node_modules","@electric-sql","pglite"),path.join(out,"api","node_modules","@electric-sql","pglite"),{recursive:true});
-await cp(path.join(root,"packages","db","migrations"),path.join(out,"api","migrations"),{recursive:true});
+await cp(
+  path.join(root,"node_modules","@electric-sql","pglite"),
+  path.join(out,"api","node_modules","@electric-sql","pglite"),
+  {recursive:true}
+);
+await cp(
+  path.join(root,"packages","db","migrations"),
+  path.join(out,"api","migrations"),
+  {recursive:true}
+);
 
 const customerServer=await stageNext("customer","apps/customer-web");
 const adminServer=await stageNext("admin","apps/admin-web");
@@ -76,7 +85,9 @@ const adminServer=await stageNext("admin","apps/admin-web");
 const manifest={
   version:1,
   nodeVersion:"22.16.0",
-  api:"api/server.mjs",\n  pgliteMigration:"api/migrate-pglite.mjs",\n  pgliteVersion:"0.5.8",
+  api:"api/server.cjs",
+  pgliteMigration:"api/migrate-pglite.mjs",
+  pgliteVersion:"0.5.8",
   customerServer,
   adminServer,
   runtimeBoundary:"SYNTHETIC_ONLY"

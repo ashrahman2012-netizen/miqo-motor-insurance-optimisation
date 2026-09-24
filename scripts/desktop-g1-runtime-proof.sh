@@ -50,7 +50,7 @@ cleanup(){
 }
 trap cleanup EXIT
 
-PORT=4000 "$NODE" "$RUNTIME/api/server.mjs" >"$PROOF/api.log" 2>&1 &
+PORT=4000 "$NODE" "$RUNTIME/api/server.cjs" >"$PROOF/api.log" 2>&1 &
 API_PID=$!
 
 (

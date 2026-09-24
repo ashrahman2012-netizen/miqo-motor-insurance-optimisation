@@ -52,7 +52,7 @@ start_api(){
   MIQO_SYNTHETIC_ADMIN_KEY=DB-G10-SYNTHETIC-ADMIN \
   CUSTOMER_WEB_URL=http://127.0.0.1:3000 \
   ADMIN_WEB_URL=http://127.0.0.1:3001 \
-  PORT=4000 "$NODE" "$RUNTIME/api/server.mjs" >"$PROOF/api.log" 2>&1 &
+  PORT=4000 "$NODE" "$RUNTIME/api/server.cjs" >"$PROOF/api.log" 2>&1 &
   API_PID=$!
 }
 start_api
