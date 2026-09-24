@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "MIQO Prototype",
+    "icon": ["icons/icon.png"],
+    "windows": {
+      "bundleVCRuntime": true,
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English"],
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}
