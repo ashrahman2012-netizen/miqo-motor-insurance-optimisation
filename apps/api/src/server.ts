@@ -227,6 +227,11 @@ export async function buildApp() {
     }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
     if(String(error?.message??error).includes("LOCKED_PROFILE_IMMUTABLE"))return reply.code(409).send({error:"LOCKED_PROFILE_IMMUTABLE"});
+    const protocolStatus=Number(error?.statusCode??0);
+    if([400,413,415].includes(protocolStatus)){
+      const protocolError=protocolStatus===400?"invalid_request":protocolStatus===413?"payload_too_large":"unsupported_media_type";
+      return reply.code(protocolStatus).send({error:protocolError,requestId:req.id});
+    }
     app.log.error({err:error,requestId:req.id},"Unhandled request error"); return reply.code(500).send(internalErrorPayload(req.id));
   });
   return app;
