@@ -1,0 +1,62 @@
+name: desktop-g1
+
+on:
+  push:
+    branches: [miqo/desktop-g1]
+  pull_request:
+    paths:
+      - "apps/customer-web/**"
+      - "apps/admin-web/**"
+      - "apps/api/**"
+      - "apps/desktop-runtime/**"
+      - "packages/db/**"
+      - "scripts/desktop-g1-*"
+      - ".github/workflows/desktop-g1.yml"
+      - "docs/gateways/DESKTOP-G1-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  distributable-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: miqo
+          POSTGRES_USER: miqo
+          POSTGRES_PASSWORD: miqo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U miqo -d miqo"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://miqo:miqo@127.0.0.1:5432/miqo
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      PGPASSWORD: miqo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22.16.0, cache: npm}
+      - run: test "$(node --version)" = "v22.16.0"
+      - run: test "$(npm --version)" = "10.9.2"
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+      - run: npx playwright install --with-deps chromium
+      - name: Prove standalone web/API runtime with staged Node
+        run: bash scripts/desktop-g1-runtime-proof.sh
+      - name: Upload G1 runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g1-runtime-${{ github.sha }}
+          path: |
+            dist/desktop-g1/runtime/runtime-manifest.json
+            dist/desktop-g1-proof/**
+          if-no-files-found: warn
+          retention-days: 14
