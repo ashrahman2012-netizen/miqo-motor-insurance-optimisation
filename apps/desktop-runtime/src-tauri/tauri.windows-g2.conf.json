@@ -1,10 +1,5 @@
 {
   "version": "0.2.0",
-  "build": {
-    "windows": {
-      "staticVCRuntime": true
-    }
-  },
   "bundle": {
     "active": true,
     "targets": ["nsis"],
