@@ -73,7 +73,9 @@ jobs:
         run: |
           Remove-Item r -Recurse -Force -ErrorAction SilentlyContinue
           robocopy dist\desktop-g1\runtime r /E /NFL /NDL /NJH /NJS /NP
-          if ($LASTEXITCODE -gt 7) { throw "robocopy failed with exit code $LASTEXITCODE" }
+          $robocopyExit=$LASTEXITCODE
+          if ($robocopyExit -gt 7) { throw "robocopy failed with exit code $robocopyExit" }
+          $global:LASTEXITCODE=0
 
       - name: Select exact Rust toolchain
         shell: pwsh
