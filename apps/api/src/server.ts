@@ -25,8 +25,39 @@ const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
 if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw new Error("Prototype boundary violation");
 
 export async function buildApp() {
-  const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true});
-  await app.register(cors,{origin:[process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000",process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001"],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+  const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true,bodyLimit:131_072});
+  const customerOrigin=process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000";
+  const adminOrigin=process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001";
+  const allowedOrigins=new Set([customerOrigin,adminOrigin]);
+  const rateWindowMs=Number(process.env.MIQO_RATE_LIMIT_WINDOW_MS??"60000");
+  const rateMax=Number(process.env.MIQO_RATE_LIMIT_MAX??"300");
+  const rateBuckets=new Map<string,{started:number,count:number}>();
+  await app.register(cors,{origin:[customerOrigin,adminOrigin],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+  app.addHook("onRequest",async(req,reply)=>{
+    const origin=typeof req.headers.origin==="string"?req.headers.origin:"";
+    if(origin&&!allowedOrigins.has(origin))return reply.code(403).send({error:"origin_not_allowed",requestId:req.id});
+    reply.header("x-request-id",req.id);
+    if(["POST","PUT","PATCH","DELETE"].includes(req.method)){
+      const now=Date.now();
+      const key=req.ip+"|"+req.method+"|"+(req.routeOptions.url??req.url);
+      const current=rateBuckets.get(key);
+      const bucket=!current||now-current.started>=rateWindowMs?{started:now,count:0}:current;
+      bucket.count+=1; rateBuckets.set(key,bucket);
+      reply.header("x-ratelimit-limit",String(rateMax));
+      reply.header("x-ratelimit-remaining",String(Math.max(0,rateMax-bucket.count)));
+      if(bucket.count>rateMax)return reply.code(429).send({error:"rate_limit_exceeded",requestId:req.id});
+    }
+  });
+  app.addHook("onSend",async(req,reply,payload)=>{
+    reply.header("x-request-id",req.id);
+    reply.header("x-content-type-options","nosniff");
+    reply.header("referrer-policy","no-referrer");
+    reply.header("permissions-policy","camera=(), microphone=(), geolocation=()");
+    reply.header("x-frame-options","DENY");
+    reply.header("content-security-policy","default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+    reply.header("cache-control","no-store");
+    return payload;
+  });
   app.addHook("onClose",async()=>pool.end());
 
   app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));
@@ -35,10 +66,14 @@ export async function buildApp() {
   app.post("/profiles/:profileId/validate",async(req:any)=>validateProfile(db,req.params.profileId));
   app.get("/profiles/:profileId/discrepancies",async(req:any)=>({items:await listDiscrepancies(db,req.params.profileId)}));
   app.post("/profiles/:profileId/lock",async(req:any)=>lockProfile(db,req.params.profileId));
-  app.post("/profiles/:profileId/corrections",async(req:any,reply)=>reply.code(201).send(await createCorrectionDraft(db,{profileId:req.params.profileId,fieldId:(req.body as any).fieldId,value:(req.body as any).value})));
+  app.post("/profiles/:profileId/corrections",{
+    schema:{body:{type:"object",additionalProperties:false,required:["fieldId","value"],properties:{fieldId:{type:"string",minLength:1},value:{}}}},
+  },async(req:any,reply)=>reply.code(201).send(await createCorrectionDraft(db,{profileId:req.params.profileId,fieldId:(req.body as any).fieldId,value:(req.body as any).value})));
   app.get("/profiles/:profileId/snapshot",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId)}));
 
-  app.put("/profile-versions/:versionId/facts/:fieldId",async(req:any)=>{
+  app.put("/profile-versions/:versionId/facts/:fieldId",{
+    schema:{body:{type:"object",additionalProperties:false,required:["value"],properties:{value:{}}}},
+  },async(req:any)=>{
     const v=await currentVersion(db,(await profileSnapshotByVersion(db,req.params.versionId)).profileId);
     if(!v || v.riskProfileVersionId!==req.params.versionId) throw new ConflictError("LOCKED_PROFILE_IMMUTABLE");
     return putFact(db,{profileId:v.profileId,fieldId:req.params.fieldId,value:(req.body as any).value,controlClass:"F"});
@@ -185,7 +220,7 @@ export async function buildApp() {
     }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
     if(String(error?.message??error).includes("LOCKED_PROFILE_IMMUTABLE"))return reply.code(409).send({error:"LOCKED_PROFILE_IMMUTABLE"});
-    app.log.error(error); return reply.code(500).send({error:"internal_error",message:String(error?.message??error)});
+    app.log.error({err:error,requestId:req.id},"Unhandled request error"); return reply.code(500).send({error:"internal_error",requestId:req.id});
   });
   return app;
 }
