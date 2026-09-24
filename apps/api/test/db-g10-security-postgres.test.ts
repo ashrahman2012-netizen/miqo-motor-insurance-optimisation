@@ -1,0 +1,64 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {buildApp,internalErrorPayload} from "../src/server.ts";
+
+test("DB-G10.2 emits security headers and correlation id",async()=>{
+  const app=await buildApp();
+  const response=await app.inject({method:"GET",url:"/health"});
+  assert.equal(response.statusCode,200);
+  assert.ok(response.headers["x-request-id"]);
+  assert.equal(response.headers["x-content-type-options"],"nosniff");
+  assert.equal(response.headers["x-frame-options"],"DENY");
+  assert.equal(response.headers["referrer-policy"],"no-referrer");
+  assert.match(String(response.headers["content-security-policy"]),/default-src 'none'/);
+  assert.equal(response.headers["cache-control"],"no-store");
+  await app.close();
+});
+
+test("DB-G10.2 rejects hostile browser origins",async()=>{
+  const app=await buildApp();
+  const response=await app.inject({method:"GET",url:"/health",headers:{origin:"https://attacker.invalid"}});
+  assert.equal(response.statusCode,403);
+  assert.equal(JSON.parse(response.body).error,"origin_not_allowed");
+  await app.close();
+});
+
+test("DB-G10.2 enforces the request body limit before route execution",async()=>{
+  const app=await buildApp();
+  const response=await app.inject({
+    method:"POST",url:"/profiles",
+    headers:{"content-type":"application/json"},
+    payload:{padding:"x".repeat(140_000)}
+  });
+  assert.equal(response.statusCode,413);
+  await app.close();
+});
+
+test("DB-G10.2 rate limits mutation bursts deterministically",async()=>{
+  const previous=process.env.MIQO_RATE_LIMIT_MAX;
+  process.env.MIQO_RATE_LIMIT_MAX="2";
+  const app=await buildApp();
+  assert.equal((await app.inject({method:"POST",url:"/profiles"})).statusCode,201);
+  assert.equal((await app.inject({method:"POST",url:"/profiles"})).statusCode,201);
+  const blocked=await app.inject({method:"POST",url:"/profiles"});
+  assert.equal(blocked.statusCode,429);
+  assert.equal(JSON.parse(blocked.body).error,"rate_limit_exceeded");
+  await app.close();
+  if(previous===undefined)delete process.env.MIQO_RATE_LIMIT_MAX; else process.env.MIQO_RATE_LIMIT_MAX=previous;
+});
+
+test("DB-G10.2 rejects unexpected properties on factual writes",async()=>{
+  const app=await buildApp();
+  const response=await app.inject({
+    method:"PUT",url:"/profile-versions/DOES-NOT-MATTER/facts/annual_mileage",
+    payload:{value:8000,unexpected:"blocked"}
+  });
+  assert.equal(response.statusCode,422);
+  await app.close();
+});
+
+test("DB-G10.2 generic internal error payload cannot disclose exception text",()=>{
+  const payload=internalErrorPayload("req-test");
+  assert.deepEqual(payload,{error:"internal_error",requestId:"req-test"});
+  assert.equal("message" in payload,false);
+});
