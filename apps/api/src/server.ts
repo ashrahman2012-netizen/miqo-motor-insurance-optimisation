@@ -38,6 +38,11 @@ export async function buildApp() {
   app.addHook("onRequest",async(req,reply)=>{
     const origin=typeof req.headers.origin==="string"?req.headers.origin:"";
     if(origin&&!allowedOrigins.has(origin))return reply.code(403).send({error:"origin_not_allowed",requestId:req.id});
+    if(req.url.startsWith("/admin/")){
+      const configuredAdminKey=process.env.MIQO_SYNTHETIC_ADMIN_KEY??"";
+      if(!configuredAdminKey)return reply.code(503).send({error:"synthetic_admin_gate_unconfigured",requestId:req.id});
+      if(req.headers["x-miqo-synthetic-admin"]!==configuredAdminKey)return reply.code(401).send({error:"synthetic_admin_access_required",requestId:req.id});
+    }
     reply.header("x-request-id",req.id);
     if(["POST","PUT","PATCH","DELETE"].includes(req.method)){
       const now=Date.now();
