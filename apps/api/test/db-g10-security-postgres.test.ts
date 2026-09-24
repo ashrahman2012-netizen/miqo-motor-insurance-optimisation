@@ -62,3 +62,32 @@ test("DB-G10.2 generic internal error payload cannot disclose exception text",()
   assert.deepEqual(payload,{error:"internal_error",requestId:"req-test"});
   assert.equal("message" in payload,false);
 });
+
+
+test("DB-G10.4 admin API gate fails closed when unconfigured",async()=>{
+  const previous=process.env.MIQO_SYNTHETIC_ADMIN_KEY;
+  delete process.env.MIQO_SYNTHETIC_ADMIN_KEY;
+  const app=await buildApp();
+  const response=await app.inject({method:"GET",url:"/admin/audit?profileId=NONE"});
+  assert.equal(response.statusCode,503);
+  assert.equal(JSON.parse(response.body).error,"synthetic_admin_gate_unconfigured");
+  await app.close();
+  if(previous!==undefined)process.env.MIQO_SYNTHETIC_ADMIN_KEY=previous;
+});
+
+test("DB-G10.4 admin API gate rejects missing marker and accepts configured synthetic marker",async()=>{
+  const previous=process.env.MIQO_SYNTHETIC_ADMIN_KEY;
+  process.env.MIQO_SYNTHETIC_ADMIN_KEY="DB-G10-SYNTHETIC-ADMIN";
+  const app=await buildApp();
+  const denied=await app.inject({method:"GET",url:"/admin/audit?profileId=NONE"});
+  assert.equal(denied.statusCode,401);
+  assert.equal(JSON.parse(denied.body).error,"synthetic_admin_access_required");
+  const allowed=await app.inject({
+    method:"GET",url:"/admin/audit?profileId=NONE",
+    headers:{"x-miqo-synthetic-admin":"DB-G10-SYNTHETIC-ADMIN"}
+  });
+  assert.equal(allowed.statusCode,200);
+  assert.deepEqual(JSON.parse(allowed.body).items,[]);
+  await app.close();
+  if(previous===undefined)delete process.env.MIQO_SYNTHETIC_ADMIN_KEY; else process.env.MIQO_SYNTHETIC_ADMIN_KEY=previous;
+});
