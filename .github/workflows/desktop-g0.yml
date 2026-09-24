@@ -10,12 +10,14 @@ on:
       - "playwright.desktop.config.ts"
       - ".github/workflows/desktop-g0.yml"
       - "docs/gateways/DESKTOP-G0-Execution-Blueprint.md"
+      - "docs/gateways/DESKTOP-G0-Closure-Pack.md"
   pull_request:
     paths:
       - "apps/desktop-runtime/**"
       - "scripts/desktop-g0-proof.sh"
       - "playwright.desktop.config.ts"
       - ".github/workflows/desktop-g0.yml"
+      - "docs/gateways/DESKTOP-G0-Closure-Pack.md"
   workflow_dispatch:
 
 permissions:
