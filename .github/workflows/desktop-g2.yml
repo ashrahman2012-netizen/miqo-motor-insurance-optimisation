@@ -68,6 +68,13 @@ jobs:
         shell: pwsh
         run: ./scripts/desktop-g2-stage-node.ps1
 
+      - name: Shorten Windows bundle resource paths
+        shell: pwsh
+        run: |
+          Remove-Item r -Recurse -Force -ErrorAction SilentlyContinue
+          robocopy dist\desktop-g1\runtime r /E /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -gt 7) { throw "robocopy failed with exit code $LASTEXITCODE" }
+
       - name: Select exact Rust toolchain
         shell: pwsh
         run: |
@@ -94,9 +101,15 @@ jobs:
       - name: Build unsigned Windows x64 NSIS installer
         shell: pwsh
         run: |
-          Push-Location apps/desktop-runtime/src-tauri
-          cargo tauri build --config tauri.windows-g2.conf.json --bundles nsis
-          Pop-Location
+          subst M: "$env:GITHUB_WORKSPACE"
+          try {
+            Push-Location M:\apps\desktop-runtime\src-tauri
+            cargo tauri build --config tauri.windows-g2.conf.json --bundles nsis
+            Pop-Location
+          } finally {
+            if ((Get-Location).Path -like "M:*") { Pop-Location }
+            subst M: /D
+          }
 
       - run: npx playwright install chromium
 
