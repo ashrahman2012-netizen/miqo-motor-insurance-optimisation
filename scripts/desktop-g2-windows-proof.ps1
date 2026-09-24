@@ -238,7 +238,7 @@ try {
     appSignature = $appSignature
     installMode = "currentUser"
     webviewInstallMode = "embedBootstrapper"
-    rustStaticVCRuntime = $true
+    rustStaticVCRuntime = "tauri-default"
     loopbackOnly = $true
     packagedNodeVersion = "22.23.3"
     databaseBackend = "pglite"
