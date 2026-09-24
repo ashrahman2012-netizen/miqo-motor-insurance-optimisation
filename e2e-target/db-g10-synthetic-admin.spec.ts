@@ -6,6 +6,7 @@ test("DB-G10.4 admin UI requires controlled synthetic handoff",async({page,reque
 
   await page.goto("/prototype");
   await page.getByRole("button",{name:"Start synthetic profile"}).click();
+  await expect(page).toHaveURL(/\/profile\/[^/]+\/section\/identity$/);
   const profileId=page.url().match(/\/profile\/([^/]+)\//)![1];
   await page.getByLabel("Main driver ID").fill("DRV-SYN-DB-G10-ADMIN");
   await page.getByLabel("Annual mileage").fill("8000");
