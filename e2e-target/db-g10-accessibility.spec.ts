@@ -18,9 +18,13 @@ test("DB-G10.1 customer/admin critical path satisfies deterministic accessibilit
   await expect(page.locator("#validation-pass")).toContainText("PASS");
   await scanAccessibility(page);
   await page.getByRole("button",{name:"Continue to confirmation"}).click();
+  await page.waitForLoadState("networkidle");
   await page.getByLabel("I confirm").check();
+  const lockButton=page.getByRole("button",{name:"Confirm & lock profile"});
+  await expect(lockButton).toBeEnabled();
   await scanAccessibility(page);
-  await page.getByRole("button",{name:"Confirm & lock profile"}).click();
+  await expect(lockButton).toBeEnabled();
+  await lockButton.click();
   await expect(page).toHaveURL(new RegExp("127\\.0\\.0\\.1:3001/admin/profiles/"+profileId));
   await expect(page.getByRole("heading",{name:new RegExp("Profile inspector")})).toBeVisible();
   await scanAccessibility(page);
