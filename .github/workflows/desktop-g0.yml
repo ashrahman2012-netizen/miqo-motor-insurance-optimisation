@@ -1,0 +1,66 @@
+name: desktop-g0
+
+on:
+  push:
+    branches:
+      - miqo/desktop-app-001
+    paths:
+      - "apps/desktop-runtime/**"
+      - "scripts/desktop-g0-proof.sh"
+      - "playwright.desktop.config.ts"
+      - ".github/workflows/desktop-g0.yml"
+      - "docs/gateways/DESKTOP-G0-Execution-Blueprint.md"
+  pull_request:
+    paths:
+      - "apps/desktop-runtime/**"
+      - "scripts/desktop-g0-proof.sh"
+      - "playwright.desktop.config.ts"
+      - ".github/workflows/desktop-g0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-runtime-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - run: test "$(node --version)" = "v22.16.0"
+      - run: test "$(npm --version)" = "10.9.2"
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+      - name: Install Tauri Linux prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             libwebkit2gtk-4.1-dev             build-essential             curl             wget             file             libxdo-dev             libssl-dev             libayatana-appindicator3-dev             librsvg2-dev             xvfb
+      - name: Select exact Rust toolchain
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+      - name: Verify locked native shell
+        run: cargo check --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --locked
+      - run: npx playwright install --with-deps chromium
+      - name: Execute DESKTOP-G0 lifecycle proof
+        run: bash scripts/desktop-g0-proof.sh
+      - name: Upload DESKTOP-G0 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g0-${{ github.sha }}
+          path: dist/desktop-g0/**
+          if-no-files-found: warn
+          retention-days: 14
