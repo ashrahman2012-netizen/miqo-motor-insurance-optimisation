@@ -5,7 +5,7 @@ import {buildApp} from "../src/server.ts";
 import {createDatabase,createPool} from "../../../packages/db/src/client.ts";
 import {selectShortlistedQuote} from "../src/selection-service.ts";
 
-const {Client}=pg;
+const {Client}=pg;\nconst ADMIN_HEADERS={"x-miqo-synthetic-admin":"DB-G10-SYNTHETIC-ADMIN"};\nprocess.env.MIQO_SYNTHETIC_ADMIN_KEY="DB-G10-SYNTHETIC-ADMIN";
 
 async function reset(){
   const c=new Client({connectionString:process.env.DATABASE_URL});
@@ -132,7 +132,7 @@ test("SP3 comparison shortlist selection final integrity completion and trace ar
   assert.equal(selection.completion.liveProviderActivity,"DISABLED");
 
   const trace=JSON.parse((await app.inject({
-    method:"GET",url:"/admin/selections/"+selected.selectionId+"/trace",
+    method:"GET",headers:ADMIN_HEADERS,url:"/admin/selections/"+selected.selectionId+"/trace",
   })).body);
   assert.equal(trace.riskProfileVersion.riskProfileVersionId,journey.profile.versionId);
   assert.equal(trace.scenario.scenarioId,journey.scenarioId);
