@@ -2047,7 +2047,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "miqos-admin"
+name = "miqo-desktop-runtime"
 version = "0.1.0"
 dependencies = [
  "log",
