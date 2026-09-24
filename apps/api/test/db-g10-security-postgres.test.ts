@@ -91,3 +91,26 @@ test("DB-G10.4 admin API gate rejects missing marker and accepts configured synt
   await app.close();
   if(previous===undefined)delete process.env.MIQO_SYNTHETIC_ADMIN_KEY; else process.env.MIQO_SYNTHETIC_ADMIN_KEY=previous;
 });
+
+
+test("DB-G10.6 malformed JSON is rejected before application logic",async()=>{
+  const app=await buildApp();
+  const response=await app.inject({
+    method:"POST",url:"/profiles",
+    headers:{"content-type":"application/json"},
+    payload:'{"broken":'
+  });
+  assert.equal(response.statusCode,400);
+  await app.close();
+});
+
+test("DB-G10.6 unsupported content type is rejected",async()=>{
+  const app=await buildApp();
+  const response=await app.inject({
+    method:"POST",url:"/profiles/ANY/corrections",
+    headers:{"content-type":"application/xml"},
+    payload:"<correction/>"
+  });
+  assert.equal(response.statusCode,415);
+  await app.close();
+});
