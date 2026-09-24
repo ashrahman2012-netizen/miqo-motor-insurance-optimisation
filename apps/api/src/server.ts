@@ -245,6 +245,15 @@ async function profileSnapshotByVersion(db:any,versionId:string){
   const versions=await profileSnapshot(db,row.profileId); return {profileId:row.profileId,version:versions.find(v=>v.versionId===versionId)};
 }
 
+async function startDirectApiServer(){
+  const app=await buildApp();
+  const port=Number(process.env.PORT??4000);
+  await app.listen({host:"127.0.0.1",port});
+}
+
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href){
-  const app=await buildApp(); const port=Number(process.env.PORT??4000); await app.listen({host:"127.0.0.1",port});
+  void startDirectApiServer().catch(error=>{
+    console.error("MIQO API startup failed",error);
+    process.exitCode=1;
+  });
 }
