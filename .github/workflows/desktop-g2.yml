@@ -77,8 +77,19 @@ jobs:
           rustc --version
           cargo --version
 
-      - name: Install pinned Tauri CLI
-        run: cargo install tauri-cli --version 2.11.4 --locked
+      - name: Install verified pinned Tauri CLI
+        shell: pwsh
+        run: |
+          $url="https://github.com/tauri-apps/tauri/releases/download/tauri-cli-v2.11.4/cargo-tauri-x86_64-pc-windows-msvc.zip"
+          $archive=Join-Path $env:RUNNER_TEMP "cargo-tauri.zip"
+          $extract=Join-Path $env:RUNNER_TEMP "cargo-tauri"
+          Invoke-WebRequest $url -OutFile $archive
+          $actual=(Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected="0743e30a661a35d63339b24cf63828f97ba5389a1d7f13b368a542794dd0a3f3"
+          if ($actual -ne $expected) { throw "Tauri CLI checksum mismatch: $actual" }
+          Expand-Archive $archive -DestinationPath $extract -Force
+          Copy-Item (Join-Path $extract "cargo-tauri.exe") (Join-Path $env:USERPROFILE ".cargo\bin\cargo-tauri.exe") -Force
+          cargo tauri --version
 
       - name: Build unsigned Windows x64 NSIS installer
         shell: pwsh
