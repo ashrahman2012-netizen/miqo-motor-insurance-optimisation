@@ -148,7 +148,7 @@ impl RuntimeSupervisor {
         }
         self.stopped = true;
         if let Ok(path) = env::var("MIQO_DESKTOP_SHUTDOWN_FILE") {
-            let _ = fs::write(path, "{"clean":true,"services":"stopped"}\n");
+            let _ = fs::write(path, r#"{\"clean\":true,\"services\":\"stopped\"}\n"#);
         }
     }
 }
