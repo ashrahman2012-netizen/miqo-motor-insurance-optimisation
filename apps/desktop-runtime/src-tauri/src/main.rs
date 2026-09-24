@@ -315,6 +315,9 @@ fn run() -> Result<(), Box<dyn Error>> {
         .setup(move |app| {
             let runtime_root = resolve_runtime_root(app)?;
             let data_dir = resolve_data_dir(app)?;
+            if let Ok(path) = env::var("MIQO_DESKTOP_DATA_DIR_PROOF_FILE") {
+                let _ = fs::write(path, data_dir.to_string_lossy().as_bytes());
+            }
             let runtime = RuntimeSupervisor::start(runtime_root, data_dir)?;
             *setup_supervisor.lock().expect("supervisor lock poisoned") = Some(runtime);
 
