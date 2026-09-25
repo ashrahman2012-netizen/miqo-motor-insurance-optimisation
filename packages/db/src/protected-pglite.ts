@@ -13,7 +13,6 @@ import type {MiqoDatabase,MiqoDatabaseRuntime,ProtectedCheckpointMetrics} from "
 const schema={...coreSchema,...sprint4Schema};
 const MAGIC=Buffer.from("MIQOG3E2","ascii");
 const FORMAT_VERSION=1;
-const KEY_VERSION=1;
 const NONCE_BYTES=12;
 const TAG_BYTES=16;
 const HEADER_BYTES=MAGIC.length+1+4+NONCE_BYTES+TAG_BYTES;
@@ -23,13 +22,14 @@ function assert(condition:unknown,message:string):asserts condition{
   if(!condition)throw new Error(message);
 }
 
-function encodeEnvelope(key:Buffer,plainTar:Buffer):Buffer{
+export function encodeProtectedEnvelope(key:Buffer,keyVersion:number,plainTar:Buffer):Buffer{
   const compressed=gzipSync(plainTar,{level:1});
   const nonce=randomBytes(NONCE_BYTES);
   const prefix=Buffer.alloc(MAGIC.length+1+4+NONCE_BYTES);
   MAGIC.copy(prefix,0);
   prefix[MAGIC.length]=FORMAT_VERSION;
-  prefix.writeUInt32BE(KEY_VERSION,MAGIC.length+1);
+  assert(Number.isInteger(keyVersion)&&keyVersion>0,"G3_PROTECTED_STORE_KEY_VERSION_INVALID");
+  prefix.writeUInt32BE(keyVersion,MAGIC.length+1);
   nonce.copy(prefix,MAGIC.length+1+4);
 
   const aad=Buffer.concat([AAD_PREFIX,prefix]);
@@ -41,12 +41,12 @@ function encodeEnvelope(key:Buffer,plainTar:Buffer):Buffer{
   return Buffer.concat([prefix,tag,ciphertext]);
 }
 
-function decodeEnvelope(key:Buffer,envelope:Buffer):Buffer{
+export function decodeProtectedEnvelope(key:Buffer,expectedKeyVersion:number,envelope:Buffer):Buffer{
   assert(envelope.length>HEADER_BYTES,"G3_PROTECTED_STORE_TRUNCATED");
   assert(envelope.subarray(0,MAGIC.length).equals(MAGIC),"G3_PROTECTED_STORE_MAGIC_INVALID");
   assert(envelope[MAGIC.length]===FORMAT_VERSION,"G3_PROTECTED_STORE_FORMAT_UNSUPPORTED");
   const keyVersion=envelope.readUInt32BE(MAGIC.length+1);
-  assert(keyVersion===KEY_VERSION,"G3_PROTECTED_STORE_KEY_VERSION_UNSUPPORTED");
+  assert(keyVersion===expectedKeyVersion,"G3_PROTECTED_STORE_KEY_VERSION_MISMATCH");
 
   const nonceStart=MAGIC.length+1+4;
   const nonce=envelope.subarray(nonceStart,nonceStart+NONCE_BYTES);
@@ -134,11 +134,42 @@ function percentile(values:number[],fraction:number):number{
   return sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(sorted.length*fraction)-1))];
 }
 
+export function protectedEnvelopeKeyVersion(envelope:Buffer):number{
+  assert(envelope.length>HEADER_BYTES,"G3_PROTECTED_STORE_TRUNCATED");
+  assert(envelope.subarray(0,MAGIC.length).equals(MAGIC),"G3_PROTECTED_STORE_MAGIC_INVALID");
+  assert(envelope[MAGIC.length]===FORMAT_VERSION,"G3_PROTECTED_STORE_FORMAT_UNSUPPORTED");
+  return envelope.readUInt32BE(MAGIC.length+1);
+}
+
+export async function rekeyProtectedStore(
+  storePath:string,
+  oldKey:Buffer,
+  oldKeyVersion:number,
+  newKey:Buffer,
+  newKeyVersion:number,
+):Promise<void>{
+  const encrypted=await readFile(storePath);
+  const plain=decodeProtectedEnvelope(oldKey,oldKeyVersion,encrypted);
+  let next:Buffer|undefined;
+  try{
+    next=encodeProtectedEnvelope(newKey,newKeyVersion,plain);
+    // Authenticate the new envelope before replacing the active store.
+    const verify=decodeProtectedEnvelope(newKey,newKeyVersion,next);
+    verify.fill(0);
+    await atomicDurableReplace(storePath,next);
+  }finally{
+    plain.fill(0);
+    next?.fill(0);
+  }
+}
+
 export async function createProtectedPgliteRuntime(
   storePath:string,
   migrationsDir:string,
 ):Promise<MiqoDatabaseRuntime>{
   const key=await readKeyFromFd();
+  const keyVersion=Number(process.env.MIQO_PGLITE_KEY_VERSION??"1");
+  assert(Number.isInteger(keyVersion)&&keyVersion>0,"MIQO_PGLITE_KEY_VERSION_INVALID");
   let plain:Buffer|undefined;
   let pg:PGlite|undefined;
   let durabilityFaulted=false;
@@ -149,7 +180,7 @@ export async function createProtectedPgliteRuntime(
   try{
     if(await pathExists(storePath)){
       const encrypted=await readFile(storePath);
-      plain=decodeEnvelope(key,encrypted);
+      plain=decodeProtectedEnvelope(key,keyVersion,encrypted);
       const loadBytes=Uint8Array.from(plain);
       pg=await PGlite.create({loadDataDir:new Blob([loadBytes])});
       loadBytes.fill(0);
@@ -175,7 +206,7 @@ export async function createProtectedPgliteRuntime(
           const dumpMs=performance.now()-dumpStarted;
 
           const encryptStarted=performance.now();
-          envelope=encodeEnvelope(key,snapshot);
+          envelope=encodeProtectedEnvelope(key,keyVersion,snapshot);
           const encryptMs=performance.now()-encryptStarted;
 
           const writeStarted=performance.now();
