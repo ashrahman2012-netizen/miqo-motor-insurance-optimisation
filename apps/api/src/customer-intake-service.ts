@@ -364,6 +364,12 @@ export async function processCustomerIntakeEmail(pool:Pool,envelope:IntakeEmailE
       })]
     );
 
+    await client.query(
+      `INSERT INTO customer_lifecycle_event(lifecycle_event_id,customer_id,intake_submission_id,event_type,event_payload_json,synthetic)
+       VALUES($1,$2,$3,'ADMIN_NOTIFICATION_QUEUED',$4::jsonb,true)`,
+      [id("CXM-SYN-EVT"),customerId,submissionId,JSON.stringify({eventType:notificationEvent})]
+    );
+
     await client.query("COMMIT");
     return {
       submissionId,
