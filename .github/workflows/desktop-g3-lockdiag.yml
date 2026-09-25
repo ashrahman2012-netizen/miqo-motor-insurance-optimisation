@@ -22,5 +22,5 @@ jobs:
       - name: Resolve proof target and print exact lockfile delta
         shell: pwsh
         run: |
-          cargo check --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin g3-keyring-proof
+          cargo generate-lockfile --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml
           git diff -- apps/desktop-runtime/src-tauri/Cargo.lock
