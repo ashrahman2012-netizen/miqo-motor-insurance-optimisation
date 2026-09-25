@@ -114,6 +114,7 @@ jobs:
       - name: Build locked G3.4 desktop/key lifecycle targets
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Path r -Force | Out-Null
           cargo check --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin miqo-desktop-runtime
           cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin g3-keyring-proof
 
