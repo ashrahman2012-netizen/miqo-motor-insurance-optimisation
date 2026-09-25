@@ -20,6 +20,7 @@ import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupatio
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
 import { processCustomerIntakeEmail, refreshDueCustomerIntakeLifecycle } from "./customer-intake-service.ts";
+import { handleGmailIntakeEvent } from "./customer-intake-event-adapter.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -216,6 +217,25 @@ export async function buildApp() {
       now:{type:"string",format:"date-time"},
     }}},
   },async(req:any)=>refreshDueCustomerIntakeLifecycle(pool,req.body?.now?new Date(req.body.now):new Date()));
+
+  app.post("/admin/cxm/intake/gmail-event",{
+    schema:{body:{type:"object",additionalProperties:false,required:["provider","eventId","mailbox","message","synthetic"],properties:{
+      provider:{type:"string",enum:["gmail"]},
+      eventId:{type:"string",minLength:1,maxLength:512},
+      mailbox:{type:"string",format:"email"},
+      synthetic:{type:"boolean"},
+      message:{type:"object",additionalProperties:false,required:["id","subject","body"],properties:{
+        id:{type:"string",minLength:1,maxLength:512},
+        threadId:{type:["string","null"],maxLength:512},
+        receivedAt:{type:["string","null"],format:"date-time"},
+        subject:{type:"string",minLength:1,maxLength:998},
+        body:{type:"string",minLength:1,maxLength:120000},
+      }},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await handleGmailIntakeEvent(pool,req.body);
+    return reply.code(result.disposition==="PROCESSED"?201:200).send(result);
+  });
 
   app.post("/admin/cxm/intake/email",{
     schema:{body:{type:"object",additionalProperties:false,required:["sourceMailbox","sourceMessageId","subject","body","synthetic"],properties:{
