@@ -1,5 +1,5 @@
 import {createCipheriv,createDecipheriv,randomBytes} from "node:crypto";
-import {constants as fsConstants} from "node:fs";
+import {constants as fsConstants,readFileSync} from "node:fs";
 import {mkdir,open as openFile,readFile,readdir,rename,stat,writeFile} from "node:fs/promises";
 import {gzipSync,gunzipSync} from "node:zlib";
 import path from "node:path";
@@ -97,7 +97,7 @@ async function readKeyFromFd():Promise<Buffer>{
   if(!raw)throw new Error("MIQO_PGLITE_KEY_FD is required for pglite-protected");
   const fd=Number(raw);
   if(!Number.isInteger(fd)||fd<3)throw new Error("MIQO_PGLITE_KEY_FD must reference a private inherited descriptor");
-  const key=await readFile(fd);
+  const key=readFileSync(fd);
   if(key.length!==32){
     key.fill(0);
     throw new Error("MIQO_PGLITE_KEY_LENGTH_INVALID");
