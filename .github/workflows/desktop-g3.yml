@@ -1,0 +1,48 @@
+name: desktop-g3
+
+on:
+  push:
+    branches: [miqo/desktop-g3]
+  pull_request:
+    paths:
+      - "apps/desktop-runtime/**"
+      - "apps/api/**"
+      - "packages/db/**"
+      - "scripts/desktop-g3-*"
+      - ".github/workflows/desktop-g3.yml"
+      - "docs/gateways/DESKTOP-G3-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pglite-encryption-feasibility:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.3
+          cache: npm
+      - name: Verify exact Node runtime
+        shell: pwsh
+        run: |
+          if ((node --version) -ne "v22.23.3") { throw "Unexpected Node version: $(node --version)" }
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+      - name: Execute G3.2 encrypted PGlite feasibility proof
+        run: node --experimental-strip-types scripts/desktop-g3-pglite-encryption-feasibility.ts
+      - name: Upload G3.2 feasibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g3-g3.2-feasibility-${{ github.sha }}
+          path: dist/desktop-g3-g3.2-proof/**
+          if-no-files-found: warn
+          retention-days: 14
