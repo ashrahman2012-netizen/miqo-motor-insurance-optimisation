@@ -19,6 +19,7 @@ import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4Mar
 import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
+import { processCustomerIntakeEmail } from "./customer-intake-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -209,6 +210,21 @@ export async function buildApp() {
   })));
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
+
+  app.post("/admin/cxm/intake/email",{
+    schema:{body:{type:"object",additionalProperties:false,required:["sourceMailbox","sourceMessageId","subject","body","synthetic"],properties:{
+      sourceMailbox:{type:"string",format:"email"},
+      sourceMessageId:{type:"string",minLength:1,maxLength:512},
+      sourceThreadId:{type:["string","null"],maxLength:512},
+      receivedAt:{type:["string","null"],format:"date-time"},
+      subject:{type:"string",minLength:1,maxLength:998},
+      body:{type:"string",minLength:1,maxLength:120000},
+      synthetic:{type:"boolean"},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await processCustomerIntakeEmail(pool,req.body);
+    return reply.code(result.deduplicated?200:201).send(result);
+  });
 
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
