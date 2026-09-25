@@ -192,7 +192,7 @@ function Stop-Miqo([object]$markers) {
 }
 
 function New-PersistenceMarker {
-  $profile = Invoke-RestMethod -Method Post "http://127.0.0.1:4000/profiles"
+  $profile = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:4000/profiles" -ContentType "application/json" -Body "{}"
   $profileId = [string]$profile.profileId
   $versionId = [string]$profile.versionId
   foreach ($fact in @(
@@ -203,8 +203,8 @@ function New-PersistenceMarker {
     $body = @{value=$fact.value} | ConvertTo-Json -Compress
     Invoke-RestMethod -Method Put -Uri "http://127.0.0.1:4000/profile-versions/$versionId/facts/$($fact.id)" -ContentType "application/json" -Body $body | Out-Null
   }
-  Invoke-RestMethod -Method Post "http://127.0.0.1:4000/profiles/$profileId/validate" | Out-Null
-  Invoke-RestMethod -Method Post "http://127.0.0.1:4000/profiles/$profileId/lock" | Out-Null
+  Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:4000/profiles/$profileId/validate" -ContentType "application/json" -Body "{}" | Out-Null
+  Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:4000/profiles/$profileId/lock" -ContentType "application/json" -Body "{}" | Out-Null
   return $profileId
 }
 
