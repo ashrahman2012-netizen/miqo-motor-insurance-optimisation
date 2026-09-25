@@ -238,7 +238,8 @@ export async function buildApp() {
     if(error instanceof ConflictError)return reply.code(409).send({error:error.message});
     if(error instanceof ValidationError)return reply.code(422).send({error:error.message,issues:error.issues});
     if(error?.validation){
-      const code=String(req?.url??"").includes("/quote-requests")?"INVALID_QUOTE_REQUEST":"INVALID_OPTIMISATION_PREFERENCE";
+      const url=String(req?.url??"");
+      const code=url.includes("/admin/cxm/intake/")?"INVALID_CUSTOMER_INTAKE_EMAIL":url.includes("/quote-requests")?"INVALID_QUOTE_REQUEST":"INVALID_OPTIMISATION_PREFERENCE";
       return reply.code(422).send({error:code,issues:error.validation.map((item:any)=>item.message)});
     }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
