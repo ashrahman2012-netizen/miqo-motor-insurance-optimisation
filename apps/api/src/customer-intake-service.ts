@@ -296,7 +296,8 @@ export async function refreshDueCustomerIntakeLifecycle(pool:Pool,now=new Date()
       [now]
     );
     for(const row of rows.rows){
-      const renewalDate=String(row.renewal_or_future_start_date);
+      const rawRenewalDate=row.renewal_or_future_start_date;
+      const renewalDate=rawRenewalDate instanceof Date?rawRenewalDate.toISOString().slice(0,10):String(rawRenewalDate).slice(0,10);
       const next=deriveCustomerIntakeStatus(renewalDate,now);
       if(next.status===row.customer_status)continue;
       await client.query(
