@@ -77,8 +77,42 @@ function Install-Miqo {
   if ($p.ExitCode -ne 0) { throw "Installer exited $($p.ExitCode)" }
   $record = Get-MiqoInstallRecord
   $dir = Resolve-InstallDir $record
-  $exe = Get-ChildItem -LiteralPath $dir -Filter "miqo-desktop-runtime.exe" -Recurse | Select-Object -First 1
-  if (-not $exe) { throw "Installed MIQO executable missing under $dir" }
+  $allExes = @(Get-ChildItem -LiteralPath $dir -Filter "*.exe" -Recurse -File)
+  $allExes | ForEach-Object {
+    [ordered]@{
+      name = $_.Name
+      fullName = $_.FullName
+      bytes = $_.Length
+      productName = $_.VersionInfo.ProductName
+      fileDescription = $_.VersionInfo.FileDescription
+      originalFilename = $_.VersionInfo.OriginalFilename
+    }
+  } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $Proof "installed-executable-inventory.json")
+
+  $helpers = @("node.exe","uninstall.exe","uninst.exe","microsoftedgewebview2setup.exe")
+  $candidates = @($allExes | Where-Object {
+    $lower = $_.Name.ToLowerInvariant()
+    ($helpers -notcontains $lower) -and
+    (-not $lower.StartsWith("unins")) -and
+    (-not $lower.Contains("webview2"))
+  })
+
+  $exe = $candidates | Where-Object { $_.Name -eq "MIQO Desktop [SYNTHETIC].exe" } | Select-Object -First 1
+  if (-not $exe) {
+    $exe = $candidates | Where-Object { $_.Name -eq "miqo-desktop-runtime.exe" } | Select-Object -First 1
+  }
+  if (-not $exe) {
+    $exe = $candidates | Where-Object {
+      $_.VersionInfo.ProductName -eq "MIQO Desktop [SYNTHETIC]" -or
+      $_.VersionInfo.FileDescription -eq "MIQO Desktop [SYNTHETIC]"
+    } | Select-Object -First 1
+  }
+  if (-not $exe -and $candidates.Count -eq 1) {
+    $exe = $candidates[0]
+  }
+  if (-not $exe) {
+    throw "Installed MIQO executable could not be uniquely identified under $dir; see installed-executable-inventory.json"
+  }
   return [pscustomobject]@{ Record=$record; Dir=$dir; Exe=$exe.FullName }
 }
 
