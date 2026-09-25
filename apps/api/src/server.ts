@@ -59,11 +59,17 @@ export async function buildApp() {
     }
   });
   app.addHook("preHandler",async(req,reply)=>{
-    if(!runtime.checkpoint)return;
-    if(runtime.isDurabilityFaulted?.() && req.url!=="/health"){
+    if(!runtime.checkpoint||req.url==="/health")return;
+    if(runtime.isDurabilityFaulted?.()){
       return reply.code(503).send({error:"durability_faulted",requestId:req.id});
     }
-    if(!mutationMethods.has(req.method))return;
+    if(!mutationMethods.has(req.method)){
+      await durabilityQueue;
+      if(runtime.isDurabilityFaulted?.()){
+        return reply.code(503).send({error:"durability_faulted",requestId:req.id});
+      }
+      return;
+    }
 
     const previous=durabilityQueue;
     let release!:()=>void;
