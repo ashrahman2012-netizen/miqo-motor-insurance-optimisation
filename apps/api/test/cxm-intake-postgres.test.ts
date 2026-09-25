@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import pg from "pg";
 import { createPool } from "../../../packages/db/src/client.ts";
-import { deriveCustomerIntakeStatus, parseStructuredCustomerIntakeEmail, processCustomerIntakeEmail } from "../src/customer-intake-service.ts";
+import { deriveCustomerIntakeStatus, parseStructuredCustomerIntakeEmail, processCustomerIntakeEmail, refreshDueCustomerIntakeLifecycle } from "../src/customer-intake-service.ts";
 import { ConflictError, ValidationError } from "../src/errors.ts";
 const {Client}=pg;
 
@@ -103,5 +103,33 @@ test("CXM intake fails closed for the wrong mailbox and for real-customer mode",
   const pool=createPool();
   await assert.rejects(()=>processCustomerIntakeEmail(pool,{sourceMailbox:"other@example.com",sourceMessageId:"G1",subject:"[MIQOS NEW CUSTOMER] X",body:body(),synthetic:true}),ValidationError);
   await assert.rejects(()=>processCustomerIntakeEmail(pool,{sourceMailbox:"miqos.new@gmail.com",sourceMessageId:"G2",subject:"[MIQOS NEW CUSTOMER] X",body:body(),synthetic:false}),ConflictError);
+  await pool.end();
+});
+
+
+test("CXM scheduler advances monitoring through renewal window to follow-up due",async()=>{
+  await reset(); const pool=createPool();
+  const first=await processCustomerIntakeEmail(pool,{
+    sourceMailbox:"miqos.new@gmail.com",
+    sourceMessageId:"GMAIL-SYN-LIFECYCLE",
+    subject:"[MIQOS NEW CUSTOMER] Synthetic Customer | 2026-12-01",
+    body:body({"Submission ID":"SUB-SYN-LIFECYCLE","Renewal / Future Start Date":"2026-12-01"}),
+    synthetic:true,
+    receivedAt:"2026-09-25T20:00:00Z"
+  });
+  assert.equal(first.status,"RENEWAL_MONITORING");
+
+  const opened=await refreshDueCustomerIntakeLifecycle(pool,new Date("2026-10-27T09:00:00Z"));
+  assert.deepEqual(opened.changed.map(x=>[x.customerId,x.from,x.to]),[[first.customerId,"RENEWAL_MONITORING","RENEWAL_WINDOW_OPEN"]]);
+
+  const due=await refreshDueCustomerIntakeLifecycle(pool,new Date("2026-12-01T09:00:00Z"));
+  assert.deepEqual(due.changed.map(x=>[x.customerId,x.from,x.to]),[[first.customerId,"RENEWAL_WINDOW_OPEN","QUOTE_FOLLOW_UP_DUE"]]);
+
+  const events=await pool.query(
+    "SELECT event_payload_json FROM customer_lifecycle_event WHERE customer_id=$1 AND event_type='CUSTOMER_STATUS_CHANGED' ORDER BY occurred_at",
+    [first.customerId]
+  );
+  assert.ok(events.rows.some((r:any)=>r.event_payload_json.to==="RENEWAL_WINDOW_OPEN"));
+  assert.ok(events.rows.some((r:any)=>r.event_payload_json.to==="QUOTE_FOLLOW_UP_DUE"));
   await pool.end();
 });
