@@ -1,11 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod keyring;
+
 use reqwest::blocking::Client;
 use serde::Deserialize;
 use std::{
     env,
     error::Error,
     fs,
+    io::Write,
     path::{Component, Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{Arc, Mutex},
@@ -64,38 +67,20 @@ impl RuntimeSupervisor {
 
         fs::create_dir_all(&data_dir)?;
         let api = runtime_member(&runtime_root, &manifest.api)?;
-        let migration = runtime_member(&runtime_root, &manifest.pglite_migration)?;
         let migrations_dir = runtime_root.join("api").join("migrations");
         let customer = runtime_member(&runtime_root, &manifest.customer_server)?;
         let admin = runtime_member(&runtime_root, &manifest.admin_server)?;
 
-        let migration_parent = migration.parent().ok_or("PGlite migration parent missing")?;
-        let migration_name = migration.file_name().ok_or("PGlite migration file name missing")?;
-        let mut migrate = Command::new(&node);
-        migrate
-            .arg(migration_name)
-            .current_dir(migration_parent)
-            .env("MIQO_PGLITE_DATA_DIR", &data_dir)
-            .env("MIQO_MIGRATIONS_DIR", &migrations_dir)
-            .env("MIQO_DATA_CLASSIFICATION", "SYNTHETIC")
-            .env("MIQO_LIVE_PROVIDERS_ENABLED", "false");
-        checked(&mut migrate, "apply embedded PGlite migrations")?;
+        let key_material = keyring::load_or_create(&data_dir)?;
+        let protected_store = keyring::protected_store_file(&data_dir);
 
-        let api_child = spawn_node(
-            "api",
+        let api_child = spawn_api_with_key(
             &node,
             &api,
             api.parent().ok_or("API parent missing")?,
-            &[
-                ("PORT", "4000"),
-                ("MIQO_DB_BACKEND", "pglite"),
-                ("MIQO_DATA_CLASSIFICATION", "SYNTHETIC"),
-                ("MIQO_LIVE_PROVIDERS_ENABLED", "false"),
-                ("MIQO_SYNTHETIC_ADMIN_KEY", ADMIN_KEY),
-                ("CUSTOMER_WEB_URL", "http://127.0.0.1:3000"),
-                ("ADMIN_WEB_URL", "http://127.0.0.1:3001"),
-            ],
-            Some(("MIQO_PGLITE_DATA_DIR", &data_dir)),
+            &protected_store,
+            &migrations_dir,
+            &key_material,
         )?;
 
         let customer_child = spawn_node(
@@ -149,7 +134,7 @@ impl RuntimeSupervisor {
         }
         self.stopped = true;
         if let Ok(path) = env::var("MIQO_DESKTOP_SHUTDOWN_FILE") {
-            let _ = fs::write(path, "{\"clean\":true,\"services\":\"stopped\",\"databaseBackend\":\"pglite\"}\n");
+            let _ = fs::write(path, "{\"clean\":true,\"services\":\"stopped\",\"databaseBackend\":\"pglite-protected\"}\n");
         }
     }
 }
@@ -221,6 +206,45 @@ fn checked(command: &mut Command, label: &str) -> Result<(), Box<dyn Error>> {
         return Err(format!("Failed to {label}: {status}").into());
     }
     Ok(())
+}
+
+fn spawn_api_with_key(
+    node: &Path,
+    script: &Path,
+    cwd: &Path,
+    protected_store: &Path,
+    migrations_dir: &Path,
+    key_material: &keyring::KeyMaterial,
+) -> Result<OwnedProcess, Box<dyn Error>> {
+    let script_name = script.file_name().ok_or("Packaged API script file name missing")?;
+    let mut command = Command::new(node);
+    command
+        .arg(script_name)
+        .current_dir(cwd)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .env("PORT", "4000")
+        .env("MIQO_DB_BACKEND", "pglite-protected")
+        .env("MIQO_PGLITE_PROTECTED_STORE", protected_store)
+        .env("MIQO_MIGRATIONS_DIR", migrations_dir)
+        .env("MIQO_PGLITE_KEY_FD", "0")
+        .env("MIQO_PGLITE_KEY_VERSION", key_material.key_version.to_string())
+        .env("MIQO_DATA_CLASSIFICATION", "SYNTHETIC")
+        .env("MIQO_LIVE_PROVIDERS_ENABLED", "false")
+        .env("MIQO_SYNTHETIC_ADMIN_KEY", ADMIN_KEY)
+        .env("CUSTOMER_WEB_URL", "http://127.0.0.1:3000")
+        .env("ADMIN_WEB_URL", "http://127.0.0.1:3001");
+
+    let mut child = command.spawn()?;
+    let mut stdin = child.stdin.take().ok_or("API private key pipe unavailable")?;
+    if let Err(error) = stdin.write_all(&key_material.at_rest_key).and_then(|_| stdin.flush()) {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(format!("Failed to deliver protected-store key: {error}").into());
+    }
+    drop(stdin);
+    Ok(OwnedProcess { name: "api", child })
 }
 
 fn spawn_node(
