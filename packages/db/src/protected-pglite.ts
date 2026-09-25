@@ -150,7 +150,9 @@ export async function createProtectedPgliteRuntime(
     if(await pathExists(storePath)){
       const encrypted=await readFile(storePath);
       plain=decodeEnvelope(key,encrypted);
-      pg=await PGlite.create({loadDataDir:new Blob([plain])});
+      const loadBytes=Uint8Array.from(plain);
+      pg=await PGlite.create({loadDataDir:new Blob([loadBytes])});
+      loadBytes.fill(0);
       plain.fill(0);
       plain=undefined;
     }else{
