@@ -66,8 +66,8 @@ function Resolve-Uninstaller([object]$record) {
 }
 
 function Resolve-InstallDir([object]$record) {
-  if ($record.InstallLocation -and (Test-Path $record.InstallLocation)) {
-    return (Resolve-Path $record.InstallLocation).Path
+  if ($record.InstallLocation -and (Test-Path -LiteralPath $record.InstallLocation)) {
+    return (Resolve-Path -LiteralPath $record.InstallLocation).Path
   }
   return (Split-Path (Resolve-Uninstaller $record) -Parent)
 }
@@ -77,18 +77,18 @@ function Install-Miqo {
   if ($p.ExitCode -ne 0) { throw "Installer exited $($p.ExitCode)" }
   $record = Get-MiqoInstallRecord
   $dir = Resolve-InstallDir $record
-  $exe = Get-ChildItem $dir -Filter "miqo-desktop-runtime.exe" -Recurse | Select-Object -First 1
+  $exe = Get-ChildItem -LiteralPath $dir -Filter "miqo-desktop-runtime.exe" -Recurse | Select-Object -First 1
   if (-not $exe) { throw "Installed MIQO executable missing under $dir" }
   return [pscustomobject]@{ Record=$record; Dir=$dir; Exe=$exe.FullName }
 }
 
 function Uninstall-Miqo([object]$install) {
   $uninstaller = Resolve-Uninstaller $install.Record
-  if (-not (Test-Path $uninstaller)) { throw "Uninstaller missing: $uninstaller" }
+  if (-not (Test-Path -LiteralPath $uninstaller)) { throw "Uninstaller missing: $uninstaller" }
   $p = Start-Process -FilePath $uninstaller -ArgumentList "/S" -Wait -PassThru
   if ($p.ExitCode -ne 0) { throw "Uninstaller exited $($p.ExitCode)" }
-  for ($i=0; $i -lt 60 -and (Test-Path $install.Exe); $i++) { Start-Sleep -Milliseconds 500 }
-  if (Test-Path $install.Exe) { throw "Installed executable remains after uninstall" }
+  for ($i=0; $i -lt 60 -and (Test-Path -LiteralPath $install.Exe); $i++) { Start-Sleep -Milliseconds 500 }
+  if (Test-Path -LiteralPath $install.Exe) { throw "Installed executable remains after uninstall" }
 }
 
 $Poison = Join-Path $Proof "poison-bin"
@@ -228,12 +228,12 @@ try {
   $appSignature = $appSignatureResult.Status.ToString()
   if ($appSignature -ne "NotSigned") { throw "G2 scope expects unsigned app; got $appSignature" }
 
-  $packagedNode = Get-ChildItem $install.Dir -Filter "node.exe" -Recurse |
+  $packagedNode = Get-ChildItem -LiteralPath $install.Dir -Filter "node.exe" -Recurse |
     Where-Object { $_.FullName -match "[\\/]runtime[\\/]node[\\/]node\.exe$" } | Select-Object -First 1
   if (-not $packagedNode) { throw "Packaged Node resource missing from install" }
   if ((& $packagedNode.FullName --version).Trim() -ne "v22.23.3") { throw "Installed packaged Node version mismatch" }
 
-  $manifest = Get-ChildItem $install.Dir -Filter "runtime-manifest.json" -Recurse | Select-Object -First 1
+  $manifest = Get-ChildItem -LiteralPath $install.Dir -Filter "runtime-manifest.json" -Recurse | Select-Object -First 1
   if (-not $manifest) { throw "Installed runtime manifest missing" }
 
   $first = Start-Miqo "first-run" $install.Exe
@@ -258,7 +258,7 @@ try {
     @{name="packagedNode";path=$packagedNode.FullName},
     @{name="runtimeManifest";path=$manifest.FullName}
   ) | ForEach-Object {
-    $item = Get-Item $_.path
+    $item = Get-Item -LiteralPath $_.path
     [ordered]@{
       name = $_.name
       path = $_.path
