@@ -72,12 +72,13 @@ export async function handleGmailIntakeEvent(pool:Pool,event:GmailIntakeEvent){
     body:event.message.body,
     synthetic:event.synthetic,
   });
-  const disposition:GmailIntakeDisposition=result.deduplicated?"DUPLICATE":"PROCESSED";
+  const identityDuplicate=result.deduplicated && result.duplicateReason==="IDENTITY_FINGERPRINT";
+  const disposition:GmailIntakeDisposition=identityDuplicate?"DUPLICATE":"PROCESSED";
   return Object.freeze({
     acknowledged:true,
     eventId:event.eventId,
     disposition,
-    gmailLabel:result.deduplicated?GMAIL_INTAKE_LABELS.duplicate:GMAIL_INTAKE_LABELS.processed,
+    gmailLabel:identityDuplicate?GMAIL_INTAKE_LABELS.duplicate:GMAIL_INTAKE_LABELS.processed,
     retryable:false,
     result,
   });
