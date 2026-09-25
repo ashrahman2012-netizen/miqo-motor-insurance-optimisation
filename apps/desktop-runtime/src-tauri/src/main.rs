@@ -69,10 +69,12 @@ impl RuntimeSupervisor {
         let customer = runtime_member(&runtime_root, &manifest.customer_server)?;
         let admin = runtime_member(&runtime_root, &manifest.admin_server)?;
 
+        let migration_parent = migration.parent().ok_or("PGlite migration parent missing")?;
+        let migration_name = migration.file_name().ok_or("PGlite migration file name missing")?;
         let mut migrate = Command::new(&node);
         migrate
-            .arg(&migration)
-            .current_dir(migration.parent().ok_or("PGlite migration parent missing")?)
+            .arg(migration_name)
+            .current_dir(migration_parent)
             .env("MIQO_PGLITE_DATA_DIR", &data_dir)
             .env("MIQO_MIGRATIONS_DIR", &migrations_dir)
             .env("MIQO_DATA_CLASSIFICATION", "SYNTHETIC")
@@ -229,9 +231,10 @@ fn spawn_node(
     envs: &[(&str, &str)],
     path_env: Option<(&str, &Path)>,
 ) -> Result<OwnedProcess, Box<dyn Error>> {
+    let script_name = script.file_name().ok_or("Packaged Node script file name missing")?;
     let mut command = Command::new(node);
     command
-        .arg(script)
+        .arg(script_name)
         .current_dir(cwd)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
