@@ -1,6 +1,7 @@
 #[path = "../keyring.rs"]
 mod keyring;
 
+use base64::Engine as _;
 use reqwest::blocking::Client;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
