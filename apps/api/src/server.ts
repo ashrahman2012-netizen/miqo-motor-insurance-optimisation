@@ -34,7 +34,10 @@ export async function buildApp() {
   const rateWindowMs=Number(process.env.MIQO_RATE_LIMIT_WINDOW_MS??"60000");
   const rateMax=Number(process.env.MIQO_RATE_LIMIT_MAX??"300");
   const rateBuckets=new Map<string,{started:number,count:number}>();
-  await app.register(cors,{origin:[customerOrigin,adminOrigin],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+  const mutationMethods=new Set(["POST","PUT","PATCH","DELETE"]);
+  const durabilityReleases=new Map<string,()=>void>();
+  let durabilityQueue=Promise.resolve();
+  await app.register(cors,{origin:[customerOrigin,adminOrigin],methods:["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"]});
   app.addHook("onRequest",async(req,reply)=>{
     const origin=typeof req.headers.origin==="string"?req.headers.origin:"";
     if(origin&&!allowedOrigins.has(origin))return reply.code(403).send({error:"origin_not_allowed",requestId:req.id});
@@ -44,7 +47,7 @@ export async function buildApp() {
       if(req.headers["x-miqo-synthetic-admin"]!==configuredAdminKey)return reply.code(401).send({error:"synthetic_admin_access_required",requestId:req.id});
     }
     reply.header("x-request-id",req.id);
-    if(["POST","PUT","PATCH","DELETE"].includes(req.method)){
+    if(mutationMethods.has(req.method)){
       const now=Date.now();
       const key=req.ip+"|"+req.method+"|"+(req.routeOptions.url??req.url);
       const current=rateBuckets.get(key);
@@ -55,7 +58,43 @@ export async function buildApp() {
       if(bucket.count>rateMax)return reply.code(429).send({error:"rate_limit_exceeded",requestId:req.id});
     }
   });
+  app.addHook("preHandler",async(req,reply)=>{
+    if(!runtime.checkpoint)return;
+    if(runtime.isDurabilityFaulted?.() && req.url!=="/health"){
+      return reply.code(503).send({error:"durability_faulted",requestId:req.id});
+    }
+    if(!mutationMethods.has(req.method))return;
+
+    const previous=durabilityQueue;
+    let release!:()=>void;
+    durabilityQueue=new Promise<void>(resolve=>{release=resolve;});
+    await previous;
+
+    if(runtime.isDurabilityFaulted?.()){
+      release();
+      return reply.code(503).send({error:"durability_faulted",requestId:req.id});
+    }
+    durabilityReleases.set(req.id,release);
+  });
+
   app.addHook("onSend",async(req,reply,payload)=>{
+    const release=durabilityReleases.get(req.id);
+    if(release){
+      try{
+        if(reply.statusCode>=200 && reply.statusCode<400){
+          await runtime.checkpoint!();
+          reply.header("x-miqo-durability","checkpointed-before-ack");
+        }
+      }catch(error){
+        app.log.error({err:error,requestId:req.id},"Protected durability checkpoint failed");
+        reply.code(503);
+        payload=JSON.stringify({error:"durability_checkpoint_failed",requestId:req.id});
+      }finally{
+        durabilityReleases.delete(req.id);
+        release();
+      }
+    }
+
     reply.header("x-request-id",req.id);
     reply.header("x-content-type-options","nosniff");
     reply.header("referrer-policy","no-referrer");
@@ -67,7 +106,14 @@ export async function buildApp() {
   });
   app.addHook("onClose",async()=>runtime.close());
 
-  app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false,databaseBackend:runtime.backend}));
+  app.get("/health",async()=>({
+    status:runtime.isDurabilityFaulted?.()?"degraded":"ok",
+    dataClassification:classification,
+    liveProvidersEnabled:false,
+    databaseBackend:runtime.backend,
+    durabilityMode:runtime.durabilityMode??"DATABASE_NATIVE",
+    durabilityFaulted:runtime.isDurabilityFaulted?.()??false,
+  }));
   app.post("/profiles",async(_req,reply)=>reply.code(201).send(await createProfile(db)));
   app.get("/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId)}));
   app.post("/profiles/:profileId/validate",async(req:any)=>validateProfile(db,req.params.profileId));
