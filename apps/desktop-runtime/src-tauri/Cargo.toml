@@ -10,6 +10,9 @@ publish = false
 tauri-build = { version = "=2.6.3", features = [] }
 
 [dependencies]
+base64 = "=0.22.1"
+getrandom = "=0.3.4"
+hkdf = "=0.12.4"
 libc = "=0.2.189"
 log = "=0.4.34"
 reqwest = { version = "=0.13.5", features = ["blocking", "json"] }
@@ -19,6 +22,8 @@ sha2 = "=0.10.9"
 tauri = { version = "=2.11.5", features = [] }
 tauri-plugin-log = "=2.9.2"
 time = { version = "=0.3.55", features = ["formatting"] }
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Security_Cryptography", "Win32_Storage_FileSystem", "Win32_System_Memory"] }
+zeroize = "=1.9.0"
 
 [profile.release]
 codegen-units = 1
