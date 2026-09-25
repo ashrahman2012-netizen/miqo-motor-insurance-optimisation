@@ -186,11 +186,15 @@ function Assert-LockedProfile([string]$profileId) {
 }
 
 try {
-  $installerSignature = (Get-AuthenticodeSignature $Installer.FullName).Status.ToString()
+  $installerSignatureResult = Get-AuthenticodeSignature -LiteralPath $Installer.FullName
+  if (-not $installerSignatureResult) { throw "Installer Authenticode inspection returned no result" }
+  $installerSignature = $installerSignatureResult.Status.ToString()
   if ($installerSignature -ne "NotSigned") { throw "G2 scope expects unsigned installer; got $installerSignature" }
 
   $install = Install-Miqo
-  $appSignature = (Get-AuthenticodeSignature $install.Exe).Status.ToString()
+  $appSignatureResult = Get-AuthenticodeSignature -LiteralPath $install.Exe
+  if (-not $appSignatureResult) { throw "Application Authenticode inspection returned no result" }
+  $appSignature = $appSignatureResult.Status.ToString()
   if ($appSignature -ne "NotSigned") { throw "G2 scope expects unsigned app; got $appSignature" }
 
   $packagedNode = Get-ChildItem $install.Dir -Filter "node.exe" -Recurse |
