@@ -1,0 +1,26 @@
+name: desktop-g3-lockdiag
+
+on:
+  push:
+    branches: [miqo/desktop-g3]
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-lock-diagnostic:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select exact Rust toolchain
+        shell: pwsh
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+      - name: Resolve proof target and print exact lockfile delta
+        shell: pwsh
+        run: |
+          cargo check --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin g3-keyring-proof
+          git diff -- apps/desktop-runtime/src-tauri/Cargo.lock
