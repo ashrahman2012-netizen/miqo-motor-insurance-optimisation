@@ -279,6 +279,48 @@ export function deriveCustomerIntakeStatus(renewalDate:string,now=new Date(),lea
   return {status:"RENEWAL_MONITORING",nextActionAt:nextAction};
 }
 
+export async function refreshDueCustomerIntakeLifecycle(pool:Pool,now=new Date()){
+  if(Number.isNaN(now.getTime()))throw new ValidationError("INVALID_LIFECYCLE_REFRESH",["now is not a valid timestamp"]);
+  const client=await pool.connect();
+  const changed:Array<{customerId:string;from:string;to:string;renewalOrFutureStartDate:string}>=[];
+  try{
+    await client.query("BEGIN");
+    const rows=await client.query(
+      `SELECT customer_id,customer_status,renewal_or_future_start_date
+         FROM customer_intake_identity
+        WHERE synthetic=true
+          AND customer_status IN ('RENEWAL_MONITORING','RENEWAL_WINDOW_OPEN')
+          AND (next_action_at IS NULL OR next_action_at <= $1 OR renewal_or_future_start_date <= $1::date)
+        ORDER BY customer_id
+        FOR UPDATE`,
+      [now]
+    );
+    for(const row of rows.rows){
+      const renewalDate=String(row.renewal_or_future_start_date);
+      const next=deriveCustomerIntakeStatus(renewalDate,now);
+      if(next.status===row.customer_status)continue;
+      await client.query(
+        `UPDATE customer_intake_identity
+            SET customer_status=$2,next_action_at=$3,updated_at=$4
+          WHERE customer_id=$1`,
+        [row.customer_id,next.status,next.nextActionAt,now]
+      );
+      await client.query(
+        `INSERT INTO customer_lifecycle_event(
+           lifecycle_event_id,customer_id,event_type,event_payload_json,synthetic,occurred_at
+         ) VALUES($1,$2,'CUSTOMER_STATUS_CHANGED',$3::jsonb,true,$4)`,
+        [id("CXM-SYN-EVT"),row.customer_id,JSON.stringify({from:row.customer_status,to:next.status,renewalOrFutureStartDate:renewalDate}),now]
+      );
+      changed.push({customerId:row.customer_id,from:row.customer_status,to:next.status,renewalOrFutureStartDate:renewalDate});
+    }
+    await client.query("COMMIT");
+    return {evaluatedAt:now.toISOString(),changed};
+  }catch(error){
+    await client.query("ROLLBACK");
+    throw error;
+  }finally{client.release();}
+}
+
 function id(prefix:string){return `${prefix}-${randomUUID()}`;}
 function payloadHash(payload:ParsedCustomerIntake){return createHash("sha256").update(JSON.stringify(payload)).digest("hex");}
 
