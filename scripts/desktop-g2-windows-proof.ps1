@@ -147,7 +147,7 @@ function Start-Miqo([string]$label, [string]$exe) {
   }
 
   $listeners = Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 3000,3001,4000 }
-  if (($listeners | Where-Object { $_.LocalAddress -ne "127.0.0.1" }).Count -gt 0) {
+  if (@($listeners | Where-Object { $_.LocalAddress -ne "127.0.0.1" }).Count -gt 0) {
     $listeners | Format-Table | Out-String | Set-Content (Join-Path $Proof "$label-listeners.txt")
     throw "Installed services are not loopback-only"
   }
