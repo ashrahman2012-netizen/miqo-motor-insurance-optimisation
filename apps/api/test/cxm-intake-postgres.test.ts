@@ -4,6 +4,7 @@ import pg from "pg";
 import { createPool } from "../../../packages/db/src/client.ts";
 import { deriveCustomerIntakeStatus, parseStructuredCustomerIntakeEmail, processCustomerIntakeEmail, refreshDueCustomerIntakeLifecycle } from "../src/customer-intake-service.ts";
 import { ConflictError, ValidationError } from "../src/errors.ts";
+import { GMAIL_INTAKE_LABELS, gmailDispositionForError, handleGmailIntakeEvent, validateGmailIntakeEvent } from "../src/customer-intake-event-adapter.ts";
 const {Client}=pg;
 
 const body=(overrides:Record<string,string>={})=>{
@@ -132,4 +133,58 @@ test("CXM scheduler advances monitoring through renewal window to follow-up due"
   assert.ok(events.rows.some((r:any)=>r.event_payload_json.to==="RENEWAL_WINDOW_OPEN"));
   assert.ok(events.rows.some((r:any)=>r.event_payload_json.to==="QUOTE_FOLLOW_UP_DUE"));
   await pool.end();
+});
+
+
+test("CXM Gmail event adapter returns mailbox dispositions only after persistence",async()=>{
+  await reset(); const pool=createPool();
+  const base={
+    provider:"gmail" as const,
+    eventId:"EVT-SYN-GMAIL-001",
+    mailbox:"miqos.new@gmail.com",
+    synthetic:true,
+    message:{
+      id:"GMAIL-SYN-EVENT-001",
+      threadId:"THREAD-SYN-EVENT-001",
+      receivedAt:"2026-09-25T20:00:00Z",
+      subject:"[MIQOS NEW CUSTOMER] Synthetic Customer | 2026-10-20",
+      body:body({"Submission ID":"SUB-SYN-GMAIL-EVENT-001"}),
+    },
+  };
+  const first=await handleGmailIntakeEvent(pool,base);
+  assert.equal(first.disposition,"PROCESSED");
+  assert.equal(first.gmailLabel,GMAIL_INTAKE_LABELS.processed);
+  assert.equal(first.result.deduplicated,false);
+
+  const duplicate=await handleGmailIntakeEvent(pool,{
+    ...base,
+    eventId:"EVT-SYN-GMAIL-002",
+    message:{...base.message,id:"GMAIL-SYN-EVENT-002"},
+  });
+  assert.equal(duplicate.disposition,"DUPLICATE");
+  assert.equal(duplicate.gmailLabel,GMAIL_INTAKE_LABELS.duplicate);
+  assert.equal(duplicate.result.deduplicated,true);
+
+  const count=await pool.query("SELECT count(*)::int AS n FROM customer_intake_submission");
+  assert.equal(count.rows[0].n,2);
+  await pool.end();
+});
+
+test("CXM Gmail event validation and errors map to fail-closed mailbox states",()=>{
+  assert.throws(()=>validateGmailIntakeEvent({
+    provider:"gmail",
+    eventId:"EVT-WRONG",
+    mailbox:"wrong@example.com",
+    synthetic:true,
+    message:{id:"G1",subject:"x",body:"x"},
+  }),ValidationError);
+
+  const sourceDisposition=gmailDispositionForError(new ValidationError("INVALID_CUSTOMER_INTAKE_SOURCE",["wrong mailbox"]));
+  assert.deepEqual(sourceDisposition,{disposition:"MANUAL_REVIEW",gmailLabel:GMAIL_INTAKE_LABELS.manualReview,retryable:false});
+
+  const malformedDisposition=gmailDispositionForError(new ValidationError("INVALID_CUSTOMER_INTAKE_EMAIL",["bad form"]));
+  assert.deepEqual(malformedDisposition,{disposition:"REJECTED",gmailLabel:GMAIL_INTAKE_LABELS.rejected,retryable:false});
+
+  const realDataDisposition=gmailDispositionForError(new ConflictError("INTAKE_REAL_DATA_GATE_CLOSED"));
+  assert.deepEqual(realDataDisposition,{disposition:"MANUAL_REVIEW",gmailLabel:GMAIL_INTAKE_LABELS.manualReview,retryable:false});
 });
