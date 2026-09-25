@@ -55,7 +55,7 @@ The first intake is automatically assigned one of:
 - `RENEWAL_WINDOW_OPEN` — date is within the next 35 days;
 - `QUOTE_FOLLOW_UP_DUE` — date is today or in the past.
 
-For monitoring records, `next_action_at` is calculated for 09:00 UTC, 35 days before the renewal/start date. A scheduler can later re-evaluate these records without altering locked quotation facts.
+For monitoring records, `next_action_at` is calculated for 09:00 UTC, 35 days before the renewal/start date. The scheduler-ready `POST /admin/cxm/intake/refresh-lifecycle` hook re-evaluates due records transactionally and records every status transition as `CUSTOMER_STATUS_CHANGED`. A production Scheduler should invoke this hook (or the underlying service function) on an approved cadence without altering locked quotation facts.
 
 ## Data separation
 
