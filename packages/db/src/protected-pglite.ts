@@ -96,7 +96,7 @@ async function readKeyFromFd():Promise<Buffer>{
   const raw=process.env.MIQO_PGLITE_KEY_FD;
   if(!raw)throw new Error("MIQO_PGLITE_KEY_FD is required for pglite-protected");
   const fd=Number(raw);
-  if(!Number.isInteger(fd)||fd<3)throw new Error("MIQO_PGLITE_KEY_FD must reference a private inherited descriptor");
+  if(!Number.isInteger(fd)||fd<0||fd===1||fd===2)throw new Error("MIQO_PGLITE_KEY_FD must reference stdin or a private inherited descriptor");
   const key=readFileSync(fd);
   if(key.length!==32){
     key.fill(0);
