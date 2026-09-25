@@ -15,13 +15,44 @@ $ExpectedDataDir = Join-Path $ExpectedDataRoot "pglite"
 Remove-Item $ExpectedDataRoot -Recurse -Force -ErrorAction SilentlyContinue
 
 function Get-MiqoInstallRecord {
-  $base = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall"
-  $record = Get-ChildItem $base -ErrorAction SilentlyContinue |
-    ForEach-Object { Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue } |
-    Where-Object { $_.DisplayName -eq "MIQO Desktop [SYNTHETIC]" } |
-    Select-Object -First 1
-  if (-not $record) { throw "MIQO NSIS uninstall record not found" }
-  return $record
+  $subkeyPath = "Software\Microsoft\Windows\CurrentVersion\Uninstall"
+  foreach ($view in @(
+    [Microsoft.Win32.RegistryView]::Registry64,
+    [Microsoft.Win32.RegistryView]::Registry32
+  )) {
+    $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey(
+      [Microsoft.Win32.RegistryHive]::CurrentUser,
+      $view
+    )
+    try {
+      $uninstall = $base.OpenSubKey($subkeyPath)
+      if (-not $uninstall) { continue }
+      try {
+        foreach ($name in $uninstall.GetSubKeyNames()) {
+          $key = $uninstall.OpenSubKey($name)
+          if (-not $key) { continue }
+          try {
+            if ([string]$key.GetValue("DisplayName") -eq "MIQO Desktop [SYNTHETIC]") {
+              return [pscustomobject]@{
+                DisplayName = [string]$key.GetValue("DisplayName")
+                InstallLocation = [string]$key.GetValue("InstallLocation")
+                UninstallString = [string]$key.GetValue("UninstallString")
+                RegistryView = $view.ToString()
+                RegistryKeyName = $name
+              }
+            }
+          } finally {
+            $key.Dispose()
+          }
+        }
+      } finally {
+        $uninstall.Dispose()
+      }
+    } finally {
+      $base.Dispose()
+    }
+  }
+  throw "MIQO NSIS uninstall record not found in HKCU 64-bit or 32-bit registry view"
 }
 
 function Resolve-Uninstaller([object]$record) {
