@@ -19,7 +19,7 @@ import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4Mar
 import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
-import { processCustomerIntakeEmail } from "./customer-intake-service.ts";
+import { processCustomerIntakeEmail, refreshDueCustomerIntakeLifecycle } from "./customer-intake-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -210,6 +210,12 @@ export async function buildApp() {
   })));
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
+
+  app.post("/admin/cxm/intake/refresh-lifecycle",{
+    schema:{body:{type:"object",additionalProperties:false,properties:{
+      now:{type:"string",format:"date-time"},
+    }}},
+  },async(req:any)=>refreshDueCustomerIntakeLifecycle(pool,req.body?.now?new Date(req.body.now):new Date()));
 
   app.post("/admin/cxm/intake/email",{
     schema:{body:{type:"object",additionalProperties:false,required:["sourceMailbox","sourceMessageId","subject","body","synthetic"],properties:{
