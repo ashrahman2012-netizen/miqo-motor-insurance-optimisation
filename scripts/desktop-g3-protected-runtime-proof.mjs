@@ -1,6 +1,6 @@
 import {createHash,randomBytes} from "node:crypto";
 import {spawn} from "node:child_process";
-import {mkdir,readFile,rm,stat} from "node:fs/promises";
+import {mkdir,readFile,rm,stat,writeFile} from "node:fs/promises";
 import path from "node:path";
 
 const ROOT=process.cwd();
@@ -185,11 +185,12 @@ try{
     secondRestart:"PASS",
     lockedMutationRejectedWithoutCheckpoint:"PASS",
     plaintextMarkerPersistentScan:"PASS",
-    protectedStoreSha256:finalHash,
+    protectedStoreSha256:sha256(encrypted),
     protectedStoreBytes:encrypted.length,
     keySource:"ONE_SHOT_PRIVATE_FD_SYNTHETIC_PROOF",
     boundary:"SYNTHETIC_ONLY",
   };
+  await writeFile(path.join(PROOF,"g3.3-protected-runtime-proof.json"),JSON.stringify(summary,null,2)+"\n",{mode:0o600});
   console.log(JSON.stringify(summary));
 }catch(error){
   console.error(error);
