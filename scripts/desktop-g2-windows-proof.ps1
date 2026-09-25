@@ -297,7 +297,7 @@ try {
       name = $_.name
       path = $_.path
       bytes = $item.Length
-      sha256 = (Get-FileHash $_.path -Algorithm SHA256).Hash.ToLowerInvariant()
+      sha256 = (Get-FileHash -LiteralPath $_.path -Algorithm SHA256).Hash.ToLowerInvariant()
     }
   }
   $hashInventory | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $Proof "sha256-inventory.json")
