@@ -368,12 +368,12 @@ fn real_main() -> Result<(), Box<dyn Error>> {
         ),
         Some("probe-user") if args.len() == 3 => {
             keyring::probe_user_share_file(Path::new(&args[2]))?;
-            println!("{\"probe\":\"user\",\"result\":\"UNWRAP_SUCCEEDED\"}");
+            println!("{}", r#"{\"probe\":\"user\",\"result\":\"UNWRAP_SUCCEEDED\"}"#);
             Ok(())
         }
         Some("probe-machine") if args.len() == 3 => {
             keyring::probe_machine_share_file(Path::new(&args[2]))?;
-            println!("{\"probe\":\"machine\",\"result\":\"UNWRAP_SUCCEEDED\"}");
+            println!("{}", r#"{\"probe\":\"machine\",\"result\":\"UNWRAP_SUCCEEDED\"}"#);
             Ok(())
         }
         Some("open") if args.len() == 3 => {
