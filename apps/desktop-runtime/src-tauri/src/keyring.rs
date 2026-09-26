@@ -36,6 +36,7 @@ const ROTATION_JOURNAL_FILE: &str = "rotation-v1.json";
 const PROTECTED_STORE_NAME: &str = "protected-store-v1.enc";
 const STORE_MAGIC: &[u8; 8] = b"MIQOG3E2";
 const STORE_FORMAT_VERSION: u8 = 1;
+const MACHINE_BINDING_METHOD: &str = "MACHINEGUID_PLUS_SMBIOS_UUID_V1";
 
 #[derive(Debug)]
 pub struct KeyringError {
@@ -91,6 +92,7 @@ struct KeyringRecord {
     protection: String,
     kdf: String,
     created_at: String,
+    machine_binding_method: String,
     machine_binding_sha256: String,
     user_wrapped_share: String,
     machine_wrapped_share: String,
@@ -122,7 +124,7 @@ fn now_utc() -> Result<String, KeyringError> {
 }
 
 fn current_machine_binding_sha256() -> Result<String, KeyringError> {
-    let output = Command::new("reg")
+    let machine_guid_output = Command::new("reg")
         .args([
             "query",
             r"HKLM\SOFTWARE\Microsoft\Cryptography",
@@ -132,14 +134,14 @@ fn current_machine_binding_sha256() -> Result<String, KeyringError> {
         .output()
         .map_err(|e| KeyringError::new("G3_MACHINE_CONTEXT_READ_FAILED", e.to_string()))?;
 
-    if !output.status.success() {
+    if !machine_guid_output.status.success() {
         return Err(KeyringError::new(
             "G3_MACHINE_CONTEXT_READ_FAILED",
-            format!("reg exit={}", output.status),
+            format!("reg exit={}", machine_guid_output.status),
         ));
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = String::from_utf8_lossy(&machine_guid_output.stdout);
     let machine_guid = stdout
         .lines()
         .find_map(|line| {
@@ -152,7 +154,43 @@ fn current_machine_binding_sha256() -> Result<String, KeyringError> {
         .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| KeyringError::new("G3_MACHINE_CONTEXT_READ_FAILED", "MachineGuid missing"))?;
 
-    let normalized = machine_guid.trim().to_ascii_lowercase();
+    let smbios_output = Command::new("powershell.exe")
+        .args([
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "(Get-CimInstance -ClassName Win32_ComputerSystemProduct -ErrorAction Stop).UUID",
+        ])
+        .output()
+        .map_err(|e| KeyringError::new("G3_MACHINE_CONTEXT_READ_FAILED", e.to_string()))?;
+
+    if !smbios_output.status.success() {
+        return Err(KeyringError::new(
+            "G3_MACHINE_CONTEXT_READ_FAILED",
+            format!("SMBIOS UUID query exit={}", smbios_output.status),
+        ));
+    }
+
+    let smbios_uuid = String::from_utf8_lossy(&smbios_output.stdout)
+        .trim()
+        .to_ascii_lowercase();
+    if smbios_uuid.is_empty()
+        || smbios_uuid == "00000000-0000-0000-0000-000000000000"
+        || smbios_uuid == "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    {
+        return Err(KeyringError::new(
+            "G3_MACHINE_CONTEXT_READ_FAILED",
+            "SMBIOS UUID unavailable",
+        ));
+    }
+
+    let normalized = format!(
+        "{}|{}|{}",
+        MACHINE_BINDING_METHOD,
+        machine_guid.trim().to_ascii_lowercase(),
+        smbios_uuid
+    );
     Ok(format!("{:x}", Sha256::digest(normalized.as_bytes())))
 }
 
@@ -371,6 +409,9 @@ fn validate_record(record: &KeyringRecord) -> Result<(), KeyringError> {
     if record.protection != PROTECTION || record.kdf != KDF || record.key_version == 0 {
         return Err(KeyringError::new("G3_KEYRING_CORRUPT", "unsupported keyring metadata"));
     }
+    if record.machine_binding_method != MACHINE_BINDING_METHOD {
+        return Err(KeyringError::new("G3_KEYRING_CORRUPT", "unsupported machine binding method"));
+    }
     if record.machine_binding_sha256.len() != 64
         || !record.machine_binding_sha256.bytes().all(|b| b.is_ascii_hexdigit())
     {
@@ -423,6 +464,7 @@ fn create_record(key_version: u32, state: &str) -> Result<(KeyringRecord, KeyMat
         protection: PROTECTION.to_string(),
         kdf: KDF.to_string(),
         created_at: now_utc()?,
+        machine_binding_method: MACHINE_BINDING_METHOD.to_string(),
         machine_binding_sha256,
         user_wrapped_share: BASE64.encode(user_wrapped),
         machine_wrapped_share: BASE64.encode(machine_wrapped),
