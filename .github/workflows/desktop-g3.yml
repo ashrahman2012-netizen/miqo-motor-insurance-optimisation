@@ -196,6 +196,7 @@ jobs:
       - name: Build locked G3.4 key lifecycle proof
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Path r -Force | Out-Null
           cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin g3-keyring-proof
 
       - uses: actions/download-artifact@v4
