@@ -65,16 +65,11 @@ BEGIN
   END;
 
   BEGIN
-    INSERT INTO customer_form_delivery(
-      intake_submission_id,idempotency_key,subject,html_sha256,excel_sha256,email_delivery_status,synthetic
-    ) VALUES(
-      'CXM-SYN-FORM-CONTRACT','SUB-SYN-FORM-REAL-BLOCK','[MIQOS NEW CUSTOMER] Blocked',
-      repeat('5',64),repeat('6',64),'PENDING',false
-    );
+    UPDATE customer_form_delivery
+       SET synthetic=false
+     WHERE intake_submission_id='CXM-SYN-FORM-CONTRACT';
     RAISE EXCEPTION 'CXM_FORM_REAL_DELIVERY_WAS_NOT_BLOCKED';
-  EXCEPTION
-    WHEN unique_violation THEN NULL;
-    WHEN check_violation THEN NULL;
+  EXCEPTION WHEN check_violation THEN NULL;
   END;
 END;
 $$;
