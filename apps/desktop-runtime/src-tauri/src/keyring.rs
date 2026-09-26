@@ -10,6 +10,7 @@ use std::{
     io::{Read, Write},
     os::windows::ffi::OsStrExt,
     path::{Path, PathBuf},
+    process::Command,
     ptr::{null, null_mut},
     slice,
 };
@@ -90,6 +91,7 @@ struct KeyringRecord {
     protection: String,
     kdf: String,
     created_at: String,
+    machine_binding_sha256: String,
     user_wrapped_share: String,
     machine_wrapped_share: String,
 }
@@ -117,6 +119,49 @@ fn now_utc() -> Result<String, KeyringError> {
     OffsetDateTime::now_utc()
         .format(&Rfc3339)
         .map_err(|e| KeyringError::new("G3_KEYRING_TIME_FORMAT_FAILED", e.to_string()))
+}
+
+fn current_machine_binding_sha256() -> Result<String, KeyringError> {
+    let output = Command::new("reg")
+        .args([
+            "query",
+            r"HKLM\SOFTWARE\Microsoft\Cryptography",
+            "/v",
+            "MachineGuid",
+        ])
+        .output()
+        .map_err(|e| KeyringError::new("G3_MACHINE_CONTEXT_READ_FAILED", e.to_string()))?;
+
+    if !output.status.success() {
+        return Err(KeyringError::new(
+            "G3_MACHINE_CONTEXT_READ_FAILED",
+            format!("reg exit={}", output.status),
+        ));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let machine_guid = stdout
+        .lines()
+        .find_map(|line| {
+            let trimmed = line.trim();
+            if !trimmed.to_ascii_lowercase().starts_with("machineguid") {
+                return None;
+            }
+            trimmed.split_whitespace().last().map(str::to_owned)
+        })
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| KeyringError::new("G3_MACHINE_CONTEXT_READ_FAILED", "MachineGuid missing"))?;
+
+    let normalized = machine_guid.trim().to_ascii_lowercase();
+    Ok(format!("{:x}", Sha256::digest(normalized.as_bytes())))
+}
+
+fn verify_machine_binding(record: &KeyringRecord) -> Result<(), KeyringError> {
+    let current = current_machine_binding_sha256()?;
+    if record.machine_binding_sha256 != current {
+        return Err(KeyringError::new("G3_MACHINE_CONTEXT_MISMATCH", ""));
+    }
+    Ok(())
 }
 
 fn fill_random(bytes: &mut [u8]) -> Result<(), KeyringError> {
@@ -326,6 +371,11 @@ fn validate_record(record: &KeyringRecord) -> Result<(), KeyringError> {
     if record.protection != PROTECTION || record.kdf != KDF || record.key_version == 0 {
         return Err(KeyringError::new("G3_KEYRING_CORRUPT", "unsupported keyring metadata"));
     }
+    if record.machine_binding_sha256.len() != 64
+        || !record.machine_binding_sha256.bytes().all(|b| b.is_ascii_hexdigit())
+    {
+        return Err(KeyringError::new("G3_KEYRING_CORRUPT", "invalid machine binding"));
+    }
     if record.state != "ACTIVE" && record.state != "ROTATING" {
         return Err(KeyringError::new("G3_KEYRING_CORRUPT", "invalid state"));
     }
@@ -334,6 +384,7 @@ fn validate_record(record: &KeyringRecord) -> Result<(), KeyringError> {
 }
 
 fn material_from_record(record: &KeyringRecord) -> Result<KeyMaterial, KeyringError> {
+    verify_machine_binding(record)?;
     let user_blob = BASE64
         .decode(record.user_wrapped_share.as_bytes())
         .map_err(|_| KeyringError::new("G3_KEYRING_CORRUPT", "invalid user wrapped share"))?;
@@ -363,6 +414,7 @@ fn create_record(key_version: u32, state: &str) -> Result<(KeyringRecord, KeyMat
     let machine_wrapped = dpapi_protect(&machine_share, true)?;
     let at_rest_key = derive_at_rest_key(user_share, machine_share, &key_id_bytes)?;
 
+    let machine_binding_sha256 = current_machine_binding_sha256()?;
     let record = KeyringRecord {
         format_version: FORMAT_VERSION,
         key_id: key_id.clone(),
@@ -371,6 +423,7 @@ fn create_record(key_version: u32, state: &str) -> Result<(KeyringRecord, KeyMat
         protection: PROTECTION.to_string(),
         kdf: KDF.to_string(),
         created_at: now_utc()?,
+        machine_binding_sha256,
         user_wrapped_share: BASE64.encode(user_wrapped),
         machine_wrapped_share: BASE64.encode(machine_wrapped),
     };
@@ -589,6 +642,7 @@ pub fn probe_user_share_file(keyring_path: &Path) -> Result<(), KeyringError> {
 
 pub fn probe_machine_share_file(keyring_path: &Path) -> Result<(), KeyringError> {
     let record = read_record(keyring_path)?;
+    verify_machine_binding(&record)?;
     let blob = BASE64.decode(record.machine_wrapped_share.as_bytes())
         .map_err(|_| KeyringError::new("G3_KEYRING_CORRUPT", "invalid machine wrapped share"))?;
     let mut share = dpapi_unprotect(&blob, true)?;
