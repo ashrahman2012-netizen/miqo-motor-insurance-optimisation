@@ -156,14 +156,29 @@ test("CXM Gmail event adapter returns mailbox dispositions only after persistenc
   assert.equal(first.gmailLabel,GMAIL_INTAKE_LABELS.processed);
   assert.equal(first.result.deduplicated,false);
 
+  const replay=await handleGmailIntakeEvent(pool,{
+    ...base,
+    eventId:"EVT-SYN-GMAIL-REPLAY",
+    message:{...base.message,id:"GMAIL-SYN-EVENT-REPLAY"},
+  });
+  assert.equal(replay.disposition,"PROCESSED");
+  assert.equal(replay.gmailLabel,GMAIL_INTAKE_LABELS.processed);
+  assert.equal(replay.result.deduplicated,true);
+  assert.equal(replay.result.duplicateReason,"MESSAGE_OR_CLIENT_SUBMISSION_ID");
+
   const duplicate=await handleGmailIntakeEvent(pool,{
     ...base,
     eventId:"EVT-SYN-GMAIL-002",
-    message:{...base.message,id:"GMAIL-SYN-EVENT-002"},
+    message:{
+      ...base.message,
+      id:"GMAIL-SYN-EVENT-002",
+      body:body({"Submission ID":"SUB-SYN-GMAIL-EVENT-002"}),
+    },
   });
   assert.equal(duplicate.disposition,"DUPLICATE");
   assert.equal(duplicate.gmailLabel,GMAIL_INTAKE_LABELS.duplicate);
   assert.equal(duplicate.result.deduplicated,true);
+  assert.equal(duplicate.result.duplicateReason,"IDENTITY_FINGERPRINT");
 
   const count=await pool.query("SELECT count(*)::int AS n FROM customer_intake_submission");
   assert.equal(count.rows[0].n,2);
