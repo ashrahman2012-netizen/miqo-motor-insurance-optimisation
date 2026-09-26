@@ -211,16 +211,23 @@ jobs:
           $keyring=(Get-ChildItem "dist/desktop-g3-g3.4-source" -Recurse -Filter "wrapped-keyring-for-context-probes.json" | Select-Object -First 1).FullName
           if (-not $keyring) { throw "Wrapped keyring evidence not found" }
 
-          & $exe probe-machine $keyring
-          if ($LASTEXITCODE -eq 0) {
-            throw "Machine DPAPI share unexpectedly unwrapped on a different Windows runner"
+          $PSNativeCommandUseErrorActionPreference = $false
+          $probeOutput = (& $exe probe-machine $keyring 2>&1 | Out-String)
+          $probeExit = $LASTEXITCODE
+          if ($probeExit -eq 0) {
+            throw "Machine-bound keyring unexpectedly opened on a different Windows runner"
+          }
+          if ($probeOutput -notmatch "G3_MACHINE_CONTEXT_MISMATCH") {
+            throw "Wrong-machine probe failed for an unexpected reason: $probeOutput"
           }
 
           New-Item -ItemType Directory -Path "dist/desktop-g3-g3.4-wrong-machine" -Force | Out-Null
           @{
             gate="G3.4"
             machineContext="DIFFERENT_WINDOWS_RUNNER"
-            machineShare="PASS_FAIL_CLOSED"
+            machineBindingMethod="MACHINEGUID_PLUS_SMBIOS_UUID_V1"
+            machineContextCheck="PASS_FAIL_CLOSED"
+            expectedFailureCode="G3_MACHINE_CONTEXT_MISMATCH"
             boundary="SYNTHETIC_ONLY"
           } | ConvertTo-Json | Set-Content "dist/desktop-g3-g3.4-wrong-machine/g3.4-wrong-machine-proof.json"
 
