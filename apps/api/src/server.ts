@@ -21,6 +21,8 @@ import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./s
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
 import { processCustomerIntakeEmail, refreshDueCustomerIntakeLifecycle } from "./customer-intake-service.ts";
 import { handleGmailIntakeEvent } from "./customer-intake-event-adapter.ts";
+import { registerCustomerFormSubmissionRoute } from "./customer-form-submission-route.ts";
+import type { FormSubmissionDependencies } from "./customer-form-submission-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -28,15 +30,18 @@ if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw
 
 export function internalErrorPayload(requestId:string){return {error:"internal_error",requestId};}
 
-export async function buildApp() {
+export type BuildAppOptions=Readonly<{formSubmissionDependencies?:FormSubmissionDependencies}>;
+
+export async function buildApp(options:BuildAppOptions={}) {
   const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true,bodyLimit:131_072});
   const customerOrigin=process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000";
   const adminOrigin=process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001";
-  const allowedOrigins=new Set([customerOrigin,adminOrigin]);
+  const allowFileOrigin=classification==="SYNTHETIC" && (process.env.MIQO_ALLOW_FILE_ORIGIN??"false").toLowerCase()==="true";
+  const allowedOrigins=new Set([customerOrigin,adminOrigin,...(allowFileOrigin?["null"]:[])]);
   const rateWindowMs=Number(process.env.MIQO_RATE_LIMIT_WINDOW_MS??"60000");
   const rateMax=Number(process.env.MIQO_RATE_LIMIT_MAX??"300");
   const rateBuckets=new Map<string,{started:number,count:number}>();
-  await app.register(cors,{origin:[customerOrigin,adminOrigin],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+  await app.register(cors,{origin:Array.from(allowedOrigins),methods:["GET","HEAD","POST","PUT","OPTIONS"]});
   app.addHook("onRequest",async(req,reply)=>{
     const origin=typeof req.headers.origin==="string"?req.headers.origin:"";
     if(origin&&!allowedOrigins.has(origin))return reply.code(403).send({error:"origin_not_allowed",requestId:req.id});
@@ -68,6 +73,7 @@ export async function buildApp() {
     return payload;
   });
   app.addHook("onClose",async()=>pool.end());
+  registerCustomerFormSubmissionRoute(app,pool,options.formSubmissionDependencies??{});
 
   app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));
   app.post("/profiles",async(_req,reply)=>reply.code(201).send(await createProfile(db)));
