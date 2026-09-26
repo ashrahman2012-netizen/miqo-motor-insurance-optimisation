@@ -94,6 +94,14 @@ The authorized Google account must have Gmail send permission. Do not place any 
 
 The ChatGPT Gmail connection is separate and is not a credential source for this runtime.
 
+A local OAuth helper is included. After setting only the OAuth client ID and client secret in your local terminal, run:
+
+```text
+npm run gmail:oauth:authorize
+```
+
+The helper opens the Google consent flow for the dedicated MIQOS mailbox and prints the resulting `MIQO_GMAIL_REFRESH_TOKEN` **only in your local terminal**. Keep that value out of Git, PRs, screenshots, and chat.
+
 ## Local synthetic-file mode
 
 To allow a downloaded `file://` form to call the local gateway, the API must be explicitly configured:
