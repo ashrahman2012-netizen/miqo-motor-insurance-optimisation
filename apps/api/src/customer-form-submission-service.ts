@@ -289,5 +289,5 @@ export async function processDirectCustomerFormSubmission(pool:Pool,request:Dire
       WHERE intake_submission_id=$1`,
     [row.intake_submission_id,pdfSha,delivery.provider,delivery.messageId,delivery.recipient]
   );
-  return Object.freeze({ok:true,emailAccepted:true,pdfGenerated:true,customerId:row.customer_id,submissionId:row.intake_submission_id,reference:row.customer_id,deduplicated:persisted.deduplicated,duplicateReason:persisted.duplicateReason,emailProvider:delivery.provider,emailProviderMessageId:delivery.messageId,idempotentReplay:false});
+  return Object.freeze({ok:true,emailAccepted:true,pdfGenerated:true,customerId:row.customer_id,submissionId:row.intake_submission_id,reference:row.customer_id,deduplicated:persisted.deduplicated,duplicateReason:persisted.duplicateReason,emailProvider:delivery.provider,emailProviderMessageId:delivery.messageId,idempotentReplay:persisted.existing});
 }
