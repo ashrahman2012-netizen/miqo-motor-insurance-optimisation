@@ -231,6 +231,11 @@ jobs:
             boundary="SYNTHETIC_ONLY"
           } | ConvertTo-Json | Set-Content "dist/desktop-g3-g3.4-wrong-machine/g3.4-wrong-machine-proof.json"
 
+          # The native probe must fail on the wrong machine. After validating the
+          # exact fail-closed code above, explicitly return success for this
+          # negative-test harness rather than leaking the expected native exit.
+          exit 0
+
       - name: Upload G3.4 wrong-machine evidence
         if: always()
         uses: actions/upload-artifact@v4
