@@ -242,10 +242,11 @@ fn dpapi_unprotect(input: &[u8], machine_scope: bool) -> Result<[u8; 32], Keyrin
     }
 
     let mut out = [0u8; 32];
-    let valid = output_blob.cbData as usize == out.len();
+    let out_len = out.len();
+    let valid = output_blob.cbData as usize == out_len;
     unsafe {
         if valid {
-            out.copy_from_slice(slice::from_raw_parts(output_blob.pbData, out.len()));
+            out.copy_from_slice(slice::from_raw_parts(output_blob.pbData, out_len));
         }
         if !output_blob.pbData.is_null() {
             slice::from_raw_parts_mut(output_blob.pbData, output_blob.cbData as usize).zeroize();
