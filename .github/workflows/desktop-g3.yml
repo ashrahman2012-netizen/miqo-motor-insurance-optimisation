@@ -255,3 +255,58 @@ jobs:
         run: |
           echo "G3.4 DPAPI user+machine lifecycle evidence complete."
           echo "Boundary remains SYNTHETIC_ONLY."
+
+  local-capability-hardening:
+    needs: key-lifecycle-certification
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.3
+          cache: npm
+      - name: Verify exact Node runtime
+        shell: pwsh
+        run: |
+          if ((node --version) -ne "v22.23.3") { throw "Unexpected Node version: $(node --version)" }
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+      - name: Build standalone web runtimes without packaged static admin authority
+        shell: pwsh
+        run: |
+          $env:NEXT_PUBLIC_API_URL="http://127.0.0.1:4000"
+          $env:NEXT_PUBLIC_ADMIN_WEB_URL="http://127.0.0.1:3001"
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
+          Remove-Item Env:MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          npm run build -w @miqo/customer-web
+          npm run build -w @miqo/admin-web
+      - run: node scripts/desktop-g1-stage-runtime.mjs
+      - name: Stage exact Windows Node runtime
+        shell: pwsh
+        run: ./scripts/desktop-g2-stage-node.ps1
+      - name: Select exact Rust toolchain
+        shell: pwsh
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+      - name: Build locked native runtime
+        shell: pwsh
+        run: cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin miqo-desktop-runtime
+      - name: Execute G3.5 owned-runtime capability proof
+        shell: pwsh
+        run: ./scripts/desktop-g3-local-capability-proof.ps1
+      - name: Upload G3.5 capability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g3-g3.5-local-capability-${{ github.sha }}
+          path: dist/desktop-g3-g3.5-proof/**
+          if-no-files-found: warn
+          retention-days: 14

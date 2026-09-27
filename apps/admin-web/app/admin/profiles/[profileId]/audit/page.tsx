@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL,ADMIN_API_HEADERS} from "../../../../lib";
+import {API_URL,ADMIN_API_OPTIONS} from "../../../../lib";
 
 export default function AuditHistory({params}:{params:Promise<{profileId:string}>}){
   const {profileId}=use(params);
@@ -8,7 +8,7 @@ export default function AuditHistory({params}:{params:Promise<{profileId:string}
   const [error,setError]=useState("");
 
   useEffect(()=>{(async()=>{
-    const response=await fetch(API_URL+"/admin/audit?profileId="+encodeURIComponent(profileId),{headers:ADMIN_API_HEADERS});
+    const response=await fetch(API_URL+"/admin/audit?profileId="+encodeURIComponent(profileId),ADMIN_API_OPTIONS);
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to load audit history");return;}
     setItems(body.items??[]);

@@ -2,11 +2,12 @@
 
 mod keyring;
 
-use reqwest::blocking::Client;
+use reqwest::{blocking::Client, header::{COOKIE, ORIGIN}};
 use serde::Deserialize;
 use std::{
     env,
     error::Error,
+    fmt::Write as FmtWrite,
     fs,
     io::Write,
     path::{Component, Path, PathBuf},
@@ -17,14 +18,15 @@ use std::{
 };
 use tauri::{
     utils::config::WebviewUrl,
-    webview::{PageLoadEvent, WebviewWindowBuilder},
+    webview::{cookie::{Cookie, SameSite}, PageLoadEvent, WebviewWindowBuilder},
     Manager, RunEvent,
 };
+use zeroize::{Zeroize, Zeroizing};
 
 const API_URL: &str = "http://127.0.0.1:4000";
 const CUSTOMER_URL: &str = "http://127.0.0.1:3000/prototype";
 const ADMIN_URL: &str = "http://127.0.0.1:3001";
-const ADMIN_KEY: &str = "DB-G10-SYNTHETIC-ADMIN";
+const RUNTIME_COOKIE_NAME: &str = "miqo_runtime_capability";
 const EXPECTED_NODE_VERSION: &str = "v22.23.3";
 
 #[derive(Debug, Deserialize)]
@@ -47,6 +49,7 @@ struct OwnedProcess {
 
 struct RuntimeSupervisor {
     processes: Vec<OwnedProcess>,
+    runtime_capability: Zeroizing<String>,
     stopped: bool,
 }
 
@@ -73,6 +76,7 @@ impl RuntimeSupervisor {
 
         let key_material = keyring::load_or_create(&data_dir)?;
         let protected_store = keyring::protected_store_file(&data_dir);
+        let runtime_capability = generate_runtime_capability()?;
 
         let api_child = spawn_api_with_key(
             &node,
@@ -81,6 +85,7 @@ impl RuntimeSupervisor {
             &protected_store,
             &migrations_dir,
             &key_material,
+            runtime_capability.as_str(),
         )?;
 
         let customer_child = spawn_node(
@@ -106,19 +111,24 @@ impl RuntimeSupervisor {
                 ("PORT", "3001"),
                 ("HOSTNAME", "127.0.0.1"),
                 ("MIQO_DATA_CLASSIFICATION", "SYNTHETIC"),
-                ("MIQO_SYNTHETIC_ADMIN_GATE", ADMIN_KEY),
+                ("MIQO_LOCAL_RUNTIME_CAPABILITY", runtime_capability.as_str()),
             ],
             None,
         )?;
 
         let mut supervisor = Self {
             processes: vec![api_child, customer_child, admin_child],
+            runtime_capability,
             stopped: false,
         };
 
         if let Err(error) = wait_runtime_ready() {
             supervisor.shutdown();
             return Err(error);
+        }
+
+        if let Ok(path) = env::var("MIQO_DESKTOP_G3_5_PROOF_FILE") {
+            write_local_capability_proof(supervisor.runtime_capability.as_str(), Path::new(&path))?;
         }
 
         Ok(supervisor)
@@ -132,6 +142,7 @@ impl RuntimeSupervisor {
             graceful_terminate(&mut process.child);
             eprintln!("desktop-g1: stopped {} process", process.name);
         }
+        self.runtime_capability.zeroize();
         self.stopped = true;
         if let Ok(path) = env::var("MIQO_DESKTOP_SHUTDOWN_FILE") {
             let _ = fs::write(path, "{\"clean\":true,\"services\":\"stopped\",\"databaseBackend\":\"pglite-protected\"}\n");
@@ -208,6 +219,82 @@ fn checked(command: &mut Command, label: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn generate_runtime_capability() -> Result<Zeroizing<String>, Box<dyn Error>> {
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes)?;
+    let mut encoded = String::with_capacity(64);
+    for byte in bytes {
+        write!(&mut encoded, "{byte:02x}")?;
+    }
+    bytes.zeroize();
+    Ok(Zeroizing::new(encoded))
+}
+
+fn write_local_capability_proof(runtime_capability: &str, path: &Path) -> Result<(), Box<dyn Error>> {
+    let client = Client::builder().timeout(Duration::from_secs(5)).build()?;
+    let admin_probe = format!("{ADMIN_URL}/admin/profiles/G3-CAPABILITY-PROBE");
+    let api_probe = format!("{API_URL}/admin/audit?profileId=G3-CAPABILITY-PROBE");
+    let cookie = format!("{RUNTIME_COOKIE_NAME}={runtime_capability}");
+
+    let admin_denied = client.get(&admin_probe).send()?.status().as_u16();
+    let admin_allowed = client.get(&admin_probe).header(COOKIE, &cookie).send()?.status().as_u16();
+    let api_denied = client.get(&api_probe).header(ORIGIN, ADMIN_URL).send()?.status().as_u16();
+    let api_wrong = client
+        .get(&api_probe)
+        .header(ORIGIN, ADMIN_URL)
+        .header(COOKIE, format!("{RUNTIME_COOKIE_NAME}=wrong-capability"))
+        .send()?
+        .status()
+        .as_u16();
+    let api_wrong_origin = client
+        .get(&api_probe)
+        .header(ORIGIN, "http://127.0.0.1:3999")
+        .header(COOKIE, &cookie)
+        .send()?
+        .status()
+        .as_u16();
+    let api_allowed = client
+        .get(&api_probe)
+        .header(ORIGIN, ADMIN_URL)
+        .header(COOKIE, &cookie)
+        .send()?
+        .status()
+        .as_u16();
+
+    if admin_denied != 401
+        || admin_allowed != 200
+        || api_denied != 401
+        || api_wrong != 401
+        || api_wrong_origin != 403
+        || api_allowed != 200
+    {
+        return Err(format!(
+            "G3.5 local capability proof failed: adminDenied={admin_denied} adminAllowed={admin_allowed} apiDenied={api_denied} apiWrong={api_wrong} apiWrongOrigin={api_wrong_origin} apiAllowed={api_allowed}"
+        ).into());
+    }
+
+    let proof = serde_json::json!({
+        "gate": "G3.5",
+        "result": "PASS",
+        "authority": "PER_LAUNCH_LOCAL_CAPABILITY",
+        "staticPackagedAdminSecret": false,
+        "capabilityPersisted": false,
+        "capabilityLogged": false,
+        "adminUiNoSession": "PASS_401",
+        "adminUiOwnedSession": "PASS_200",
+        "apiNoSession": "PASS_401",
+        "apiWrongSession": "PASS_401",
+        "apiWrongOrigin": "PASS_403",
+        "apiOwnedSession": "PASS_200",
+        "boundary": "SYNTHETIC_ONLY"
+    });
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(path, serde_json::to_vec_pretty(&proof)?)?;
+    Ok(())
+}
+
 fn spawn_api_with_key(
     node: &Path,
     script: &Path,
@@ -215,6 +302,7 @@ fn spawn_api_with_key(
     protected_store: &Path,
     migrations_dir: &Path,
     key_material: &keyring::KeyMaterial,
+    runtime_capability: &str,
 ) -> Result<OwnedProcess, Box<dyn Error>> {
     let script_name = script.file_name().ok_or("Packaged API script file name missing")?;
     let mut command = Command::new(node);
@@ -232,7 +320,7 @@ fn spawn_api_with_key(
         .env("MIQO_PGLITE_KEY_VERSION", key_material.key_version.to_string())
         .env("MIQO_DATA_CLASSIFICATION", "SYNTHETIC")
         .env("MIQO_LIVE_PROVIDERS_ENABLED", "false")
-        .env("MIQO_SYNTHETIC_ADMIN_KEY", ADMIN_KEY)
+        .env("MIQO_LOCAL_RUNTIME_CAPABILITY", runtime_capability)
         .env("CUSTOMER_WEB_URL", "http://127.0.0.1:3000")
         .env("ADMIN_WEB_URL", "http://127.0.0.1:3001");
 
@@ -346,10 +434,11 @@ fn run() -> Result<(), Box<dyn Error>> {
                 let _ = fs::write(path, data_dir.to_string_lossy().as_bytes());
             }
             let runtime = RuntimeSupervisor::start(runtime_root, data_dir)?;
+            let mut admin_cookie_value = runtime.runtime_capability.to_string();
             *setup_supervisor.lock().expect("supervisor lock poisoned") = Some(runtime);
 
             let ready_file = env::var("MIQO_DESKTOP_READY_FILE").ok();
-            WebviewWindowBuilder::new(app, "main", WebviewUrl::External(CUSTOMER_URL.parse()?))
+            let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(CUSTOMER_URL.parse()?))
                 .title("MIQO Desktop — SYNTHETIC")
                 .inner_size(1280.0, 800.0)
                 .min_inner_size(960.0, 640.0)
@@ -364,6 +453,14 @@ fn run() -> Result<(), Box<dyn Error>> {
                     }
                 })
                 .build()?;
+            let admin_cookie = Cookie::build((RUNTIME_COOKIE_NAME, admin_cookie_value.as_str()))
+                .domain("127.0.0.1")
+                .path("/admin")
+                .http_only(true)
+                .same_site(SameSite::Strict)
+                .build();
+            window.set_cookie(admin_cookie)?;
+            admin_cookie_value.zeroize();
 
             if let Ok(stop_file) = env::var("MIQO_DESKTOP_STOP_FILE") {
                 let handle = app.handle().clone();

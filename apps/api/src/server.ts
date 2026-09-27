@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { pathToFileURL } from "node:url";
+import { timingSafeEqual } from "node:crypto";
 import cors from "@fastify/cors";
 import { createDatabaseRuntime } from "../../../packages/db/src/client.ts";
 import { ConflictError, FinalIntegrityError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
@@ -26,6 +27,20 @@ if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw
 
 export function internalErrorPayload(requestId:string){return {error:"internal_error",requestId};}
 
+const RUNTIME_COOKIE_NAME="miqo_runtime_capability";
+function cookieValue(header:string,name:string){
+  for(const part of header.split(";")){
+    const index=part.indexOf("=");
+    if(index<1)continue;
+    if(part.slice(0,index).trim()===name)return decodeURIComponent(part.slice(index+1).trim());
+  }
+  return "";
+}
+function secretEquals(left:string,right:string){
+  const a=Buffer.from(left,"utf8"); const b=Buffer.from(right,"utf8");
+  return a.length===b.length && timingSafeEqual(a,b);
+}
+
 export async function buildApp() {
   const runtime=await createDatabaseRuntime(); const db=runtime.db; const app=Fastify({logger:true,bodyLimit:131_072});
   const customerOrigin=process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000";
@@ -37,14 +52,23 @@ export async function buildApp() {
   const mutationMethods=new Set(["POST","PUT","PATCH","DELETE"]);
   const durabilityReleases=new Map<string,()=>void>();
   let durabilityQueue=Promise.resolve();
-  await app.register(cors,{origin:[customerOrigin,adminOrigin],methods:["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"]});
+  await app.register(cors,{origin:[customerOrigin,adminOrigin],methods:["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"],credentials:true});
   app.addHook("onRequest",async(req,reply)=>{
     const origin=typeof req.headers.origin==="string"?req.headers.origin:"";
     if(origin&&!allowedOrigins.has(origin))return reply.code(403).send({error:"origin_not_allowed",requestId:req.id});
     if(req.url.startsWith("/admin/")){
-      const configuredAdminKey=process.env.MIQO_SYNTHETIC_ADMIN_KEY??"";
-      if(!configuredAdminKey)return reply.code(503).send({error:"synthetic_admin_gate_unconfigured",requestId:req.id});
-      if(req.headers["x-miqo-synthetic-admin"]!==configuredAdminKey)return reply.code(401).send({error:"synthetic_admin_access_required",requestId:req.id});
+      const runtimeCapability=process.env.MIQO_LOCAL_RUNTIME_CAPABILITY??"";
+      if(runtimeCapability){
+        if(origin!==adminOrigin)return reply.code(403).send({error:"local_admin_origin_required",requestId:req.id});
+        const supplied=cookieValue(String(req.headers.cookie??""),RUNTIME_COOKIE_NAME);
+        if(!supplied||!secretEquals(supplied,runtimeCapability)){
+          return reply.code(401).send({error:"local_runtime_capability_required",requestId:req.id});
+        }
+      }else{
+        const configuredAdminKey=process.env.MIQO_SYNTHETIC_ADMIN_KEY??"";
+        if(!configuredAdminKey)return reply.code(503).send({error:"synthetic_admin_gate_unconfigured",requestId:req.id});
+        if(req.headers["x-miqo-synthetic-admin"]!==configuredAdminKey)return reply.code(401).send({error:"synthetic_admin_access_required",requestId:req.id});
+      }
     }
     reply.header("x-request-id",req.id);
     if(mutationMethods.has(req.method)){
