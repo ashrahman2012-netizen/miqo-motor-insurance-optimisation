@@ -40,20 +40,20 @@ try {
   }
   if(-not (Test-Path $CapabilityProof)){throw "G3.5 capability proof timeout"}
 
-  $proof=Get-Content $CapabilityProof -Raw | ConvertFrom-Json
-  if($proof.result -ne "PASS" -or
-     $proof.authority -ne "PER_LAUNCH_LOCAL_CAPABILITY" -or
-     $proof.staticPackagedAdminSecret -ne $false -or
-     $proof.adminUiNoSession -ne "PASS_401" -or
-     $proof.adminUiOwnedSession -ne "PASS_200" -or
-     $proof.scope -ne "ALL_NON_HEALTH_LOOPBACK_API_REQUESTS" -or
-     $proof.apiNoSession -ne "PASS_401" -or
-     $proof.apiWrongSession -ne "PASS_401" -or
-     $proof.apiWrongOrigin -ne "PASS_403" -or
-     $proof.apiOwnedSession -ne "PASS_200" -or
-     $proof.customerApiNoSession -ne "PASS_401" -or
-     $proof.customerApiWrongOrigin -ne "PASS_403" -or
-     $proof.customerApiOwnedSession -ne "PASS_200"){
+  $capabilityState=Get-Content $CapabilityProof -Raw | ConvertFrom-Json
+  if($capabilityState.result -ne "PASS" -or
+     $capabilityState.authority -ne "PER_LAUNCH_LOCAL_CAPABILITY" -or
+     $capabilityState.staticPackagedAdminSecret -ne $false -or
+     $capabilityState.adminUiNoSession -ne "PASS_401" -or
+     $capabilityState.adminUiOwnedSession -ne "PASS_200" -or
+     $capabilityState.scope -ne "ALL_NON_HEALTH_LOOPBACK_API_REQUESTS" -or
+     $capabilityState.apiNoSession -ne "PASS_401" -or
+     $capabilityState.apiWrongSession -ne "PASS_401" -or
+     $capabilityState.apiWrongOrigin -ne "PASS_403" -or
+     $capabilityState.apiOwnedSession -ne "PASS_200" -or
+     $capabilityState.customerApiNoSession -ne "PASS_401" -or
+     $capabilityState.customerApiWrongOrigin -ne "PASS_403" -or
+     $capabilityState.customerApiOwnedSession -ne "PASS_200"){
     throw "G3.5 capability proof content mismatch"
   }
 
