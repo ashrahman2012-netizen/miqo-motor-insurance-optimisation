@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../lib";
+import {API_URL,apiFetch} from "../../../lib";
 
 function money(value:number|null|undefined){
   return value===null||value===undefined?"Not available":new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(value/100);
@@ -14,7 +14,7 @@ export default function Completion({params}:{params:Promise<{profileId:string}>}
   useEffect(()=>{(async()=>{
     const selectionId=new URLSearchParams(window.location.search).get("selectionId")??"";
     if(!selectionId){setError("Missing selection reference.");return;}
-    const response=await fetch(API_URL+"/selections/"+encodeURIComponent(selectionId));
+    const response=await apiFetch(API_URL+"/selections/"+encodeURIComponent(selectionId));
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to load completion state");return;}
     setSelection(body);

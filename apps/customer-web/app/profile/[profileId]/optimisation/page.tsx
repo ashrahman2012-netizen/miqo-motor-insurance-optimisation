@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../lib";
+import {API_URL,apiFetch} from "../../../lib";
 
 type LockedVersion={versionId:string;versionNo:number;status:string};
 
@@ -16,12 +16,12 @@ export default function OptimisationPreferences({params}:{params:Promise<{profil
   const [saving,setSaving]=useState(false);
 
   useEffect(()=>{(async()=>{
-    const response=await fetch(API_URL+"/profiles/"+profileId);
+    const response=await apiFetch(API_URL+"/profiles/"+profileId);
     const data=await response.json();
     const locked=[...(data.versions??[])].reverse().find((item:any)=>item.status==="LOCKED");
     if(!locked){setError("C-08 requires an already LOCKED RiskProfileVersion.");return;}
     setVersion(locked);
-    const existing=await fetch(API_URL+"/profile-versions/"+locked.versionId+"/optimisation-preferences");
+    const existing=await apiFetch(API_URL+"/profile-versions/"+locked.versionId+"/optimisation-preferences");
     if(existing.ok){
       const body=await existing.json();
       for(const item of body.items??[]){
@@ -45,7 +45,7 @@ export default function OptimisationPreferences({params}:{params:Promise<{profil
     };
     if(policyStartDate)payload.policy_start_date=policyStartDate;
     if(drivers.length)payload.genuine_named_driver_inclusion=drivers;
-    const response=await fetch(API_URL+"/profile-versions/"+version.versionId+"/optimisation-preferences",{
+    const response=await apiFetch(API_URL+"/profile-versions/"+version.versionId+"/optimisation-preferences",{
       method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload),
     });
     if(!response.ok){

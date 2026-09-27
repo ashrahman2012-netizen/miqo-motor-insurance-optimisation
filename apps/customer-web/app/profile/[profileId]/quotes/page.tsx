@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../lib";
+import {API_URL,apiFetch} from "../../../lib";
 
 function money(value:number|null|undefined){
   return value===null||value===undefined?"Not available":new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(value/100);
@@ -21,8 +21,8 @@ export default function QuoteComparison({params}:{params:Promise<{profileId:stri
     if(!rawId||!quoteRequestId){setError("Missing quote lineage reference.");return;}
 
     const [normalisedResponse,requestResponse]=await Promise.all([
-      fetch(API_URL+"/raw-provider-responses/"+encodeURIComponent(rawId)+"/normalised-quotes"),
-      fetch(API_URL+"/quote-requests/"+encodeURIComponent(quoteRequestId)),
+      apiFetch(API_URL+"/raw-provider-responses/"+encodeURIComponent(rawId)+"/normalised-quotes"),
+      apiFetch(API_URL+"/quote-requests/"+encodeURIComponent(quoteRequestId)),
     ]);
     const normalisedBody=await normalisedResponse.json();
     const requestBody=await requestResponse.json();
@@ -31,7 +31,7 @@ export default function QuoteComparison({params}:{params:Promise<{profileId:stri
 
     const selectedQuote=(normalisedBody.items??[]).at(-1)??null;
     setQuote(selectedQuote);
-    const shortlistResponse=await fetch(API_URL+"/profile-versions/"+requestBody.riskProfileVersionId+"/shortlists",{method:"POST"});
+    const shortlistResponse=await apiFetch(API_URL+"/profile-versions/"+requestBody.riskProfileVersionId+"/shortlists",{method:"POST"});
     const shortlistBody=await shortlistResponse.json();
     if(!shortlistResponse.ok){setError(shortlistBody.error??"Unable to create comparison shortlist");return;}
     setShortlist(shortlistBody);
@@ -40,7 +40,7 @@ export default function QuoteComparison({params}:{params:Promise<{profileId:stri
   async function selectQuote(){
     if(!quote||!shortlist)return;
     setSelecting(true);setError("");setSignals([]);
-    const response=await fetch(API_URL+"/shortlists/"+shortlist.shortlistId+"/selections",{
+    const response=await apiFetch(API_URL+"/shortlists/"+shortlist.shortlistId+"/selections",{
       method:"POST",
       headers:{"content-type":"application/json"},
       body:JSON.stringify({normalisedQuoteId:quote.normalisedQuoteId}),

@@ -42,7 +42,10 @@ function secretEquals(left:string,right:string){
 }
 
 export async function buildApp() {
-  const runtime=await createDatabaseRuntime(); const db=runtime.db; const app=Fastify({logger:true,bodyLimit:131_072});
+  const runtime=await createDatabaseRuntime(); const db=runtime.db; const app=Fastify({
+    logger:{redact:{paths:["req.headers","res.headers"],censor:"[REDACTED]"}},
+    bodyLimit:131_072
+  });
   const customerOrigin=process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000";
   const adminOrigin=process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001";
   const allowedOrigins=new Set([customerOrigin,adminOrigin]);
@@ -56,19 +59,19 @@ export async function buildApp() {
   app.addHook("onRequest",async(req,reply)=>{
     const origin=typeof req.headers.origin==="string"?req.headers.origin:"";
     if(origin&&!allowedOrigins.has(origin))return reply.code(403).send({error:"origin_not_allowed",requestId:req.id});
-    if(req.url.startsWith("/admin/")){
-      const runtimeCapability=process.env.MIQO_LOCAL_RUNTIME_CAPABILITY??"";
-      if(runtimeCapability){
-        if(origin!==adminOrigin)return reply.code(403).send({error:"local_admin_origin_required",requestId:req.id});
-        const supplied=cookieValue(String(req.headers.cookie??""),RUNTIME_COOKIE_NAME);
-        if(!supplied||!secretEquals(supplied,runtimeCapability)){
-          return reply.code(401).send({error:"local_runtime_capability_required",requestId:req.id});
-        }
-      }else{
-        const configuredAdminKey=process.env.MIQO_SYNTHETIC_ADMIN_KEY??"";
-        if(!configuredAdminKey)return reply.code(503).send({error:"synthetic_admin_gate_unconfigured",requestId:req.id});
-        if(req.headers["x-miqo-synthetic-admin"]!==configuredAdminKey)return reply.code(401).send({error:"synthetic_admin_access_required",requestId:req.id});
+    const runtimeCapability=process.env.MIQO_LOCAL_RUNTIME_CAPABILITY??"";
+    if(runtimeCapability && req.url!=="/health" && req.method!=="OPTIONS"){
+      if(!origin||!allowedOrigins.has(origin)){
+        return reply.code(403).send({error:"local_runtime_origin_required",requestId:req.id});
       }
+      const supplied=cookieValue(String(req.headers.cookie??""),RUNTIME_COOKIE_NAME);
+      if(!supplied||!secretEquals(supplied,runtimeCapability)){
+        return reply.code(401).send({error:"local_runtime_capability_required",requestId:req.id});
+      }
+    }else if(!runtimeCapability && req.url.startsWith("/admin/")){
+      const configuredAdminKey=process.env.MIQO_SYNTHETIC_ADMIN_KEY??"";
+      if(!configuredAdminKey)return reply.code(503).send({error:"synthetic_admin_gate_unconfigured",requestId:req.id});
+      if(req.headers["x-miqo-synthetic-admin"]!==configuredAdminKey)return reply.code(401).send({error:"synthetic_admin_access_required",requestId:req.id});
     }
     reply.header("x-request-id",req.id);
     if(mutationMethods.has(req.method)){
@@ -116,7 +119,7 @@ export async function buildApp() {
           reply.header("x-miqo-durability","checkpointed-before-ack");
         }
       }catch(error){
-        app.log.error({err:error,requestId:req.id},"Protected durability checkpoint failed");
+        app.log.error({requestId:req.id,errorType:error instanceof Error?error.name:"Error"},"Protected durability checkpoint failed");
         reply.code(503);
         payload=JSON.stringify({error:"durability_checkpoint_failed",requestId:req.id});
       }finally{
@@ -308,7 +311,7 @@ export async function buildApp() {
       const protocolError=protocolStatus===400?"invalid_request":protocolStatus===413?"payload_too_large":"unsupported_media_type";
       return reply.code(protocolStatus).send({error:protocolError,requestId:req.id});
     }
-    app.log.error({err:error,requestId:req.id},"Unhandled request error"); return reply.code(500).send(internalErrorPayload(req.id));
+    app.log.error({requestId:req.id,errorType:error instanceof Error?error.name:"Error"},"Unhandled request error"); return reply.code(500).send(internalErrorPayload(req.id));
   });
   return app;
 }
@@ -329,7 +332,7 @@ async function startDirectApiServer(){
 
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href){
   void startDirectApiServer().catch(error=>{
-    console.error("MIQO API startup failed",error);
+    console.error("MIQO API startup failed",error instanceof Error?error.name:"Error");
     process.exitCode=1;
   });
 }

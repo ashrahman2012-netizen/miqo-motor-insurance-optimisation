@@ -24,6 +24,7 @@ use tauri::{
 use zeroize::{Zeroize, Zeroizing};
 
 const API_URL: &str = "http://127.0.0.1:4000";
+const CUSTOMER_ORIGIN: &str = "http://127.0.0.1:3000";
 const CUSTOMER_URL: &str = "http://127.0.0.1:3000/prototype";
 const ADMIN_URL: &str = "http://127.0.0.1:3001";
 const RUNTIME_COOKIE_NAME: &str = "miqo_runtime_capability";
@@ -130,6 +131,7 @@ impl RuntimeSupervisor {
         if let Ok(path) = env::var("MIQO_DESKTOP_G3_5_PROOF_FILE") {
             write_local_capability_proof(supervisor.runtime_capability.as_str(), Path::new(&path))?;
         }
+        execute_log_redaction_probe(supervisor.runtime_capability.as_str())?;
 
         Ok(supervisor)
     }
@@ -234,6 +236,7 @@ fn write_local_capability_proof(runtime_capability: &str, path: &Path) -> Result
     let client = Client::builder().timeout(Duration::from_secs(5)).build()?;
     let admin_probe = format!("{ADMIN_URL}/admin/profiles/G3-CAPABILITY-PROBE");
     let api_probe = format!("{API_URL}/admin/audit?profileId=G3-CAPABILITY-PROBE");
+    let customer_api_probe = format!("{API_URL}/profiles/G3-CAPABILITY-PROBE");
     let cookie = format!("{RUNTIME_COOKIE_NAME}={runtime_capability}");
 
     let admin_denied = client.get(&admin_probe).send()?.status().as_u16();
@@ -261,15 +264,39 @@ fn write_local_capability_proof(runtime_capability: &str, path: &Path) -> Result
         .status()
         .as_u16();
 
+    let customer_api_denied = client
+        .get(&customer_api_probe)
+        .header(ORIGIN, CUSTOMER_ORIGIN)
+        .send()?
+        .status()
+        .as_u16();
+    let customer_api_wrong_origin = client
+        .get(&customer_api_probe)
+        .header(ORIGIN, "http://127.0.0.1:3999")
+        .header(COOKIE, &cookie)
+        .send()?
+        .status()
+        .as_u16();
+    let customer_api_allowed = client
+        .get(&customer_api_probe)
+        .header(ORIGIN, CUSTOMER_ORIGIN)
+        .header(COOKIE, &cookie)
+        .send()?
+        .status()
+        .as_u16();
+
     if admin_denied != 401
         || admin_allowed != 200
         || api_denied != 401
         || api_wrong != 401
         || api_wrong_origin != 403
         || api_allowed != 200
+        || customer_api_denied != 401
+        || customer_api_wrong_origin != 403
+        || customer_api_allowed != 200
     {
         return Err(format!(
-            "G3.5 local capability proof failed: adminDenied={admin_denied} adminAllowed={admin_allowed} apiDenied={api_denied} apiWrong={api_wrong} apiWrongOrigin={api_wrong_origin} apiAllowed={api_allowed}"
+            "G3.5 local capability proof failed: adminDenied={admin_denied} adminAllowed={admin_allowed} apiDenied={api_denied} apiWrong={api_wrong} apiWrongOrigin={api_wrong_origin} apiAllowed={api_allowed} customerApiDenied={customer_api_denied} customerApiWrongOrigin={customer_api_wrong_origin} customerApiAllowed={customer_api_allowed}"
         ).into());
     }
 
@@ -277,6 +304,7 @@ fn write_local_capability_proof(runtime_capability: &str, path: &Path) -> Result
         "gate": "G3.5",
         "result": "PASS",
         "authority": "PER_LAUNCH_LOCAL_CAPABILITY",
+        "scope": "ALL_NON_HEALTH_LOOPBACK_API_REQUESTS",
         "staticPackagedAdminSecret": false,
         "capabilityPersisted": false,
         "capabilityLogged": false,
@@ -286,12 +314,56 @@ fn write_local_capability_proof(runtime_capability: &str, path: &Path) -> Result
         "apiWrongSession": "PASS_401",
         "apiWrongOrigin": "PASS_403",
         "apiOwnedSession": "PASS_200",
+        "customerApiNoSession": "PASS_401",
+        "customerApiWrongOrigin": "PASS_403",
+        "customerApiOwnedSession": "PASS_200",
         "boundary": "SYNTHETIC_ONLY"
     });
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
     fs::write(path, serde_json::to_vec_pretty(&proof)?)?;
+    Ok(())
+}
+
+
+fn execute_log_redaction_probe(runtime_capability: &str) -> Result<(), Box<dyn Error>> {
+    let payload_marker = match env::var("MIQO_DESKTOP_G3_7_PAYLOAD_MARKER") {
+        Ok(value) => value,
+        Err(_) => return Ok(()),
+    };
+    let secret_sentinel = env::var("MIQO_DESKTOP_G3_7_SECRET_SENTINEL").unwrap_or_default();
+    let client = Client::builder().timeout(Duration::from_secs(5)).build()?;
+    let cookie = format!("{RUNTIME_COOKIE_NAME}={runtime_capability}");
+
+    let create = client
+        .post(format!("{API_URL}/profiles"))
+        .header(ORIGIN, CUSTOMER_ORIGIN)
+        .header(COOKIE, &cookie)
+        .header("authorization", format!("Bearer {secret_sentinel}"))
+        .header("x-miqo-sensitive-test", &secret_sentinel)
+        .json(&serde_json::json!({}))
+        .send()?;
+    if create.status().as_u16() != 201 {
+        return Err(format!("G3.7 redaction probe profile creation failed: {}", create.status()).into());
+    }
+    let created: serde_json::Value = create.json()?;
+    let version_id = created
+        .get("versionId")
+        .and_then(|value| value.as_str())
+        .ok_or("G3.7 redaction probe versionId missing")?;
+
+    let put = client
+        .put(format!("{API_URL}/profile-versions/{version_id}/facts/main_driver_id"))
+        .header(ORIGIN, CUSTOMER_ORIGIN)
+        .header(COOKIE, &cookie)
+        .header("authorization", format!("Bearer {secret_sentinel}"))
+        .header("x-miqo-sensitive-test", &secret_sentinel)
+        .json(&serde_json::json!({"value": payload_marker}))
+        .send()?;
+    if !put.status().is_success() {
+        return Err(format!("G3.7 redaction probe fact write failed: {}", put.status()).into());
+    }
     Ok(())
 }
 
@@ -384,7 +456,7 @@ fn loopback_navigation(url: &tauri::Url) -> bool {
     if url.scheme() != "http" {
         return false;
     }
-    let host_ok = matches!(url.host_str(), Some("127.0.0.1") | Some("localhost"));
+    let host_ok = matches!(url.host_str(), Some("127.0.0.1"));
     let port_ok = matches!(url.port_or_known_default(), Some(3000) | Some(3001));
     host_ok && port_ok
 }
@@ -455,7 +527,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 .build()?;
             let admin_cookie = Cookie::build((RUNTIME_COOKIE_NAME, admin_cookie_value.as_str()))
                 .domain("127.0.0.1")
-                .path("/admin")
+                .path("/")
                 .http_only(true)
                 .same_site(SameSite::Strict)
                 .build();

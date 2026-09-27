@@ -46,10 +46,14 @@ try {
      $proof.staticPackagedAdminSecret -ne $false -or
      $proof.adminUiNoSession -ne "PASS_401" -or
      $proof.adminUiOwnedSession -ne "PASS_200" -or
+     $proof.scope -ne "ALL_NON_HEALTH_LOOPBACK_API_REQUESTS" -or
      $proof.apiNoSession -ne "PASS_401" -or
      $proof.apiWrongSession -ne "PASS_401" -or
      $proof.apiWrongOrigin -ne "PASS_403" -or
-     $proof.apiOwnedSession -ne "PASS_200"){
+     $proof.apiOwnedSession -ne "PASS_200" -or
+     $proof.customerApiNoSession -ne "PASS_401" -or
+     $proof.customerApiWrongOrigin -ne "PASS_403" -or
+     $proof.customerApiOwnedSession -ne "PASS_200"){
     throw "G3.5 capability proof content mismatch"
   }
 

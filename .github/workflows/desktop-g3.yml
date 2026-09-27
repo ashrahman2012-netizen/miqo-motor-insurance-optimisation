@@ -310,3 +310,63 @@ jobs:
           path: dist/desktop-g3-g3.5-proof/**
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Upload owned runtime build for downstream G3 security gates
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g3-runtime-build-${{ github.sha }}
+          path: |
+            dist/desktop-g1/runtime/**
+            apps/desktop-runtime/src-tauri/target/debug/miqo-desktop-runtime.exe
+          if-no-files-found: error
+          retention-days: 3
+
+  webview-local-origin-hardening:
+    needs: local-capability-hardening
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-runtime-build-${{ github.sha }}
+          path: .
+      - name: Execute G3.6 WebView/local-origin hardening proof
+        shell: pwsh
+        run: ./scripts/desktop-g3-webview-hardening-proof.ps1
+      - name: Upload G3.6 hardening evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g3-g3.6-webview-hardening-${{ github.sha }}
+          path: dist/desktop-g3-g3.6-proof/**
+          if-no-files-found: warn
+          retention-days: 14
+
+  diagnostics-redaction:
+    needs: webview-local-origin-hardening
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-runtime-build-${{ github.sha }}
+          path: .
+      - name: Execute G3.7 diagnostics/redaction proof
+        shell: pwsh
+        run: ./scripts/desktop-g3-diagnostics-redaction-proof.ps1
+      - name: Upload G3.7 redaction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g3-g3.7-diagnostics-redaction-${{ github.sha }}
+          path: dist/desktop-g3-g3.7-proof/**
+          if-no-files-found: warn
+          retention-days: 14

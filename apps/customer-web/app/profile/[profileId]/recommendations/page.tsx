@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../lib";
+import {API_URL,apiFetch} from "../../../lib";
 
 function money(value:number|null|undefined){
   return value===null||value===undefined
@@ -21,14 +21,14 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
   const [error,setError]=useState("");
 
   useEffect(()=>{(async()=>{
-    const response=await fetch(API_URL+"/profiles/"+profileId);
+    const response=await apiFetch(API_URL+"/profiles/"+profileId);
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to load profile");return;}
     const locked=[...(body.versions??[])].reverse().find((item:any)=>item.status==="LOCKED");
     if(!locked){setError("Sprint 4 optimisation requires a LOCKED RiskProfileVersion.");return;}
     setVersionId(locked.versionId);
 
-    const existing=await fetch(API_URL+"/profile-versions/"+locked.versionId+"/customer-objectives");
+    const existing=await apiFetch(API_URL+"/profile-versions/"+locked.versionId+"/customer-objectives");
     if(existing.ok){
       const existingBody=await existing.json();
       const selected=(existingBody.items??[]).find((item:any)=>item.objectiveId==="LOWEST_ANNUAL_PREMIUM");
@@ -39,7 +39,7 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
   async function saveObjective(){
     if(!versionId)return;
     setBusy("objective");setError("");
-    const response=await fetch(API_URL+"/profile-versions/"+versionId+"/customer-objectives",{
+    const response=await apiFetch(API_URL+"/profile-versions/"+versionId+"/customer-objectives",{
       method:"POST",
       headers:{"content-type":"application/json"},
       body:JSON.stringify({objectiveId}),
@@ -54,7 +54,7 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
   async function generateExploration(){
     if(!objective)return;
     setBusy("exploration");setError("");
-    const response=await fetch(API_URL+"/customer-objectives/"+objective.customerObjectiveId+"/scenario-explorations",{
+    const response=await apiFetch(API_URL+"/customer-objectives/"+objective.customerObjectiveId+"/scenario-explorations",{
       method:"POST",
       headers:{"content-type":"application/json"},
       body:JSON.stringify({choices:{
@@ -73,7 +73,7 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
     setBusy("routes");setError("");
     const base=API_URL+"/customer-objectives/"+objective.customerObjectiveId+
       "/scenario-explorations/"+encodeURIComponent(exploration.explorationFingerprint);
-    const response=await fetch(base+"/market-route-quotes",{method:"POST"});
+    const response=await apiFetch(base+"/market-route-quotes",{method:"POST"});
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to run synthetic market routes");setBusy("");return;}
     setRouteQuotes(body);setRecommendation(null);setExplanation(null);setBusy("");
@@ -84,10 +84,10 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
     setBusy("recommendation");setError("");
     const base=API_URL+"/customer-objectives/"+objective.customerObjectiveId+
       "/scenario-explorations/"+encodeURIComponent(exploration.explorationFingerprint);
-    const response=await fetch(base+"/recommendations",{method:"POST"});
+    const response=await apiFetch(base+"/recommendations",{method:"POST"});
     const body=await response.json();
     if(!response.ok){setError(body.error??"Unable to build recommendation");setBusy("");return;}
-    const explanationResponse=await fetch(API_URL+"/recommendations/"+encodeURIComponent(body.recommendationSetId)+"/explanation");
+    const explanationResponse=await apiFetch(API_URL+"/recommendations/"+encodeURIComponent(body.recommendationSetId)+"/explanation");
     const explanationBody=await explanationResponse.json();
     if(!explanationResponse.ok){
       setError(explanationBody.error??"Unable to load recommendation explanation");
@@ -100,7 +100,7 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
   async function selectRecommendation(){
     if(!recommendation||!versionId)return;
     setBusy("selection");setError("");
-    const shortlistResponse=await fetch(API_URL+"/profile-versions/"+versionId+"/shortlists",{method:"POST"});
+    const shortlistResponse=await apiFetch(API_URL+"/profile-versions/"+versionId+"/shortlists",{method:"POST"});
     const shortlistBody=await shortlistResponse.json();
     if(!shortlistResponse.ok){setError(shortlistBody.error??"Unable to create selection shortlist");setBusy("");return;}
     const eligible=shortlistBody.entries?.some(
@@ -111,7 +111,7 @@ export default function Sprint4Recommendations({params}:{params:Promise<{profile
       setBusy("");
       return;
     }
-    const response=await fetch(API_URL+"/shortlists/"+shortlistBody.shortlistId+"/selections",{
+    const response=await apiFetch(API_URL+"/shortlists/"+shortlistBody.shortlistId+"/selections",{
       method:"POST",
       headers:{"content-type":"application/json"},
       body:JSON.stringify({normalisedQuoteId:recommendation.surfacedNormalisedQuoteId,recommendationSetId:recommendation.recommendationSetId}),

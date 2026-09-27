@@ -4,6 +4,7 @@ import type {NextConfig} from "next";
 
 const appDir=path.dirname(fileURLToPath(import.meta.url));
 const repoRoot=path.resolve(appDir,"../..");
+const isProduction=process.env.NODE_ENV==="production";
 
 const contentSecurityPolicy=[
   "default-src 'self'",
@@ -11,11 +12,11 @@ const contentSecurityPolicy=[
   "frame-ancestors 'none'",
   "form-action 'self'",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline'"+(isProduction?"":" 'unsafe-eval'"),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self' data:",
-  "connect-src 'self' http://127.0.0.1:4000 ws://127.0.0.1:3000 ws://127.0.0.1:3001"
+  "connect-src 'self' http://127.0.0.1:4000"+(isProduction?"":" ws://127.0.0.1:3000 ws://127.0.0.1:3001")
 ].join("; ");
 
 const securityHeaders=[

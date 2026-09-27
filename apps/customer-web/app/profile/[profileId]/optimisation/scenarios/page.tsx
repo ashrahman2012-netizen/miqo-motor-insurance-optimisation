@@ -1,6 +1,6 @@
 "use client";
 import {use,useEffect,useState} from "react";
-import {API_URL} from "../../../../lib";
+import {API_URL,apiFetch} from "../../../../lib";
 
 export default function ScenarioPreview({params}:{params:Promise<{profileId:string}>}){
   const {profileId}=use(params);
@@ -12,13 +12,13 @@ export default function ScenarioPreview({params}:{params:Promise<{profileId:stri
   const [signals,setSignals]=useState<any[]>([]);
 
   useEffect(()=>{(async()=>{
-    const profile=await (await fetch(API_URL+"/profiles/"+profileId)).json();
+    const profile=await (await apiFetch(API_URL+"/profiles/"+profileId)).json();
     const locked=[...(profile.versions??[])].reverse().find((item:any)=>item.status==="LOCKED");
     if(!locked){setError("C-09 requires a LOCKED RiskProfileVersion.");return;}
     setVersionId(locked.versionId);
-    const pref=await (await fetch(API_URL+"/profile-versions/"+locked.versionId+"/optimisation-preferences")).json();
+    const pref=await (await apiFetch(API_URL+"/profile-versions/"+locked.versionId+"/optimisation-preferences")).json();
     setPreferences(pref.items??[]);
-    const generated=await fetch(API_URL+"/profile-versions/"+locked.versionId+"/scenarios/generated");
+    const generated=await apiFetch(API_URL+"/profile-versions/"+locked.versionId+"/scenarios/generated");
     if(generated.ok){
       const body=await generated.json();
       if(body.items?.length)setScenario(body.items[0]);
@@ -27,7 +27,7 @@ export default function ScenarioPreview({params}:{params:Promise<{profileId:stri
 
   async function generate(){
     setBusy(true);setError("");
-    const response=await fetch(API_URL+"/profile-versions/"+versionId+"/scenarios/generate",{method:"POST"});
+    const response=await apiFetch(API_URL+"/profile-versions/"+versionId+"/scenarios/generate",{method:"POST"});
     const body=await response.json();
     if(!response.ok){setError(body.error??"Scenario generation failed");setBusy(false);return;}
     setScenario(body.items[0]);setBusy(false);
@@ -36,7 +36,7 @@ export default function ScenarioPreview({params}:{params:Promise<{profileId:stri
   async function quote(){
     if(!scenario)return;
     setBusy(true);setError("");setSignals([]);
-    const prepared=await fetch(API_URL+"/scenarios/"+scenario.scenarioId+"/quote-requests",{
+    const prepared=await apiFetch(API_URL+"/scenarios/"+scenario.scenarioId+"/quote-requests",{
       method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({providerKey:"MOCK-PROVIDER-001",channel:"DIRECT_SYNTHETIC"}),
     });
@@ -46,11 +46,11 @@ export default function ScenarioPreview({params}:{params:Promise<{profileId:stri
       setError(preparedBody.error??"Pre-quote integrity blocked");
       setBusy(false);return;
     }
-    const executed=await fetch(API_URL+"/quote-requests/"+preparedBody.quoteRequestId+"/execute",{method:"POST"});
+    const executed=await apiFetch(API_URL+"/quote-requests/"+preparedBody.quoteRequestId+"/execute",{method:"POST"});
     const executedBody=await executed.json();
     if(!executed.ok){setError(executedBody.error??"Synthetic provider execution failed");setBusy(false);return;}
     const rawId=executedBody.item.rawProviderResponseId;
-    const normalised=await fetch(API_URL+"/raw-provider-responses/"+rawId+"/normalise",{method:"POST"});
+    const normalised=await apiFetch(API_URL+"/raw-provider-responses/"+rawId+"/normalise",{method:"POST"});
     const normalisedBody=await normalised.json();
     if(!normalised.ok){setError(normalisedBody.error??"Normalisation failed");setBusy(false);return;}
     location.href="/profile/"+profileId+"/quotes?rawProviderResponseId="+encodeURIComponent(rawId)+"&quoteRequestId="+encodeURIComponent(preparedBody.quoteRequestId);
