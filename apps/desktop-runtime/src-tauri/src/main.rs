@@ -223,7 +223,8 @@ fn checked(command: &mut Command, label: &str) -> Result<(), Box<dyn Error>> {
 
 fn generate_runtime_capability() -> Result<Zeroizing<String>, Box<dyn Error>> {
     let mut bytes = [0u8; 32];
-    getrandom::fill(&mut bytes)?;
+    getrandom::fill(&mut bytes)
+        .map_err(|error| std::io::Error::other(format!("G3_OS_CSPRNG_FAILED: {error}")))?;
     let mut encoded = String::with_capacity(64);
     for byte in bytes {
         write!(&mut encoded, "{byte:02x}")?;
