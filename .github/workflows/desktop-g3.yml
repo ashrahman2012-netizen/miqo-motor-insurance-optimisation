@@ -298,7 +298,9 @@ jobs:
           rustup default 1.98.1
       - name: Build locked native runtime
         shell: pwsh
-        run: cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin miqo-desktop-runtime
+        run: |
+          New-Item -ItemType Directory -Path r -Force | Out-Null
+          cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin miqo-desktop-runtime
       - name: Execute G3.5 owned-runtime capability proof
         shell: pwsh
         run: ./scripts/desktop-g3-local-capability-proof.ps1
