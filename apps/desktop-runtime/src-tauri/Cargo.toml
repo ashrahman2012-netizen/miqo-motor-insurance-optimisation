@@ -1,5 +1,6 @@
 [package]
 name = "miqo-desktop-runtime"
+default-run = "miqo-desktop-runtime"
 version = "0.1.0"
 description = "MIQO synthetic desktop runtime"
 edition = "2021"
