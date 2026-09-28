@@ -373,3 +373,61 @@ jobs:
           path: dist/desktop-g3-g3.7-proof/**
           if-no-files-found: warn
           retention-days: 14
+
+  windows-negative-security:
+    needs: diagnostics-redaction
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-g3.3-protected-runtime-${{ github.sha }}
+          path: dist/desktop-g3-g3.8-input/g3.3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-g3.4-primary-${{ github.sha }}
+          path: dist/desktop-g3-g3.8-input/g3.4-primary
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-g3.4-wrong-machine-${{ github.sha }}
+          path: dist/desktop-g3-g3.8-input/g3.4-wrong-machine
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-g3.5-local-capability-${{ github.sha }}
+          path: dist/desktop-g3-g3.8-input/g3.5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-g3.6-webview-hardening-${{ github.sha }}
+          path: dist/desktop-g3-g3.8-input/g3.6
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-g3.7-diagnostics-redaction-${{ github.sha }}
+          path: dist/desktop-g3-g3.8-input/g3.7
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-g3-runtime-build-${{ github.sha }}
+          path: .
+
+      - name: Execute G3.8 Windows negative-security certification
+        shell: pwsh
+        run: ./scripts/desktop-g3-negative-security-proof.ps1
+
+      - name: Upload G3.8 negative-security evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g3-g3.8-negative-security-${{ github.sha }}
+          path: dist/desktop-g3-g3.8-proof/**
+          if-no-files-found: warn
+          retention-days: 14
