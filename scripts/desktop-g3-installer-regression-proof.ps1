@@ -367,12 +367,12 @@ try{
     Require ($config.bundle.windows.nsis.installMode -eq "currentUser") "installer mode changed"
     Require ($config.bundle.windows.webviewInstallMode.type -eq "embedBootstrapper") "WebView2 packaging changed"
 
-    $installerSignature=(Get-AuthenticodeSignature $Installer.FullName).Status.ToString()
+    $installerSignature=(Get-AuthenticodeSignature -LiteralPath $Installer.FullName).Status.ToString()
     Require ($installerSignature -eq "NotSigned") "G3 does not authorise code signing"
 
     $install=Install-Miqo
 
-    $appSignature=(Get-AuthenticodeSignature $install.Exe).Status.ToString()
+    $appSignature=(Get-AuthenticodeSignature -LiteralPath $install.Exe).Status.ToString()
     Require ($appSignature -eq "NotSigned") "installed executable unexpectedly signed"
 
     $packagedNode=Get-ChildItem $install.Dir -Filter "node.exe" -Recurse |
