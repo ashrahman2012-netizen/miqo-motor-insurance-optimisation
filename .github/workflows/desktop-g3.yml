@@ -431,3 +431,107 @@ jobs:
           path: dist/desktop-g3-g3.8-proof/**
           if-no-files-found: warn
           retention-days: 14
+
+  windows-installer-regression:
+    needs: windows-negative-security
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.3
+          cache: npm
+
+      - name: Verify Node and npm pins
+        shell: pwsh
+        run: |
+          if ((node --version) -ne "v22.23.3") { throw "Node pin mismatch" }
+          if ((npm --version) -ne "10.9.9") { throw "npm pin mismatch" }
+
+      - run: npm ci
+      - run: npm run verify:pins
+      - run: npm run verify:boundary
+
+      - name: Build standalone web runtimes without static packaged authority
+        shell: pwsh
+        run: |
+          $env:NEXT_PUBLIC_API_URL="http://127.0.0.1:4000"
+          $env:NEXT_PUBLIC_ADMIN_WEB_URL="http://127.0.0.1:3001"
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
+          Remove-Item Env:MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          Remove-Item Env:MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
+          npm run build -w @miqo/customer-web
+          npm run build -w @miqo/admin-web
+
+      - run: node scripts/desktop-g1-stage-runtime.mjs
+
+      - name: Stage exact Windows Node runtime
+        shell: pwsh
+        run: ./scripts/desktop-g2-stage-node.ps1
+
+      - name: Stage runtime resources for NSIS
+        shell: pwsh
+        run: |
+          Remove-Item r -Recurse -Force -ErrorAction SilentlyContinue
+          robocopy dist\desktop-g1\runtime r /E /NFL /NDL /NJH /NJS /NP
+          $code=$LASTEXITCODE
+          if ($code -gt 7) { throw "robocopy failed with exit code $code" }
+          $global:LASTEXITCODE=0
+
+      - name: Select exact Rust toolchain
+        shell: pwsh
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+
+      - name: Install verified pinned Tauri CLI
+        shell: pwsh
+        run: |
+          $url="https://github.com/tauri-apps/tauri/releases/download/tauri-cli-v2.11.4/cargo-tauri-x86_64-pc-windows-msvc.zip"
+          $archive=Join-Path $env:RUNNER_TEMP "cargo-tauri.zip"
+          $extract=Join-Path $env:RUNNER_TEMP "cargo-tauri"
+          Invoke-WebRequest $url -OutFile $archive
+          $actual=(Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected="0743e30a661a35d63339b24cf63828f97ba5389a1d7f13b368a542794dd0a3f3"
+          if ($actual -ne $expected) { throw "Tauri CLI checksum mismatch: $actual" }
+          Expand-Archive $archive -DestinationPath $extract -Force
+          Copy-Item (Join-Path $extract "cargo-tauri.exe") (Join-Path $env:USERPROFILE ".cargo\bin\cargo-tauri.exe") -Force
+          cargo tauri --version
+
+      - name: Build current-head unsigned Windows x64 NSIS installer
+        shell: pwsh
+        run: |
+          subst M: "$env:GITHUB_WORKSPACE"
+          try {
+            Push-Location M:\apps\desktop-runtime\src-tauri
+            cargo tauri build --config tauri.windows-g2.conf.json --bundles nsis
+            Pop-Location
+          }
+          finally {
+            if ((Get-Location).Path -like "M:*") { Pop-Location }
+            subst M: /D
+          }
+
+      - name: Execute G3.9 current-head installer/runtime regression
+        shell: pwsh
+        run: ./scripts/desktop-g3-installer-regression-proof.ps1
+
+      - name: Upload G3.9 installer/runtime regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-g3-g3.9-installer-regression-${{ github.sha }}
+          path: |
+            apps/desktop-runtime/src-tauri/target/release/bundle/nsis/*-setup.exe
+            dist/desktop-g3-g3.9-proof/**
+          if-no-files-found: warn
+          retention-days: 14
