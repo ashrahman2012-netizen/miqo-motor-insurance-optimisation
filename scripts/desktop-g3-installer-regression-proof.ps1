@@ -101,6 +101,64 @@ function Install-Miqo {
     $dir=Resolve-InstallDir $record
 
     $allExes=@(Get-ChildItem -LiteralPath $dir -Filter "*.exe" -Recurse -File)
+
+    # G3.9 diagnostic evidence only.
+    # This records the installed layout before any packaged-runtime
+    # assertion is evaluated. It does not change locator/assertion semantics.
+    $installedLayout=[ordered]@{
+        installDir=$dir
+        registryInstallLocation=$record.InstallLocation
+        registryUninstallString=$record.UninstallString
+
+        topLevel=@(
+            Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue |
+            Select-Object Name,FullName,PSIsContainer,Length
+        )
+
+        executableFiles=@(
+            $allExes |
+            Select-Object Name,FullName,Length
+        )
+
+        nodeCandidates=@(
+            Get-ChildItem -LiteralPath $dir `
+                -Filter "node.exe" `
+                -Recurse `
+                -File `
+                -Force `
+                -ErrorAction SilentlyContinue |
+            Select-Object Name,FullName,Length
+        )
+
+        runtimeManifestCandidates=@(
+            Get-ChildItem -LiteralPath $dir `
+                -Filter "runtime-manifest.json" `
+                -Recurse `
+                -File `
+                -Force `
+                -ErrorAction SilentlyContinue |
+            Select-Object Name,FullName,Length
+        )
+
+        runtimeNamedDirectories=@(
+            Get-ChildItem -LiteralPath $dir `
+                -Directory `
+                -Recurse `
+                -Force `
+                -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.Name -in @("runtime","resources","node")
+            } |
+            Select-Object Name,FullName
+        )
+    }
+
+    $installedLayout |
+        ConvertTo-Json -Depth 8 |
+        Set-Content `
+            (Join-Path $Proof "installed-layout-diagnostics.json") `
+            -Encoding utf8
+
     $helpers=@("node.exe","uninstall.exe","uninst.exe","microsoftedgewebview2setup.exe")
 
     $candidates=@($allExes | Where-Object {
