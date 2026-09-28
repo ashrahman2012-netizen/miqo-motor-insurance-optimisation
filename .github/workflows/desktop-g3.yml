@@ -322,6 +322,7 @@ jobs:
             apps/desktop-runtime/src-tauri/target/debug/miqo-desktop-runtime.exe
           if-no-files-found: error
           retention-days: 3
+          include-hidden-files: true
 
   webview-local-origin-hardening:
     needs: local-capability-hardening
