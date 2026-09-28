@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $Root=(Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$Input=Join-Path $Root "dist\desktop-g3-g3.8-input"
+$EvidenceRoot=Join-Path $Root "dist\desktop-g3-g3.8-input"
 $Proof=Join-Path $Root "dist\desktop-g3-g3.8-proof"
 $Runtime=Join-Path $Root "dist\desktop-g1\runtime"
 $Exe=Join-Path $Root "apps\desktop-runtime\src-tauri\target\debug\miqo-desktop-runtime.exe"
@@ -15,7 +15,7 @@ function Require-Condition([bool]$Condition,[string]$Message) {
 }
 
 function Find-Evidence([string]$Area,[string]$Name) {
-    $base=Join-Path $Input $Area
+    $base=Join-Path $EvidenceRoot $Area
     if(-not (Test-Path $base)){throw "G3.8 evidence area missing: $Area"}
     $match=Get-ChildItem $base -Recurse -File -Filter $Name |
         Select-Object -First 1
@@ -45,14 +45,14 @@ $g35detail=Read-Evidence $p35detail
 $g36=Read-Evidence $p36
 $g37=Read-Evidence $p37
 
-# G3.3 — protected persistence / plaintext-negative evidence
+# G3.3 â€” protected persistence / plaintext-negative evidence
 Require-Condition ($g33.result -eq "PASS") "G3.3 is not PASS"
 Require-Condition ($g33.backend -eq "pglite-protected") "G3.3 backend is not protected"
 Require-Condition ($g33.persistentPlaintextPgdata -eq $false) "persistent plaintext PGDATA detected"
 Require-Condition ($g33.plaintextMarkerPersistentScan -eq "PASS") "G3.3 plaintext scan failed"
 Require-Condition ($g33.lockedMutationRejectedWithoutCheckpoint -eq "PASS") "locked mutation fail-closed proof missing"
 
-# G3.4 — key lifecycle / corruption / context fail-closed evidence
+# G3.4 â€” key lifecycle / corruption / context fail-closed evidence
 Require-Condition ($g34.corruptKeyringFailClosed -eq "PASS") "corrupt keyring did not fail closed"
 Require-Condition ($g34.missingKeyringFailClosed -eq "PASS") "missing keyring did not fail closed"
 Require-Condition ($g34.protectedStorePlaintextScan -eq "PASS") "protected-store plaintext scan failed"
@@ -62,7 +62,7 @@ Require-Condition ($g34.rotationRecoveryAfterStoreSwitch -eq "PASS") "rotation r
 Require-Condition ($g34u.differentUserUserShare -eq "PASS_FAIL_CLOSED") "wrong-user proof failed"
 Require-Condition ($g34m.machineContextCheck -eq "PASS_FAIL_CLOSED") "wrong-machine proof failed"
 
-# G3.5 — explicit local authority / negative API evidence
+# G3.5 â€” explicit local authority / negative API evidence
 Require-Condition ($g35.result -eq "PASS") "G3.5 is not PASS"
 Require-Condition ($g35.perLaunchCapability -eq "PASS") "per-launch capability missing"
 Require-Condition ($g35.legacyStaticAuthorityRejected -eq "PASS") "legacy static authority was not rejected"
@@ -77,7 +77,7 @@ Require-Condition ($g35detail.apiWrongOrigin -eq "PASS_403") "wrong API origin n
 Require-Condition ($g35detail.customerApiNoSession -eq "PASS_401") "unauthorised customer API caller not rejected"
 Require-Condition ($g35detail.customerApiWrongOrigin -eq "PASS_403") "wrong customer API origin not rejected"
 
-# G3.6 — WebView / origin / listener negative evidence
+# G3.6 â€” WebView / origin / listener negative evidence
 Require-Condition ($g36.result -eq "PASS") "G3.6 is not PASS"
 Require-Condition ($g36.tauriCsp -eq "EXPLICIT") "Tauri CSP is not explicit"
 Require-Condition ($g36.productionWebCsp -eq "PASS") "production web CSP failed"
@@ -89,7 +89,7 @@ Require-Condition ($g36.listeners -eq "LOOPBACK_ONLY") "non-loopback listener de
 Require-Condition ([int]$g36.unexpectedOutboundConnections -eq 0) "unexpected outbound packaged-service connection detected"
 Require-Condition ($g36.unauthorisedAdminNavigation -eq "PASS_401") "unauthorised admin navigation not rejected"
 
-# G3.7 — diagnostic leakage negative evidence
+# G3.7 â€” diagnostic leakage negative evidence
 Require-Condition ($g37.result -eq "PASS") "G3.7 is not PASS"
 Require-Condition ($g37.secretSentinelLeak -eq "ABSENT") "secret sentinel leaked"
 Require-Condition ($g37.customerPayloadLeak -eq "ABSENT") "customer payload leaked"
@@ -148,7 +148,7 @@ if($PackageHits.Count -gt 0){
 }
 
 # Re-scan the encrypted G3.7 application-local representation.
-$EncryptedStore=Get-ChildItem (Join-Path $Input "g3.7") -Recurse -File -Filter "protected-store-v1.enc" |
+$EncryptedStore=Get-ChildItem (Join-Path $EvidenceRoot "g3.7") -Recurse -File -Filter "protected-store-v1.enc" |
     Select-Object -First 1
 
 Require-Condition ($null -ne $EncryptedStore) "G3.7 protected store missing"
