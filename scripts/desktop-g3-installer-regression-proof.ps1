@@ -364,7 +364,7 @@ try{
         (Join-Path $Root "apps\desktop-runtime\src-tauri\tauri.windows-g2.conf.json") `
         -Raw | ConvertFrom-Json
 
-    Require ($config.bundle.nsis.installMode -eq "currentUser") "installer mode changed"
+    Require ($config.bundle.windows.nsis.installMode -eq "currentUser") "installer mode changed"
     Require ($config.bundle.windows.webviewInstallMode.type -eq "embedBootstrapper") "WebView2 packaging changed"
 
     $installerSignature=(Get-AuthenticodeSignature $Installer.FullName).Status.ToString()
