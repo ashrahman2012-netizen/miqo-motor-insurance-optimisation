@@ -1,4 +1,4 @@
-#[path = "../keyring.rs"]
+#[path = "../src/keyring.rs"]
 mod keyring;
 
 use base64::Engine as _;

@@ -102,6 +102,15 @@ function Install-Miqo {
 
     $allExes=@(Get-ChildItem -LiteralPath $dir -Filter "*.exe" -Recurse -File)
 
+    $testOnlyHelpers=@(
+        $allExes |
+        Where-Object { $_.Name -eq "g3-keyring-proof.exe" }
+    )
+
+    Require (
+        $testOnlyHelpers.Count -eq 0
+    ) "test-only G3 keyring proof helper packaged"
+
     # G3.9 diagnostic evidence only.
     # This records the installed layout before any packaged-runtime
     # assertion is evaluated. It does not change locator/assertion semantics.
@@ -263,7 +272,13 @@ function Start-Miqo([string]$Label,[string]$Exe){
     Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
     Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
 
-    $env:Path="$Poison;$env:SystemRoot\System32;$env:SystemRoot"
+    $WindowsPowerShellDir=Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0"
+
+    Require (
+        Test-Path -LiteralPath (Join-Path $WindowsPowerShellDir "powershell.exe")
+    ) "Windows PowerShell OS component missing"
+
+    $env:Path="$Poison;$env:SystemRoot\System32;$WindowsPowerShellDir;$env:SystemRoot"
 
     $script:RuntimeProcess=Start-Process `
         -FilePath $Exe `

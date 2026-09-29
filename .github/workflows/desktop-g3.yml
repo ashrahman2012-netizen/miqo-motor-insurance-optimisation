@@ -116,12 +116,12 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path r -Force | Out-Null
           cargo check --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin miqo-desktop-runtime
-          cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin g3-keyring-proof
+          cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --example g3-keyring-proof
 
       - name: Execute DPAPI lifecycle, reinstall, rotation and corruption proof
         shell: pwsh
         run: |
-          $exe=Resolve-Path "apps/desktop-runtime/src-tauri/target/debug/g3-keyring-proof.exe"
+          $exe=Resolve-Path "apps/desktop-runtime/src-tauri/target/debug/examples/g3-keyring-proof.exe"
           $data=Join-Path $env:RUNNER_TEMP "miqo-g3-key-data"
           $evidence=Join-Path $env:GITHUB_WORKSPACE "dist/desktop-g3-g3.4-proof"
           & $exe lifecycle $data $env:GITHUB_WORKSPACE $evidence
@@ -135,7 +135,7 @@ jobs:
           $secure=ConvertTo-SecureString $plainPassword -AsPlainText -Force
           $publicRoot=Join-Path $env:PUBLIC "miqo-g3-proof"
           New-Item -ItemType Directory -Path $publicRoot -Force | Out-Null
-          $sourceExe=Resolve-Path "apps/desktop-runtime/src-tauri/target/debug/g3-keyring-proof.exe"
+          $sourceExe=Resolve-Path "apps/desktop-runtime/src-tauri/target/debug/examples/g3-keyring-proof.exe"
           $publicExe=Join-Path $publicRoot "g3-keyring-proof.exe"
           $sourceKeyring=Resolve-Path "dist/desktop-g3-g3.4-proof/wrapped-keyring-for-context-probes.json"
           $publicKeyring=Join-Path $publicRoot "wrapped-keyring.json"
@@ -197,7 +197,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path r -Force | Out-Null
-          cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin g3-keyring-proof
+          cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --example g3-keyring-proof
 
       - uses: actions/download-artifact@v4
         with:
@@ -207,7 +207,7 @@ jobs:
       - name: Prove machine-bound share fails on a different Windows runner
         shell: pwsh
         run: |
-          $exe=Resolve-Path "apps/desktop-runtime/src-tauri/target/debug/g3-keyring-proof.exe"
+          $exe=Resolve-Path "apps/desktop-runtime/src-tauri/target/debug/examples/g3-keyring-proof.exe"
           $keyring=(Get-ChildItem "dist/desktop-g3-g3.4-source" -Recurse -Filter "wrapped-keyring-for-context-probes.json" | Select-Object -First 1).FullName
           if (-not $keyring) { throw "Wrapped keyring evidence not found" }
 
