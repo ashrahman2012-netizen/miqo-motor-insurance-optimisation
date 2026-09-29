@@ -23,6 +23,12 @@ use tauri::{
 };
 use zeroize::{Zeroize, Zeroizing};
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 const API_URL: &str = "http://127.0.0.1:4000";
 const CUSTOMER_ORIGIN: &str = "http://127.0.0.1:3000";
 const CUSTOMER_URL: &str = "http://127.0.0.1:3000/prototype";
@@ -64,7 +70,9 @@ impl RuntimeSupervisor {
         if !node.is_file() {
             return Err(format!("Packaged Node runtime missing: {}", node.display()).into());
         }
-        let version = Command::new(&node).arg("--version").output()?;
+        let mut version_command = Command::new(&node);
+        suppress_windows_console(&mut version_command);
+        let version = version_command.arg("--version").output()?;
         if !version.status.success() || String::from_utf8_lossy(&version.stdout).trim() != EXPECTED_NODE_VERSION {
             return Err("Packaged Node runtime version mismatch".into());
         }
@@ -219,6 +227,18 @@ fn checked(command: &mut Command, label: &str) -> Result<(), Box<dyn Error>> {
         return Err(format!("Failed to {label}: {status}").into());
     }
     Ok(())
+}
+
+fn suppress_windows_console(command: &mut Command) {
+    #[cfg(windows)]
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    #[cfg(not(windows))]
+    {
+        let _ = command;
+    }
 }
 
 fn generate_runtime_capability() -> Result<Zeroizing<String>, Box<dyn Error>> {
@@ -379,6 +399,7 @@ fn spawn_api_with_key(
 ) -> Result<OwnedProcess, Box<dyn Error>> {
     let script_name = script.file_name().ok_or("Packaged API script file name missing")?;
     let mut command = Command::new(node);
+    suppress_windows_console(&mut command);
     command
         .arg(script_name)
         .current_dir(cwd)
@@ -418,6 +439,7 @@ fn spawn_node(
 ) -> Result<OwnedProcess, Box<dyn Error>> {
     let script_name = script.file_name().ok_or("Packaged Node script file name missing")?;
     let mut command = Command::new(node);
+    suppress_windows_console(&mut command);
     command
         .arg(script_name)
         .current_dir(cwd)
