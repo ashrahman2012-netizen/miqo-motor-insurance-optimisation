@@ -479,11 +479,11 @@ try{
         @{name="packagedNode";path=$packagedNode.FullName},
         @{name="runtimeManifest";path=$manifest.FullName}
     ) | ForEach-Object {
-        $item=Get-Item $_.path
+        $item=Get-Item -LiteralPath $_.path
         [ordered]@{
             name=$_.name
             bytes=$item.Length
-            sha256=(Get-FileHash $_.path -Algorithm SHA256).Hash.ToLowerInvariant()
+            sha256=(Get-FileHash -LiteralPath $_.path -Algorithm SHA256).Hash.ToLowerInvariant()
         }
     }
 
