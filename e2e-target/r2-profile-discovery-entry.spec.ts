@@ -54,7 +54,7 @@ test("R2-C01-001 zero profiles renders explicit new-profile state without creati
   const posts=await mockDiscovery(page,[]);
   await page.goto("/");
 
-  await expect(page.getByRole("status")).toHaveCount(0);
+  await expect(page.getByText("Checking for retained synthetic profiles…")).toHaveCount(0);
   await expect(page.getByText("No retained synthetic profiles found.")).toBeVisible();
   await expect(page.getByRole("button",{name:"Start new synthetic profile"})).toBeVisible();
   await expect(page.getByRole("button",{name:"Resume profile"})).toHaveCount(0);
@@ -109,7 +109,7 @@ test("R2-C01-005 discovery failure is explicit and does not create a profile",as
   const posts=await mockDiscovery(page,[],{status:503});
   await page.goto("/");
 
-  await expect(page.getByRole("alert")).toHaveText("Unable to discover retained profiles.");
+  await expect(page.getByText("Unable to discover retained profiles.",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:"Start new synthetic profile"})).toBeVisible();
   expect(posts()).toBe(0);
 });

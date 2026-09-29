@@ -2,7 +2,7 @@ import {test,expect} from "@playwright/test";
 
 test("SP4-G15 admin reconstructs objective through final integrity",async({page})=>{
   await page.goto("/prototype");
-  await page.getByRole("button",{name:"Start synthetic profile"}).click();
+  await page.getByRole("button",{name:"Start new synthetic profile"}).click();
   await expect(page).toHaveURL(/\/profile\/[^/]+\/section\/identity$/);
   const profileId=page.url().match(/\/profile\/([^/]+)\//)![1];
 

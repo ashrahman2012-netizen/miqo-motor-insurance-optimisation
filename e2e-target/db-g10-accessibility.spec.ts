@@ -7,7 +7,7 @@ test("DB-G10.1 customer/admin critical path satisfies deterministic accessibilit
   await expect(page.getByText("MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY")).toBeVisible();
   await scanAccessibility(page);
   await expectVisibleKeyboardFocus(page);
-  await page.getByRole("button",{name:"Start synthetic profile"}).click();
+  await page.getByRole("button",{name:"Start new synthetic profile"}).click();
   await expect(page).toHaveURL(/\/profile\/[^/]+\/section\/identity$/);
   const profileId=page.url().match(/\/profile\/([^/]+)\//)![1];
   await scanAccessibility(page);
