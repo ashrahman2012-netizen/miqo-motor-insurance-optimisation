@@ -2,7 +2,7 @@ name: desktop-g3
 
 on:
   push:
-    branches: [miqo/desktop-g3]
+    branches: [miqo/desktop-g3, miqo/desktop-uat-remediation]
   pull_request:
     paths:
       - "apps/desktop-runtime/**"
