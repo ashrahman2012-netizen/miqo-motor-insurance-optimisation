@@ -401,7 +401,7 @@ function Assert-ProtectedData {
 function Assert-NoLegacyStaticAuthority([string]$InstallDir,[string]$Exe){
     $marker="DB-G10-SYNTHETIC-ADMIN"
 
-    foreach($file in Get-ChildItem $InstallDir -Recurse -File){
+    foreach($file in Get-ChildItem -LiteralPath $InstallDir -Recurse -File){
         if($file.Extension.ToLowerInvariant() -in @(
             ".js",".cjs",".mjs",".json",".html",".css",".txt"
         )){
@@ -433,14 +433,14 @@ try{
     $appSignature=(Get-AuthenticodeSignature -LiteralPath $install.Exe).Status.ToString()
     Require ($appSignature -eq "NotSigned") "installed executable unexpectedly signed"
 
-    $packagedNode=Get-ChildItem $install.Dir -Filter "node.exe" -Recurse |
+    $packagedNode=Get-ChildItem -LiteralPath $install.Dir -Filter "node.exe" -Recurse |
         Where-Object { $_.FullName -match "[\\/]runtime[\\/]node[\\/]node\.exe$" } |
         Select-Object -First 1
 
     Require ($null -ne $packagedNode) "packaged Node missing"
     Require ((& $packagedNode.FullName --version).Trim() -eq "v22.23.3") "packaged Node version mismatch"
 
-    $manifest=Get-ChildItem $install.Dir -Filter "runtime-manifest.json" -Recurse |
+    $manifest=Get-ChildItem -LiteralPath $install.Dir -Filter "runtime-manifest.json" -Recurse |
         Select-Object -First 1
 
     Require ($null -ne $manifest) "runtime manifest missing"
