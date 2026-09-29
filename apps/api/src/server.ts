@@ -4,7 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 import cors from "@fastify/cors";
 import { createDatabaseRuntime } from "../../../packages/db/src/client.ts";
 import { ConflictError, FinalIntegrityError, PreQuoteIntegrityError, ValidationError } from "./errors.ts";
-import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
+import { auditEvents, createCorrectionDraft, createPersistedScenario, createProfile, currentVersion, listDiscrepancies, listProfiles, lockProfile, profileSnapshot, putFact, validateProfile } from "./profile-service.ts";
 import { listOptimisationPreferences, saveOptimisationPreferences } from "./preference-service.ts";
 import { generateScenarios, listGeneratedScenarios } from "./scenario-service.ts";
 import { getPreparedQuoteRequest, listPreQuoteIntegritySignals, prepareQuoteRequest } from "./quote-service.ts";
@@ -147,6 +147,7 @@ export async function buildApp() {
     durabilityMode:runtime.durabilityMode??"DATABASE_NATIVE",
     durabilityFaulted:runtime.isDurabilityFaulted?.()??false,
   }));
+  app.get("/profiles",async()=>({items:await listProfiles(db)}));
   app.post("/profiles",async(_req,reply)=>reply.code(201).send(await createProfile(db)));
   app.get("/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId)}));
   app.post("/profiles/:profileId/validate",async(req:any)=>validateProfile(db,req.params.profileId));

@@ -28,6 +28,28 @@ export async function currentVersion(db:MiqoDatabase, profileId:string) {
   return (await db.select().from(riskProfileVersion).where(eq(riskProfileVersion.profileId,profileId)).orderBy(desc(riskProfileVersion.versionNo)).limit(1))[0];
 }
 
+export async function listProfiles(db:MiqoDatabase) {
+  const profiles=await db.select({
+    profileId:profile.profileId,
+    createdAt:profile.createdAt,
+  }).from(profile).orderBy(desc(profile.createdAt),asc(profile.profileId));
+
+  return Promise.all(profiles.map(async item=>{
+    const version=await currentVersion(db,item.profileId);
+    if(!version) throw new ValidationError("Profile version not found");
+    return {
+      profileId:item.profileId,
+      createdAt:item.createdAt,
+      currentVersion:{
+        versionId:version.riskProfileVersionId,
+        versionNo:version.versionNo,
+        status:version.status,
+        lockedAt:version.lockedAt,
+      },
+    };
+  }));
+}
+
 export async function listValues(db:MiqoDatabase,versionId:string) {
   const rows=await db.select().from(canonicalFieldValue).where(eq(canonicalFieldValue.riskProfileVersionId,versionId)).orderBy(asc(canonicalFieldValue.fieldId));
   return rows.map(r=>({fieldId:r.fieldId,controlClass:r.controlClass,value:r.valueJson,sourceType:r.sourceType,createdAt:r.createdAt}));
