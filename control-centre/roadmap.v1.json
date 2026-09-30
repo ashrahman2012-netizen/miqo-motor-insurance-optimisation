@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "miqos-control-centre-v1",
+  "snapshotDate": "2026-09-30",
+  "boundary": "SYNTHETIC_ONLY",
+  "activeRuntimeBranch": "miqo/desktop-uat-remediation",
+  "activeRuntimeHead": "d0a61b3b464a9af9d1d3408e6a1818b8a1a4ae9b",
+  "authoritativeChecks": {
+    "ci": [{"run": 1042, "status": "PASS"}, {"run": 1043, "status": "PASS"}],
+    "desktopG3": [{"run": 55, "status": "PASS"}, {"run": 56, "status": "PASS"}]
+  },
+  "openExecutionDrifts": [
+    {"id": "EXF-01", "workflow": "desktop-g1 #16", "classification": "HARNESS_DRIFT"},
+    {"id": "EXF-02", "workflow": "desktop-g2 #27", "classification": "HARNESS_DRIFT"}
+  ],
+  "roadmap": [
+    {"id": "R1", "status": "PASS"},
+    {"id": "R2.1-R2.4", "status": "PASS"},
+    {"id": "R2.5", "status": "PENDING"},
+    {"id": "R3", "status": "PENDING"},
+    {"id": "R4", "status": "PENDING"},
+    {"id": "R5", "status": "PENDING"},
+    {"id": "EH-1", "status": "NEW"},
+    {"id": "CC-0", "status": "ACTIVE"}
+  ],
+  "futureIntegrations": [
+    {"id": "SEOPA_QUOTEZONE", "status": "PENDING_EXTERNAL"},
+    {"id": "PROVIDER_ADAPTER_REGISTRY", "status": "PLANNED"},
+    {"id": "PROVIDER_NORMALISATION_PLUGINS", "status": "PLANNED"},
+    {"id": "CREDENTIAL_BROKER", "status": "NOT_AUTHORISED"},
+    {"id": "GITHUB_CONTROL_BROKER", "status": "PLANNED"}
+  ]
+}
