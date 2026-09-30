@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0",
+  "defaultPort": 4300,
+  "browserCredentialPolicy": "NO_SECRETS",
+  "endpoints": {
+    "status": {"method":"GET","path":"/api/status","write":false},
+    "roadmap": {"method":"GET","path":"/api/roadmap","write":false},
+    "events": {"method":"GET","path":"/api/events","write":false},
+    "execute": {"method":"POST","path":"/api/actions/execute","write":true,"requiresHumanApproval":true,"requiresExactHead":true},
+    "decision": {"method":"POST","path":"/api/actions/decision","write":true,"requiresHumanApproval":true},
+    "githubWebhook": {"method":"POST","path":"/api/github/webhook","write":false,"requiresSignatureVerification":true},
+    "githubSnapshot": {"method":"GET","path":"/api/github/snapshot","write":false},
+    "modelReview": {"method":"POST","path":"/api/chatgpt/review","write":false}
+  },
+  "channels": {
+    "github": {
+      "authentication": "GitHub App / installation token",
+      "feedback": ["push","pull_request","issues","workflow_run","workflow_job"]
+    },
+    "chatgptModel": {
+      "authentication": "server-side OpenAI API",
+      "state": "durable conversation maintained by broker",
+      "browserApiKey": false
+    },
+    "human": {
+      "authority": ["approve","reject","defer","physical_uat","boundary_change"]
+    }
+  },
+  "guards": [
+    "ACTION_ALLOWLIST",
+    "HUMAN_APPROVAL",
+    "STALE_HEAD_REJECTION",
+    "IDEMPOTENCY",
+    "WEBHOOK_SIGNATURE",
+    "RECEIPT_REQUIRED",
+    "SYNTHETIC_ONLY"
+  ]
+}
