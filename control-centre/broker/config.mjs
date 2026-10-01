@@ -61,7 +61,7 @@ export function createConfig(overrides={}){
     allowSnapshotHead:Boolean(overrides.allowSnapshotHead??process.env.MIQOS_ALLOW_SNAPSHOT_HEAD==="1"),
     issueNumbers:overrides.issueNumbers??[19,15],
     workflowLimit:Number(overrides.workflowLimit??8),
-    openAiModel:overrides.openAiModel??process.env.MIQOS_OPENAI_MODEL??"gpt-5.6",
+    openAiModel:overrides.openAiModel??process.env.MIQOS_OPENAI_MODEL??"",
     openAiApiKey:overrides.openAiApiKey??process.env.OPENAI_API_KEY??"",
     requestTimeoutMs:Number(overrides.requestTimeoutMs??12000),
   };
