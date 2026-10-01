@@ -9,11 +9,20 @@ Set-StrictMode -Version Latest
 $ExpectedNode = "v22.23.3"
 $PortableNode = Join-Path $env:LOCALAPPDATA "MIQOS\toolchains\node-v22.23.3-win-x64"
 
-if (Test-Path -LiteralPath (Join-Path $PortableNode "node.exe")) {
-    $env:Path = "$PortableNode;$env:Path"
+$NodeExe = Join-Path $PortableNode "node.exe"
+$NpmCmd = Join-Path $PortableNode "npm.cmd"
+
+if (-not (Test-Path -LiteralPath $NodeExe)) {
+    throw "STOP: certified portable Node is missing: $NodeExe"
 }
 
-$NodeVersion = (& node --version).Trim()
+if (-not (Test-Path -LiteralPath $NpmCmd)) {
+    throw "STOP: certified portable npm launcher is missing: $NpmCmd"
+}
+
+$env:Path = "$PortableNode;$env:Path"
+
+$NodeVersion = (& $NodeExe --version).Trim()
 if ($NodeVersion -ne $ExpectedNode) {
     throw "STOP: CC-2 requires Node $ExpectedNode; found $NodeVersion."
 }
@@ -49,4 +58,4 @@ Write-Host "GitHub     : READ-ONLY"
 Write-Host "Mutations  : DISABLED"
 Write-Host ""
 
-npm run control-centre:broker
+& $NpmCmd run control-centre:broker
