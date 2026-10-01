@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "mode": "CC2_READ_ONLY",
+  "readOnly": [
+    "VIEW_G3",
+    "VIEW_R1",
+    "VIEW_R2A",
+    "READ_GITHUB_STATUS",
+    "MODEL_REVIEW"
+  ],
+  "mutatingBlocked": [
+    "EH1_AUTHORISE",
+    "EH2_EXECUTE",
+    "R25_EXECUTE",
+    "R3_AUTHORISE",
+    "R4_EXECUTE",
+    "EH3_DESIGN",
+    "R5_AUTHORISE"
+  ]
+}
