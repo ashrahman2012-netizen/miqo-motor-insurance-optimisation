@@ -115,6 +115,12 @@ jobs:
           NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
       - run: node scripts/desktop-g1-stage-runtime.mjs
       - run: bash scripts/desktop-g1-stage-node.sh
+      - name: Stage repository-root runtime resources
+        run: |
+          rm -rf r
+          mkdir -p r
+          cp -a dist/desktop-g1/runtime/. r/
+          test -f r/runtime-manifest.json
       - name: Install Tauri Linux prerequisites
         run: |
           sudo apt-get update
