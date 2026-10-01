@@ -1,11 +1,14 @@
 export function modelState(config){
   return config.openAiApiKey
-    ? {state:"CONFIGURED_ANALYSIS_ONLY",model:config.openAiModel,mutationsEnabled:false,browserKeyPresent:false}
-    : {state:"NOT_CONFIGURED",model:config.openAiModel,mutationsEnabled:false,browserKeyPresent:false};
+    ? (config.openAiModel
+      ? {state:"CONFIGURED_ANALYSIS_ONLY",model:config.openAiModel,mutationsEnabled:false,browserKeyPresent:false}
+      : {state:"CONFIGURED_MODEL_REQUIRED",model:null,mutationsEnabled:false,browserKeyPresent:false})
+    : {state:"NOT_CONFIGURED",model:null,mutationsEnabled:false,browserKeyPresent:false};
 }
 
 export async function modelReview(config,packet,githubSnapshot){
   if(!config.openAiApiKey)throw new Error("OPENAI_NOT_CONFIGURED");
+  if(!config.openAiModel)throw new Error("OPENAI_MODEL_NOT_CONFIGURED");
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),config.requestTimeoutMs*2);
   try{
