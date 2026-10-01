@@ -79,10 +79,10 @@ Set `OPENAI_API_KEY` locally to enable the allow-listed `MODEL_REVIEW` action. T
 Optional model override:
 
 ```powershell
-$env:MIQOS_OPENAI_MODEL = "gpt-5.6"
+$env:MIQOS_OPENAI_MODEL = "<approved OpenAI API model id>"
 ```
 
-CC-2 model use is analysis-only; it receives no repository mutation tool.
+CC-2 model use is analysis-only; it receives no repository mutation tool. The broker does not hard-code a model ID so the API model can be selected explicitly and updated without changing broker code.
 
 ## Tests
 
