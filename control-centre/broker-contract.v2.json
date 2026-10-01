@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "2.0",
+  "phase": "CC-2",
+  "defaultHost": "127.0.0.1",
+  "defaultPort": 4300,
+  "mode": "READ_ONLY",
+  "browserCredentialPolicy": "NO_SECRETS",
+  "endpoints": {
+    "status": {"method":"GET","path":"/api/status","write":false},
+    "roadmap": {"method":"GET","path":"/api/roadmap","write":false},
+    "githubStatus": {"method":"GET","path":"/api/github/status","write":false},
+    "execute": {"method":"POST","path":"/api/actions/execute","write":false,"requiresHumanApproval":true,"requiresExactHead":true},
+    "actionReceipt": {"method":"GET","path":"/api/actions/:id","write":false}
+  },
+  "github": {
+    "mode": "READ_ONLY",
+    "mutationsEnabled": false,
+    "auth": ["MIQOS_GITHUB_TOKEN","GITHUB_TOKEN","GH_TOKEN","gh-cli","public-readonly"]
+  },
+  "model": {
+    "mode": "OPTIONAL_ANALYSIS_ONLY",
+    "mutationsEnabled": false,
+    "browserApiKey": false
+  },
+  "guards": [
+    "LOOPBACK_ONLY",
+    "ACTION_ALLOWLIST",
+    "HUMAN_APPROVAL",
+    "STALE_HEAD_REJECTION",
+    "NO_BROWSER_SECRETS",
+    "CC2_MUTATIONS_DISABLED",
+    "SYNTHETIC_ONLY",
+    "ACTION_RECEIPT"
+  ]
+}
