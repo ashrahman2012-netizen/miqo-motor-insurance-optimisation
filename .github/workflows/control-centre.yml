@@ -2,7 +2,12 @@ name: control-centre
 
 on:
   push:
-    branches: [miqo/control-centre-v1]
+    branches: [miqo/control-centre-v1, miqo/control-centre-cc3]
+    paths:
+      - "control-centre/**"
+      - "package.json"
+      - ".github/workflows/control-centre.yml"
+  pull_request:
     paths:
       - "control-centre/**"
       - "package.json"
@@ -13,11 +18,12 @@ permissions:
   contents: read
 
 jobs:
-  cc2-broker:
+  cc3-broker:
     runs-on: ubuntu-latest
     env:
       MIQO_DATA_CLASSIFICATION: SYNTHETIC
       MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      MIQOS_CC3_WRITES_ENABLED: "0"
     steps:
       - uses: actions/checkout@v4
 
@@ -25,14 +31,16 @@ jobs:
         with:
           node-version: 22.23.3
 
-      - name: Verify CC-2 broker syntax
+      - name: Verify CC-3 broker syntax
         run: |
           node --check control-centre/broker/config.mjs
           node --check control-centre/broker/store.mjs
           node --check control-centre/broker/github.mjs
+          node --check control-centre/broker/github-write.mjs
           node --check control-centre/broker/model.mjs
+          node --check control-centre/broker/mutation-policy.mjs
           node --check control-centre/broker/actions.mjs
           node --check control-centre/broker/server.mjs
 
-      - name: Run CC-2 broker contract tests
+      - name: Run CC-3 broker contract tests
         run: npm run test:control-centre:broker

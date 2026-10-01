@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "2.0",
+  "mode": "CC3_GUARDED",
+  "readOnly": [
+    "VIEW_G3",
+    "VIEW_R1",
+    "VIEW_R2A",
+    "READ_GITHUB_STATUS",
+    "MODEL_REVIEW"
+  ],
+  "mutatingAllowed": [
+    "EH1_AUTHORISE"
+  ],
+  "mutatingBlocked": [
+    "SC1_AUTHORISE",
+    "EH2_EXECUTE",
+    "R25_EXECUTE",
+    "CC3_AUTHORISE",
+    "R3_AUTHORISE",
+    "R4_EXECUTE",
+    "CC4_AUTHORISE",
+    "EH3_DESIGN",
+    "R5_AUTHORISE",
+    "CC5_AUTHORISE"
+  ]
+}

@@ -2,14 +2,16 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createConfig, detectGitHubToken } from "./config.mjs";
+import {
+  createConfig,detectGitHubToken,detectGitHubWriteToken,
+} from "./config.mjs";
 import { ActionStore } from "./store.mjs";
 import { createGitHubReader } from "./github.mjs";
+import { createGitHubWriter } from "./github-write.mjs";
 import { createActionExecutor } from "./actions.mjs";
 import { modelState } from "./model.mjs";
 
-const MAX_BODY_BYTES=128*1024;
-
+const MAX_BODY_BYTES=256*1024;
 const readJson=async path=>JSON.parse(await readFile(path,"utf8"));
 
 function allowedOrigin(origin){
@@ -68,19 +70,32 @@ async function readBody(req){
   }
 }
 
+function brokerMode(config,writer){
+  const state=writer.state();
+  if(config.cc3WritesEnabled&&state.state==="CONFIGURED"&&state.mutationsEnabled){
+    return {mode:"CC3_GUARDED_WRITE",mutationsEnabled:true};
+  }
+  return {mode:"CC3_LOCKED",mutationsEnabled:false};
+}
+
 export async function createBroker(overrides={}){
   const config=createConfig(overrides);
-  if(config.host!=="127.0.0.1")throw new Error("CC2_BIND_HOST_MUST_BE_LOOPBACK");
+  if(config.host!=="127.0.0.1")throw new Error("CC3_BIND_HOST_MUST_BE_LOOPBACK");
 
   const roadmap=await readJson(config.roadmapPath);
   const allowlist=await readJson(config.allowlistPath);
+  const actionPolicy=await readJson(config.actionPolicyPath);
   const store=new ActionStore(config.actionStorePath);
   await store.load();
 
-  const auth=detectGitHubToken();
-  const github=createGitHubReader({config,roadmap,auth});
+  const readAuth=detectGitHubToken();
+  const writeAuth=detectGitHubWriteToken();
+  const github=overrides.githubReader??createGitHubReader({config,roadmap,auth:readAuth});
+  const writer=overrides.githubWriter??createGitHubWriter({
+    config,roadmap,auth:writeAuth,fetchImpl:overrides.fetchImpl??fetch,
+  });
   const executeAction=createActionExecutor({
-    config,roadmap,allowlist,store,github,
+    config,roadmap,allowlist,actionPolicy,store,github,writer,
   });
 
   const server=http.createServer(async(req,res)=>{
@@ -99,11 +114,12 @@ export async function createBroker(overrides={}){
       if(req.method==="GET"&&url.pathname==="/api/status"){
         const snapshot=await github.snapshot();
         const targetHead=await github.resolveTargetHead();
+        const mode=brokerMode(config,writer);
         return sendJson(req,res,200,{
-          service:"MIQOS_CC2_LOCAL_TRUSTED_BROKER",
-          version:"0.2.0",
+          service:"MIQOS_CC3_AUTHORISED_GITHUB_BROKER",
+          version:"0.3.0",
           health:"OK",
-          mode:"CC2_READ_ONLY",
+          mode:mode.mode,
           host:config.host,
           port:server.address()?.port??config.port,
           boundary:roadmap.boundary,
@@ -113,8 +129,9 @@ export async function createBroker(overrides={}){
           headSource:targetHead.source,
           headMatchesRoadmap:targetHead.head===roadmap.activeHead,
           github:snapshot.connection,
+          githubWrite:writer.state(),
           model:modelState(config),
-          mutationsEnabled:false,
+          mutationsEnabled:mode.mutationsEnabled,
           observedAt:new Date().toISOString(),
         });
       }
@@ -144,13 +161,15 @@ export async function createBroker(overrides={}){
       }
 
       if(req.method==="GET"&&url.pathname==="/"){
+        const mode=brokerMode(config,writer);
         return sendJson(req,res,200,{
-          service:"MIQOS CC-2 Local Trusted Broker",
+          service:"MIQOS CC-3 Authorised GitHub Execution Broker",
+          mode:mode.mode,
           statusEndpoint:"/api/status",
           roadmapEndpoint:"/api/roadmap",
           githubEndpoint:"/api/github/status",
           executeEndpoint:"/api/actions/execute",
-          mutationsEnabled:false,
+          mutationsEnabled:mode.mutationsEnabled,
         });
       }
 
@@ -180,7 +199,8 @@ export async function createBroker(overrides={}){
   }
 
   return {
-    config,roadmap,allowlist,store,github,server,start,close,executeAction,
+    config,roadmap,allowlist,actionPolicy,store,github,writer,
+    server,start,close,executeAction,
   };
 }
 
@@ -188,21 +208,23 @@ async function main(){
   const broker=await createBroker();
   const address=await broker.start();
   const github=await broker.github.snapshot();
+  const mode=brokerMode(broker.config,broker.writer);
 
-  console.log("MIQOS CC-2 Local Trusted Broker");
+  console.log("MIQOS CC-3 Authorised GitHub Execution Broker");
   console.log("Listening: http://"+address.address+":"+address.port);
   console.log("Repository: "+broker.roadmap.repository);
   console.log("Target branch: "+broker.roadmap.activeBranch);
   console.log("Expected head: "+broker.roadmap.activeHead);
-  console.log("GitHub: "+github.connection.state+" ("+(github.connection.authSource??"none")+")");
-  console.log("OpenAI/model: "+modelState(broker.config).state);
-  console.log("Mutations: DISABLED (CC-2 read-only)");
+  console.log("GitHub read: "+github.connection.state+" ("+(github.connection.authSource??"none")+")");
+  console.log("GitHub write identity: "+broker.writer.state().state+" ("+(broker.writer.state().authSource??"none")+")");
+  console.log("Mode: "+mode.mode);
+  console.log("Mutations: "+(mode.mutationsEnabled?"GUARDED / ALLOW-LISTED":"LOCKED"));
 }
 
 const invoked=process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href;
 if(invoked){
   main().catch(error=>{
-    console.error("CC2_BROKER_START_FAILED: "+error.message);
+    console.error("CC3_BROKER_START_FAILED: "+error.message);
     process.exitCode=1;
   });
 }
