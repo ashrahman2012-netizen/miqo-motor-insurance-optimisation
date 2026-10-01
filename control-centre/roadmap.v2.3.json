@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "2.3",
+  "snapshot": "2026-10-01",
+  "repository": "ashrahman2012-netizen/miqo-motor-insurance-optimisation",
+  "activeBranch": "miqo/desktop-uat-remediation",
+  "controlBranch": "miqo/control-centre-v1",
+  "activeHead": "d0a61b3b464a9af9d1d3408e6a1818b8a1a4ae9b",
+  "boundary": "SYNTHETIC_ONLY",
+  "brokerUrl": "http://127.0.0.1:4300",
+  "progress": {
+    "method": "weighted-stage-effort",
+    "currentPercent": 37
+  },
+  "stages": [
+    {"id":"G3","lane":"Certified baseline","title":"DESKTOP-G3 security baseline","status":"PASS","weight":14,"gate":"CLOSED"},
+    {"id":"R1","lane":"Desktop remediation","title":"Suppress internal Node console windows","status":"PASS","weight":4,"gate":"CLOSED"},
+    {"id":"R2A","lane":"Desktop remediation","title":"R2.1–R2.4 retained-profile discovery","status":"PASS","weight":8,"gate":"GREEN"},
+    {"id":"CC1","lane":"Control Centre","title":"Interactive Control Centre V2","status":"PASS","weight":4,"gate":"CLOSED"},
+    {"id":"CC2","lane":"Control Centre","title":"Local trusted broker","status":"PASS","weight":7,"gate":"CC2_READ_ONLY"},
+    {"id":"EH1","lane":"Execution harmonisation","title":"Legacy G1/G2 harness harmonisation","status":"NEXT","weight":6,"gate":"AUTHORISATION_REQUIRED","actionId":"EH1_AUTHORISE"},
+    {"id":"SC1","lane":"Supply-chain","title":"Dependency audit remediation","status":"NEW","weight":6,"gate":"CONTROLLED_DEPENDENCY_CHANGE","actionId":"SC1_AUTHORISE"},
+    {"id":"EH2","lane":"Execution harmonisation","title":"Unified regression matrix","status":"PLANNED","weight":4,"gate":"EH1_REQUIRED","actionId":"EH2_EXECUTE"},
+    {"id":"R2.5","lane":"Desktop remediation","title":"Safe DRAFT hydration in C-03","status":"PLANNED","weight":6,"gate":"EH1_GREEN","actionId":"R25_EXECUTE"},
+    {"id":"CC3","lane":"Control Centre","title":"Authorised GitHub execution broker","status":"PLANNED","weight":10,"gate":"CC2_PASS","actionId":"CC3_AUTHORISE"},
+    {"id":"R3","lane":"Product UX","title":"MIQOS application shell","status":"PLANNED","weight":8,"gate":"R2_REQUIRED","actionId":"R3_AUTHORISE"},
+    {"id":"R4","lane":"Product UX","title":"Installer/product presentation","status":"PLANNED","weight":5,"gate":"R3_REQUIRED","actionId":"R4_EXECUTE"},
+    {"id":"CC4","lane":"Control Centre","title":"Real-time feedback and notifications","status":"PLANNED","weight":5,"gate":"CC3_REQUIRED","actionId":"CC4_AUTHORISE"},
+    {"id":"EH3","lane":"Future integration","title":"Provider-integration seam hardening","status":"FUTURE","weight":6,"gate":"PROVIDER_NEUTRAL_ONLY","actionId":"EH3_DESIGN"},
+    {"id":"INT1","lane":"External integration","title":"SEOPA / Quotezone onboarding","status":"WAITING_EXTERNAL","weight":2,"gate":"PROVIDER_RESPONSE_REQUIRED"},
+    {"id":"R5","lane":"Closure","title":"Integrated physical UAT and remediation closure","status":"PLANNED","weight":3,"gate":"R2_R3_R4_REQUIRED","actionId":"R5_AUTHORISE"},
+    {"id":"CC5","lane":"Control Centre","title":"Control-plane assurance and closure","status":"PLANNED","weight":2,"gate":"CC3_CC4_REQUIRED","actionId":"CC5_AUTHORISE"}
+  ]
+}
