@@ -45,21 +45,16 @@ jobs:
       - run: npm run verify:pins
       - run: npm run verify:boundary
 
-      - name: Build customer standalone output
+      - name: Build standalone web runtimes without packaged static admin authority
         shell: pwsh
         run: |
           $env:NEXT_PUBLIC_API_URL="http://127.0.0.1:4000"
           $env:NEXT_PUBLIC_ADMIN_WEB_URL="http://127.0.0.1:3001"
-          $env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE="DB-G10-SYNTHETIC-ADMIN"
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
+          Remove-Item Env:MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          Remove-Item Env:MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
           npm run build -w @miqo/customer-web
-
-      - name: Build admin standalone output
-        shell: pwsh
-        run: |
-          $env:MIQO_DATA_CLASSIFICATION="SYNTHETIC"
-          $env:MIQO_SYNTHETIC_ADMIN_GATE="DB-G10-SYNTHETIC-ADMIN"
-          $env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY="DB-G10-SYNTHETIC-ADMIN"
-          $env:NEXT_PUBLIC_API_URL="http://127.0.0.1:4000"
           npm run build -w @miqo/admin-web
 
       - run: node scripts/desktop-g1-stage-runtime.mjs
@@ -113,11 +108,9 @@ jobs:
             subst M: /D
           }
 
-      - run: npx playwright install chromium
-
-      - name: Execute installed clean-machine lifecycle proof
+      - name: Execute current-architecture installed lifecycle proof
         shell: pwsh
-        run: ./scripts/desktop-g2-windows-proof.ps1
+        run: ./scripts/desktop-g3-installer-regression-proof.ps1
 
       - name: Upload Windows installer and G2 evidence
         if: always()
@@ -128,5 +121,6 @@ jobs:
             apps/desktop-runtime/src-tauri/target/release/bundle/nsis/*-setup.exe
             dist/desktop-g2/node-stage.json
             dist/desktop-g2-proof/**
+            dist/desktop-g3-g3.9-proof/**
           if-no-files-found: warn
           retention-days: 14
