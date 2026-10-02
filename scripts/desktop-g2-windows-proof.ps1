@@ -181,7 +181,7 @@ function Start-Miqo([string]$label, [string]$exe) {
   }
 
   $health = Invoke-RestMethod "http://127.0.0.1:4000/health"
-  if ($health.dataClassification -ne "SYNTHETIC" -or $health.liveProvidersEnabled -ne $false -or $health.databaseBackend -ne "pglite") {
+  if ($health.dataClassification -ne "SYNTHETIC" -or $health.liveProvidersEnabled -ne $false -or $health.databaseBackend -ne "pglite-protected") {
     throw "Installed API health boundary mismatch"
   }
 
@@ -221,7 +221,7 @@ function Stop-Miqo([object]$markers) {
   }
   if (-not (Test-Path $markers.Shutdown)) { throw "Shutdown marker missing" }
   $shutdown = Get-Content $markers.Shutdown -Raw | ConvertFrom-Json
-  if ($shutdown.clean -ne $true -or $shutdown.databaseBackend -ne "pglite") { throw "Shutdown evidence invalid" }
+  if ($shutdown.clean -ne $true -or $shutdown.databaseBackend -ne "pglite-protected") { throw "Shutdown evidence invalid" }
   foreach ($port in 3000,3001,4000) {
     if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) {
       throw "Listener remains after shutdown on port $port"
@@ -315,7 +315,7 @@ try {
     rustStaticVCRuntime = "tauri-default"
     loopbackOnly = $true
     packagedNodeVersion = "22.23.3"
-    databaseBackend = "pglite"
+    databaseBackend = "pglite-protected"
     syntheticOnly = $true
   } | ConvertTo-Json | Set-Content (Join-Path $Proof "security-inspection.json")
 
@@ -352,7 +352,7 @@ try {
     hostNpmRequired = $false
     dockerRequired = $false
     externalPostgresRequired = $false
-    databaseBackend = "PGLITE"
+    databaseBackend = "PGLITE_PROTECTED"
     boundary = "SYNTHETIC_ONLY"
   } | ConvertTo-Json | Set-Content (Join-Path $Proof "desktop-g2-proof.json")
   Get-Content (Join-Path $Proof "desktop-g2-proof.json")
