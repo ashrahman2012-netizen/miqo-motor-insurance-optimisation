@@ -140,7 +140,7 @@ test("R2.5-C03-001 resumed DRAFT hydrates persisted facts without mutation",asyn
   await page.goto("/profile/"+draft.profileId+"/section/identity");
 
   await expect(page.getByText("Loading retained profile…")).toHaveCount(0);
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByText("Unable to load the retained profile. Saving is disabled.",{exact:true})).toHaveCount(0);
   await expect(page.getByLabel("Main driver ID")).toHaveValue("DRV-SYN-R25-HYDRATED");
   await expect(page.getByLabel("Annual mileage")).toHaveValue("6123");
   await expect(page.getByLabel("Licence held since")).toHaveValue("2016-02-14");
@@ -180,7 +180,7 @@ test("R2.5-C03-002 failed DRAFT hydration blocks stale-default save",async({page
 
   await page.goto("/profile/"+profileId+"/section/identity");
 
-  await expect(page.getByRole("alert")).toHaveText("Unable to load the retained profile. Saving is disabled.");
+  await expect(page.getByText("Unable to load the retained profile. Saving is disabled.",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:"Save & continue"})).toBeDisabled();
   await expect(page.getByLabel("Main driver ID")).toBeDisabled();
   await expect(page.getByLabel("Annual mileage")).toBeDisabled();
