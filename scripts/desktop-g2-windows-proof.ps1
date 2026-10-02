@@ -154,7 +154,12 @@ function Start-Miqo([string]$label, [string]$exe) {
   $env:MIQO_DESKTOP_DATA_DIR_PROOF_FILE = $dataProof
   $env:MIQO_DATA_CLASSIFICATION = "SYNTHETIC"
   $env:MIQO_LIVE_PROVIDERS_ENABLED = "false"
-  $env:Path = "$Poison;$env:SystemRoot\System32;$env:SystemRoot"
+  $WindowsPowerShellDir = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0"
+  $WindowsPowerShellExe = Join-Path $WindowsPowerShellDir "powershell.exe"
+  if (-not (Test-Path -LiteralPath $WindowsPowerShellExe)) {
+    throw "Certified Windows PowerShell dependency missing: $WindowsPowerShellExe"
+  }
+  $env:Path = "$Poison;$env:SystemRoot\System32;$WindowsPowerShellDir;$env:SystemRoot"
 
   $script:RuntimeProcess = Start-Process -FilePath $exe -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
   $env:Path = $OriginalPath
