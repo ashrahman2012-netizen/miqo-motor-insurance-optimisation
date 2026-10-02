@@ -105,7 +105,7 @@ const g2 = byId.get("desktop-g2");
 if (
   g2 &&
   !g2.allowedHostDependencies.some((value) =>
-    String(value).toLowerCase().includes("windowspowershell")
+    String(value).toLowerCase().replace(/\s+/g, "").includes("windowspowershell")
   )
 ) {
   fail("desktop-g2: WindowsPowerShell dependency must remain explicitly allow-listed");
