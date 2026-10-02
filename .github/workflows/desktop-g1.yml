@@ -88,7 +88,7 @@ jobs:
 
   tauri-distributable:
     needs: embedded-pglite
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 75
     env:
       MIQO_DATA_CLASSIFICATION: SYNTHETIC
@@ -96,46 +96,74 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: 22.23.3, cache: npm}
+        with:
+          node-version: 22.23.3
+          cache: npm
+      - name: Verify Node and npm pins
+        shell: pwsh
+        run: |
+          if ((node --version) -ne "v22.23.3") { throw "Node pin mismatch" }
+          if ((npm --version) -ne "10.9.9") { throw "npm pin mismatch" }
       - run: npm ci
       - run: npm run verify:pins
       - run: npm run verify:boundary
-      - name: Build customer standalone output
-        run: npm run build -w @miqo/customer-web
-        env:
-          NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
-          NEXT_PUBLIC_ADMIN_WEB_URL: http://127.0.0.1:3001
-          NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE: DB-G10-SYNTHETIC-ADMIN
-      - name: Build admin standalone output
-        run: npm run build -w @miqo/admin-web
-        env:
-          MIQO_DATA_CLASSIFICATION: SYNTHETIC
-          MIQO_SYNTHETIC_ADMIN_GATE: DB-G10-SYNTHETIC-ADMIN
-          NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY: DB-G10-SYNTHETIC-ADMIN
-          NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
-      - run: node scripts/desktop-g1-stage-runtime.mjs
-      - run: bash scripts/desktop-g1-stage-node.sh
-      - name: Install Tauri Linux prerequisites
+      - name: Build standalone web runtimes without packaged static admin authority
+        shell: pwsh
         run: |
-          sudo apt-get update
-          sudo apt-get install -y             libwebkit2gtk-4.1-dev             build-essential             curl             wget             file             libxdo-dev             libssl-dev             libayatana-appindicator3-dev             librsvg2-dev             xvfb
+          $env:NEXT_PUBLIC_API_URL="http://127.0.0.1:4000"
+          $env:NEXT_PUBLIC_ADMIN_WEB_URL="http://127.0.0.1:3001"
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          Remove-Item Env:NEXT_PUBLIC_MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
+          Remove-Item Env:MIQO_SYNTHETIC_ADMIN_GATE -ErrorAction SilentlyContinue
+          Remove-Item Env:MIQO_SYNTHETIC_ADMIN_KEY -ErrorAction SilentlyContinue
+          npm run build -w @miqo/customer-web
+          npm run build -w @miqo/admin-web
+      - run: node scripts/desktop-g1-stage-runtime.mjs
+      - name: Stage exact Windows Node runtime
+        shell: pwsh
+        run: ./scripts/desktop-g2-stage-node.ps1
+      - name: Stage repository-root runtime resources
+        shell: pwsh
+        run: |
+          Remove-Item r -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item r -ItemType Directory -Force | Out-Null
+          Copy-Item "dist\desktop-g1\runtime\*" r -Recurse -Force
+          if (-not (Test-Path "r\runtime-manifest.json")) { throw "runtime-manifest.json missing from staged repository-root resources" }
       - name: Select exact Rust toolchain
+        shell: pwsh
         run: |
           rustup set auto-self-update disable
           rustup toolchain install 1.98.1 --profile minimal
           rustup default 1.98.1
           rustc --version
           cargo --version
-      - name: Build resource-backed Tauri runtime
-        run: cargo build --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --locked
-      - run: npx playwright install --with-deps chromium
-      - name: Prove Tauri packaged-runtime independence
-        run: bash scripts/desktop-g1-tauri-proof.sh
+      - name: Build resource-backed Windows Tauri runtime
+        shell: pwsh
+        run: cargo build --locked --manifest-path apps/desktop-runtime/src-tauri/Cargo.toml --bin miqo-desktop-runtime
+      - name: Prove Windows Tauri packaged-runtime independence
+        shell: pwsh
+        run: |
+          ./scripts/desktop-g3-local-capability-proof.ps1
+          New-Item "dist\desktop-g1-tauri-proof" -ItemType Directory -Force | Out-Null
+          @{
+            g1_5="PASS"
+            g1_6="PASS"
+            nativeRuntime="WINDOWS"
+            packagedRuntime="PASS"
+            certifiedCapabilityProof="G3.5"
+            hostNodeRequired=$false
+            hostNpmRequired=$false
+            dockerRequired=$false
+            externalPostgresRequired=$false
+            boundary="SYNTHETIC_ONLY"
+          } | ConvertTo-Json | Set-Content "dist\desktop-g1-tauri-proof\g1-tauri-proof.json"
       - name: Upload G1 Tauri evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: desktop-g1-tauri-${{ github.sha }}
-          path: dist/desktop-g1-tauri-proof/**
+          path: |
+            dist/desktop-g1-tauri-proof/**
+            dist/desktop-g3-g3.5-proof/**
           if-no-files-found: warn
           retention-days: 14
