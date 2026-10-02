@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { modelReview } from "./model.mjs";
+import { validateWritePlan, validateClosePr } from "./mutation-policy.mjs";
 
 const now=()=>new Date().toISOString();
 const hash=value=>createHash("sha256").update(value).digest("hex");
@@ -20,7 +21,41 @@ export function validatePacket(packet,roadmap){
   return errors;
 }
 
-export function createActionExecutor({config,roadmap,allowlist,store,github}){
+async function executeWriteOperation(writer,packet,rule,op){
+  if(op.type==="create_branch"){
+    return writer.createBranch(op.branch,op.baseSha);
+  }
+  if(op.type==="update_file"){
+    return writer.upsertFile({
+      branch:op.branch,
+      path:op.path,
+      content:op.content,
+      message:"[CC3:"+packet.actionId+"] "+(op.message||"controlled update"),
+    });
+  }
+  if(op.type==="dispatch_workflow"){
+    return writer.dispatchWorkflow({workflow:op.workflow,ref:op.ref,inputs:op.inputs??{}});
+  }
+  if(op.type==="open_validation_pr"){
+    return writer.openPullRequest({
+      head:op.head,base:op.base,title:op.title,
+      body:op.body??"MIQOS CC-3 controlled validation PR.",
+      draft:true,
+    });
+  }
+  if(op.type==="comment_issue"){
+    return writer.commentIssue({issueNumber:Number(op.issueNumber),body:op.body});
+  }
+  if(op.type==="close_validation_pr"){
+    await validateClosePr(writer,op,rule);
+    return writer.closePullRequest(Number(op.prNumber));
+  }
+  throw new Error("CC3_OPERATION_NOT_IMPLEMENTED");
+}
+
+export function createActionExecutor({
+  config,roadmap,allowlist,actionPolicy,store,github,writer,
+}){
   return async function execute(packet){
     const errors=validatePacket(packet,roadmap);
     if(errors.length){
@@ -30,6 +65,7 @@ export function createActionExecutor({config,roadmap,allowlist,store,github}){
       throw error;
     }
 
+    const packetHash=hash(JSON.stringify(packet));
     const current=await github.resolveTargetHead({requireLive:true});
     if(packet.expectedHead!==current.head){
       const error=new Error("STALE_HEAD_REJECTED");
@@ -44,14 +80,14 @@ export function createActionExecutor({config,roadmap,allowlist,store,github}){
 
     const base={
       id:randomUUID(),
-      schemaVersion:"1.0",
+      schemaVersion:"1.1",
       stageId:packet.stageId,
       actionId:packet.actionId,
       verb:packet.verb,
       repository:packet.repository,
       branch:packet.branch,
       expectedHead:packet.expectedHead,
-      packetHash:hash(JSON.stringify(packet)),
+      packetHash,
       approvedAt:packet.approval?.approvedAt??now(),
       createdAt:now(),
       updatedAt:now(),
@@ -59,19 +95,80 @@ export function createActionExecutor({config,roadmap,allowlist,store,github}){
       evidence:[],
     };
 
+    if(allowlist.readOnly.includes(packet.actionId)){
+      const snapshot=await github.snapshot({force:true});
+
+      if(packet.actionId==="MODEL_REVIEW"){
+        try{
+          const review=await modelReview(config,packet,snapshot);
+          const record=await store.put({
+            ...base,
+            status:"COMPLETED_READ_ONLY",
+            completedAt:now(),
+            updatedAt:now(),
+            evidence:[{
+              type:"github_snapshot",
+              observedAt:snapshot.observedAt,
+              targetHead:snapshot.target?.head??null,
+            }],
+            result:{
+              review,
+              githubSummary:{target:snapshot.target,connection:snapshot.connection},
+            },
+          });
+          return {httpStatus:200,record};
+        }catch(error){
+          const record=await store.put({
+            ...base,
+            status:"FAILED_ANALYSIS_ONLY",
+            completedAt:now(),
+            updatedAt:now(),
+            result:{code:error.message},
+          });
+          return {
+            httpStatus:error.message==="OPENAI_NOT_CONFIGURED"?503:502,
+            record,
+          };
+        }
+      }
+
+      const stage=roadmap.stages.find(item=>item.id===packet.stageId)??null;
+      const record=await store.put({
+        ...base,
+        status:"COMPLETED_READ_ONLY",
+        completedAt:now(),
+        updatedAt:now(),
+        evidence:[{
+          type:"github_snapshot",
+          observedAt:snapshot.observedAt,
+          targetHead:snapshot.target?.head??null,
+        }],
+        result:{
+          stage,
+          githubSummary:{
+            connection:snapshot.connection,
+            target:snapshot.target,
+            recentRuns:snapshot.workflowRuns.slice(0,5),
+            issues:snapshot.issues,
+          },
+        },
+      });
+      return {httpStatus:200,record};
+    }
+
     if(allowlist.mutatingBlocked.includes(packet.actionId)){
       const record=await store.put({
         ...base,
-        status:"BLOCKED_CC2_MUTATIONS_DISABLED",
+        status:"BLOCKED_CC3_ACTION_NOT_ENABLED",
         result:{
-          code:"CC2_READ_ONLY",
-          message:"Action is valid and approved, but repository mutations are disabled until CC-3.",
+          code:"CC3_ACTION_NOT_ENABLED",
+          message:"This mutating action is not enabled by the current CC-3 allowlist.",
         },
       });
       return {httpStatus:409,record};
     }
 
-    if(!allowlist.readOnly.includes(packet.actionId)){
+    if(!allowlist.mutatingAllowed.includes(packet.actionId)){
       const record=await store.put({
         ...base,
         status:"REJECTED_NOT_ALLOWLISTED",
@@ -80,63 +177,89 @@ export function createActionExecutor({config,roadmap,allowlist,store,github}){
       return {httpStatus:403,record};
     }
 
-    const snapshot=await github.snapshot({force:true});
-
-    if(packet.actionId==="MODEL_REVIEW"){
-      try{
-        const review=await modelReview(config,packet,snapshot);
-        const record=await store.put({
-          ...base,
-          status:"COMPLETED_READ_ONLY",
-          completedAt:now(),
-          updatedAt:now(),
-          evidence:[{
-            type:"github_snapshot",
-            observedAt:snapshot.observedAt,
-            targetHead:snapshot.target?.head??null,
-          }],
-          result:{
-            review,
-            githubSummary:{target:snapshot.target,connection:snapshot.connection},
-          },
-        });
-        return {httpStatus:200,record};
-      }catch(error){
-        const record=await store.put({
-          ...base,
-          status:"FAILED_ANALYSIS_ONLY",
-          completedAt:now(),
-          updatedAt:now(),
-          result:{code:error.message},
-        });
-        return {
-          httpStatus:error.message==="OPENAI_NOT_CONFIGURED"?503:502,
-          record,
-        };
+    const existing=store.findByIdempotencyKey(packet.idempotencyKey);
+    if(existing){
+      if(existing.packetHash!==packetHash){
+        const error=new Error("CC3_IDEMPOTENCY_CONFLICT");
+        error.statusCode=409;
+        error.details={idempotencyKey:packet.idempotencyKey,existingActionId:existing.id};
+        throw error;
       }
+      return {httpStatus:200,record:{...existing,replayed:true}};
     }
 
-    const stage=roadmap.stages.find(item=>item.id===packet.stageId)??null;
-    const record=await store.put({
+    if(!config.cc3WritesEnabled){
+      const record=await store.put({
+        ...base,
+        idempotencyKey:packet.idempotencyKey??null,
+        status:"BLOCKED_CC3_WRITES_DISABLED",
+        result:{code:"CC3_WRITES_DISABLED"},
+      });
+      return {httpStatus:409,record};
+    }
+
+    const writerState=writer.state();
+    if(writerState.state!=="CONFIGURED"||writerState.mutationsEnabled!==true){
+      const record=await store.put({
+        ...base,
+        idempotencyKey:packet.idempotencyKey??null,
+        status:"BLOCKED_CC3_WRITE_IDENTITY_REQUIRED",
+        result:{code:"CC3_WRITE_IDENTITY_REQUIRED",writer:writerState},
+      });
+      return {httpStatus:503,record};
+    }
+
+    if(current.live!==true){
+      const error=new Error("CC3_LIVE_HEAD_REQUIRED");
+      error.statusCode=503;
+      throw error;
+    }
+
+    const validated=validateWritePlan(packet,actionPolicy,config);
+    let record=await store.put({
       ...base,
-      status:"COMPLETED_READ_ONLY",
-      completedAt:now(),
-      updatedAt:now(),
-      evidence:[{
-        type:"github_snapshot",
-        observedAt:snapshot.observedAt,
-        targetHead:snapshot.target?.head??null,
-      }],
-      result:{
-        stage,
-        githubSummary:{
-          connection:snapshot.connection,
-          target:snapshot.target,
-          recentRuns:snapshot.workflowRuns.slice(0,5),
-          issues:snapshot.issues,
-        },
-      },
+      idempotencyKey:packet.idempotencyKey,
+      status:"EXECUTING_CC3_WRITE",
+      result:{operations:[]},
     });
-    return {httpStatus:200,record};
+
+    const results=[];
+    try{
+      for(const [index,op] of validated.operations.entries()){
+        const result=await executeWriteOperation(writer,packet,validated.rule,op);
+        results.push({index,type:op.type,result,completedAt:now()});
+        record=await store.put({
+          ...record,
+          updatedAt:now(),
+          result:{operations:results},
+        });
+      }
+
+      record=await store.put({
+        ...record,
+        status:"COMPLETED_CC3_WRITE",
+        completedAt:now(),
+        updatedAt:now(),
+        evidence:[
+          ...record.evidence,
+          {type:"exact_head",source:current.source,head:current.head},
+          {type:"write_plan",operationCount:validated.operations.length},
+        ],
+        result:{operations:results},
+      });
+      return {httpStatus:200,record};
+    }catch(error){
+      record=await store.put({
+        ...record,
+        status:"FAILED_CC3_WRITE",
+        completedAt:now(),
+        updatedAt:now(),
+        result:{
+          operations:results,
+          failure:{code:error.message,details:error.details??null},
+        },
+      });
+      return {httpStatus:Number(error.statusCode??502),record};
+    }
   };
 }

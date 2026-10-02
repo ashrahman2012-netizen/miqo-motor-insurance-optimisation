@@ -22,12 +22,24 @@ export class ActionStore{
     return this.items.get(id)??null;
   }
 
+  findByIdempotencyKey(key){
+    if(!key)return null;
+    for(const item of this.items.values()){
+      if(item.idempotencyKey===key)return item;
+    }
+    return null;
+  }
+
+  list(){
+    return [...this.items.values()];
+  }
+
   async put(item){
     this.items.set(item.id,item);
     await mkdir(dirname(this.path),{recursive:true});
     const tmp=`${this.path}.tmp`;
     await writeFile(tmp,JSON.stringify({
-      schemaVersion:"1.0",
+      schemaVersion:"1.1",
       items:[...this.items.values()],
     },null,2),"utf8");
     await rename(tmp,this.path);

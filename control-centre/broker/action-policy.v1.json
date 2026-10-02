@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "mode": "CC3_GUARDED",
+  "actions": {
+    "EH1_AUTHORISE": {
+      "enabled": true,
+      "branchPrefix": "miqo/cc3/eh1-",
+      "allowedOperations": [
+        "create_branch",
+        "update_file",
+        "dispatch_workflow",
+        "open_validation_pr",
+        "comment_issue",
+        "close_validation_pr"
+      ],
+      "allowedPaths": [
+        ".github/workflows/desktop-g1.yml",
+        ".github/workflows/desktop-g2.yml",
+        "scripts/desktop-g1-stage-node.sh",
+        "scripts/desktop-g1-stage-runtime.mjs",
+        "scripts/desktop-g1-tauri-proof.sh",
+        "scripts/desktop-g2-stage-node.ps1",
+        "scripts/desktop-g2-windows-proof.ps1"
+      ],
+      "allowedWorkflows": [
+        "desktop-g1.yml",
+        "desktop-g2.yml",
+        "desktop-g3.yml"
+      ],
+      "allowedIssueNumbers": [19],
+      "allowedPrBases": ["miqo/desktop-uat-remediation"],
+      "maxFiles": 8,
+      "maxFileBytes": 131072
+    }
+  }
+}
