@@ -5,11 +5,13 @@ on:
     branches: [miqo/control-centre-v1, miqo/control-centre-cc3]
     paths:
       - "control-centre/**"
+      - "scripts/verify-regression-matrix.mjs"
       - "package.json"
       - ".github/workflows/control-centre.yml"
   pull_request:
     paths:
       - "control-centre/**"
+      - "scripts/verify-regression-matrix.mjs"
       - "package.json"
       - ".github/workflows/control-centre.yml"
   workflow_dispatch:
@@ -41,6 +43,12 @@ jobs:
           node --check control-centre/broker/mutation-policy.mjs
           node --check control-centre/broker/actions.mjs
           node --check control-centre/broker/server.mjs
+
+      - name: Verify EH-2 regression matrix syntax
+        run: node --check scripts/verify-regression-matrix.mjs
+
+      - name: Verify EH-2 unified regression matrix
+        run: node scripts/verify-regression-matrix.mjs
 
       - name: Run CC-3 broker contract tests
         run: npm run test:control-centre:broker
