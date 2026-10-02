@@ -13,8 +13,14 @@ test("DB-G10.4 admin UI requires controlled synthetic handoff",async({page,reque
   await page.getByLabel("Licence held since").fill("2018-04-16");
   await page.getByRole("button",{name:"Save & continue"}).click();
   await page.getByRole("button",{name:"Continue to confirmation"}).click();
-  await page.getByLabel("I confirm").check();
-  await page.getByRole("button",{name:"Confirm & lock profile"}).click();
+  await expect(page).toHaveURL(new RegExp("/profile/"+profileId+"/lock$"));
+  await page.waitForLoadState("networkidle");
+  const confirmation=page.getByLabel("I confirm");
+  const lockButton=page.getByRole("button",{name:"Confirm & lock profile"});
+  await confirmation.check();
+  await expect(confirmation).toBeChecked();
+  await expect(lockButton).toBeEnabled();
+  await lockButton.click();
 
   await expect(page).toHaveURL(new RegExp("127\\.0\\.0\\.1:3001/admin/profiles/"+profileId+"$"));
   await expect(page.getByRole("heading",{name:new RegExp("Profile inspector")})).toBeVisible();
