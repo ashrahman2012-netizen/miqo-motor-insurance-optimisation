@@ -2,7 +2,7 @@ import {test,expect} from "@playwright/test";
 
 test("SP4-G14 customer objective to final integrity browser journey",async({page})=>{
   await page.goto("/prototype");
-  await expect(page.getByText("MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY")).toBeVisible();
+  await expect(page.getByText("SYNTHETIC DATA ONLY",{exact:true})).toBeVisible();
   await page.getByRole("button",{name:"Start new synthetic profile"}).click();
 
   await expect(page).toHaveURL(/\/profile\/[^/]+\/section\/identity$/);
