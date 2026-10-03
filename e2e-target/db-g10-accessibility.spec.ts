@@ -4,7 +4,7 @@ import {scanAccessibility,expectVisibleKeyboardFocus,DB_G10_A11Y_SCANNER_VERSION
 test("DB-G10.1 customer/admin critical path satisfies deterministic accessibility scanner",async({page})=>{
   await page.setViewportSize({width:320,height:800});
   await page.goto("/prototype");
-  await expect(page.getByText("MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY")).toBeVisible();
+  await expect(page.getByText("SYNTHETIC DATA ONLY",{exact:true})).toBeVisible();
   await scanAccessibility(page);
   await expectVisibleKeyboardFocus(page);
   await page.getByRole("button",{name:"Start new synthetic profile"}).click();
