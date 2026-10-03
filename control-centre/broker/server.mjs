@@ -113,11 +113,12 @@ export async function createBroker(overrides={}){
     try{
       if(req.method==="GET"&&url.pathname==="/api/status"){
         const snapshot=await github.snapshot();
-        const targetHead=await github.resolveTargetHead();
         const mode=brokerMode(config,writer);
+        const remoteHead=snapshot.target?.head??null;
+        const localHead=snapshot.local?.head??null;
         return sendJson(req,res,200,{
           service:"MIQOS_CC3_AUTHORISED_GITHUB_BROKER",
-          version:"0.3.0",
+          version:"0.3.1",
           health:"OK",
           mode:mode.mode,
           host:config.host,
@@ -125,9 +126,13 @@ export async function createBroker(overrides={}){
           boundary:roadmap.boundary,
           repository:roadmap.repository,
           branch:roadmap.activeBranch,
-          head:targetHead.head,
-          headSource:targetHead.source,
-          headMatchesRoadmap:targetHead.head===roadmap.activeHead,
+          head:remoteHead,
+          headSource:"github-snapshot",
+          headMatchesRoadmap:remoteHead===roadmap.activeHead,
+          expectedHead:roadmap.activeHead,
+          localHead,
+          localBranch:snapshot.local?.branch??null,
+          localHeadMatchesRoadmap:localHead===roadmap.activeHead,
           github:snapshot.connection,
           githubWrite:writer.state(),
           model:modelState(config),
