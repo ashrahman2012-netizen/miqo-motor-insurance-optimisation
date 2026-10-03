@@ -1,7 +1,7 @@
 import {test,expect} from "@playwright/test";
 const API="http://127.0.0.1:4000";
 test("SP1-IMMUTABILITY-001 target stack",async({page,request})=>{
- await page.goto("/prototype"); await expect(page.getByText("SYNTHETIC DATA ONLY",{exact:true})).toBeVisible(); await page.getByRole("button",{name:"Start new synthetic profile"}).click();
+ await page.goto("/prototype"); await expect(page.getByText("MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY")).toBeVisible(); await page.getByRole("button",{name:"Start new synthetic profile"}).click();
  await expect(page).toHaveURL(/\/profile\/[^/]+\/section\/identity$/); const profileId=page.url().match(/\/profile\/([^/]+)\//)![1];
  await page.getByLabel("Main driver ID").fill("DRV-SYN-001"); await page.getByLabel("Annual mileage").fill("8000"); await page.getByLabel("Licence held since").fill("2018-04-16"); await page.getByRole("button",{name:"Save & continue"}).click();
  await expect(page).toHaveURL(`/profile/${profileId}/review`); await expect(page.locator("#validation-pass")).toContainText("PASS"); await page.getByRole("button",{name:"Continue to confirmation"}).click(); await page.getByLabel("I confirm").check(); await page.getByRole("button",{name:"Confirm & lock profile"}).click();
