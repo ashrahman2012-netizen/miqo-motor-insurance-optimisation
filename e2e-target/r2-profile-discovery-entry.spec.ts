@@ -113,3 +113,78 @@ test("R2-C01-005 discovery failure is explicit and does not create a profile",as
   await expect(page.getByRole("button",{name:"Start new synthetic profile"})).toBeVisible();
   expect(posts()).toBe(0);
 });
+
+test("R2.5-C03-001 resumed DRAFT hydrates persisted facts without mutation",async({page,request})=>{
+  const created=await request.post(API+"/profiles");
+  expect(created.status()).toBe(201);
+  const draft=await created.json();
+
+  const persisted=[
+    ["main_driver_id","DRV-SYN-R25-HYDRATED"],
+    ["annual_mileage",6123],
+    ["licence_held_since","2016-02-14"],
+  ] as const;
+
+  for(const [fieldId,value] of persisted){
+    const response=await request.put(
+      API+"/profile-versions/"+draft.versionId+"/facts/"+fieldId,
+      {data:{value}},
+    );
+    expect(response.status()).toBe(200);
+  }
+
+  const beforeResponse=await request.get(API+"/profiles/"+draft.profileId+"/snapshot");
+  expect(beforeResponse.status()).toBe(200);
+  const before=await beforeResponse.json();
+
+  await page.goto("/profile/"+draft.profileId+"/section/identity");
+
+  await expect(page.getByText("Loading retained profile…")).toHaveCount(0);
+  await expect(page.getByText("Unable to load the retained profile. Saving is disabled.",{exact:true})).toHaveCount(0);
+  await expect(page.getByLabel("Main driver ID")).toHaveValue("DRV-SYN-R25-HYDRATED");
+  await expect(page.getByLabel("Annual mileage")).toHaveValue("6123");
+  await expect(page.getByLabel("Licence held since")).toHaveValue("2016-02-14");
+  await expect(page.getByRole("button",{name:"Save & continue"})).toBeEnabled();
+
+  const afterResponse=await request.get(API+"/profiles/"+draft.profileId+"/snapshot");
+  expect(afterResponse.status()).toBe(200);
+  const after=await afterResponse.json();
+
+  expect(after).toEqual(before);
+  expect(after.versions).toHaveLength(1);
+  expect(after.versions[0].versionId).toBe(draft.versionId);
+  expect(after.versions[0].status).toBe("DRAFT");
+  expect(after.versions[0].values.find((item:any)=>item.fieldId==="annual_mileage").value).toBe(6123);
+});
+
+test("R2.5-C03-002 failed DRAFT hydration blocks stale-default save",async({page})=>{
+  const profileId="PRO-SYN-R25-LOAD-FAIL";
+  let mutationCount=0;
+
+  await page.route(API+"/profiles/"+profileId,async(route:any)=>{
+    await route.fulfill({
+      status:503,
+      headers:CORS,
+      body:JSON.stringify({error:"snapshot_unavailable"}),
+    });
+  });
+
+  await page.route(API+"/profile-versions/**",async(route:any)=>{
+    if(["POST","PUT","PATCH","DELETE"].includes(route.request().method()))mutationCount+=1;
+    await route.fulfill({
+      status:500,
+      headers:CORS,
+      body:JSON.stringify({error:"unexpected_mutation"}),
+    });
+  });
+
+  await page.goto("/profile/"+profileId+"/section/identity");
+
+  await expect(page.getByText("Unable to load the retained profile. Saving is disabled.",{exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Save & continue"})).toBeDisabled();
+  await expect(page.getByLabel("Main driver ID")).toBeDisabled();
+  await expect(page.getByLabel("Annual mileage")).toBeDisabled();
+  await expect(page.getByLabel("Licence held since")).toBeDisabled();
+  expect(mutationCount).toBe(0);
+});
+
