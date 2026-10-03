@@ -15,7 +15,7 @@ function adminContext(pathname:string){
 export default function MiqosAdminShell({children}:{children:React.ReactNode}){
   const pathname=usePathname();
   return <>
-    <a className="skip-link" href="#main-content">Skip to main content</a>
+    <a className="skip-link" href="#primary-content">Skip to main content</a>
     <header className="app-header">
       <div className="app-header__inner">
         <a className="brand" href="/" aria-label="MIQOS administration home">
@@ -41,7 +41,7 @@ export default function MiqosAdminShell({children}:{children:React.ReactNode}){
       <span className="workspace-strip__divider" aria-hidden="true">•</span>
       <span>Local capability boundary</span>
     </div>
-    {children}
+    <div id="primary-content">{children}</div>
     <footer className="app-footer">
       <span>MIQOS controlled local administration</span>
       <span>No production authority or live-provider activation</span>
