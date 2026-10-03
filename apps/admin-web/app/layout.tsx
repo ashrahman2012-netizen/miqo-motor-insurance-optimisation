@@ -1,19 +1,17 @@
 import type {Metadata} from "next";
 import "./globals.css";
+import MiqosAdminShell from "./miqos-admin-shell";
 
 export const metadata:Metadata={
-  title:"MIQO Synthetic Admin Prototype",
-  description:"Synthetic-only non-production MIQO administration prototype"
+  title:"MIQOS Administration | Synthetic Workspace",
+  description:"MIQOS synthetic-only administration workspace"
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
       <body>
-        <div role="status" aria-live="polite" style={{padding: 12, borderBottom: "2px solid currentColor", fontWeight: 700}}>
-          ADMIN — NON-PRODUCTION / SYNTHETIC DATA
-        </div>
-        {children}
+        <MiqosAdminShell>{children}</MiqosAdminShell>
       </body>
     </html>
   );
