@@ -8,14 +8,19 @@ import { createBroker } from "../server.mjs";
 const head="d0a61b3b464a9af9d1d3408e6a1818b8a1a4ae9b";
 const repo="ashrahman2012-netizen/miqo-motor-insurance-optimisation";
 
-function fakeReader(){
+function fakeReader({resolvedHead=head,snapshotHead=head,localHead="b".repeat(40)}={}){
   return {
-    async resolveTargetHead(){return {head,source:"test-live-github",live:true}},
+    async resolveTargetHead(){return {head:resolvedHead,source:"test-live-github",live:true}},
     async snapshot(){
       return {
         connection:{state:"CONNECTED",authenticated:true,authSource:"test",mutationsEnabled:false},
-        target:{branch:"miqo/desktop-uat-remediation",head,expectedHead:head,headMatchesRoadmap:true},
-        local:{repositoryRoot:"/tmp/test",branch:"miqo/control-centre-cc3",head:"b".repeat(40),dirty:false},
+        target:{
+          branch:"miqo/desktop-uat-remediation",
+          head:snapshotHead,
+          expectedHead:head,
+          headMatchesRoadmap:snapshotHead===head,
+        },
+        local:{repositoryRoot:"/tmp/test",branch:"miqo/control-centre-cc3",head:localHead,dirty:false},
         workflowRuns:[],jobs:{},issues:[],observedAt:new Date().toISOString(),
       };
     },
@@ -41,7 +46,7 @@ function fakeWriter({configured=true,prHead="miqo/cc3/eh1-test",prBase="miqo/des
   };
 }
 
-async function fixture({writesEnabled=false,writer=fakeWriter()}={}){
+async function fixture({writesEnabled=false,writer=fakeWriter(),reader=fakeReader()}={}){
   const dir=await mkdtemp(join(tmpdir(),"miqos-cc3-"));
   const roadmapPath=join(dir,"roadmap.json");
   const allowlistPath=join(dir,"allowlist.json");
@@ -86,7 +91,7 @@ async function fixture({writesEnabled=false,writer=fakeWriter()}={}){
   const broker=await createBroker({
     port:0,roadmapPath,allowlistPath,actionPolicyPath,actionStorePath,
     cc3WritesEnabled:writesEnabled,
-    githubReader:fakeReader(),
+    githubReader:reader,
     githubWriter:writer,
     openAiApiKey:"",
   });
@@ -129,6 +134,21 @@ test("CC3 starts locked by default while preserving read-only broker operation",
   });
   assert.equal(response.status,200);
   assert.equal((await response.json()).action.status,"COMPLETED_READ_ONLY");
+});
+
+test("CC3 roadmap-head status is derived from the observed GitHub target, not a divergent local checkout",async t=>{
+  const divergentLocal="c".repeat(40);
+  const reader=fakeReader({resolvedHead:divergentLocal,snapshotHead:head,localHead:divergentLocal});
+  const {broker,base}=await fixture({reader});
+  t.after(()=>broker.close());
+
+  const status=await (await fetch(base+"/api/status")).json();
+  assert.equal(status.head,head);
+  assert.equal(status.expectedHead,head);
+  assert.equal(status.headSource,"github-snapshot");
+  assert.equal(status.headMatchesRoadmap,true);
+  assert.equal(status.localHead,divergentLocal);
+  assert.equal(status.localHeadMatchesRoadmap,false);
 });
 
 test("CC3 still requires explicit APPROVED human state",async t=>{
