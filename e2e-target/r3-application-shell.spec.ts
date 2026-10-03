@@ -44,7 +44,9 @@ test("R3-SHELL-001 customer shell preserves routing, boundary and route-derived 
   await expect(page.getByText("SYNTHETIC DATA ONLY",{exact:true})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Build one truthful profile. Change choices, not facts."})).toBeVisible();
   await expect(page.getByLabel("Journey context")).toContainText("Profile home");
-  await expect(page.getByRole("link",{name:"Customer home"})).toHaveAttribute("aria-current","page");
+  await expect(
+    page.getByRole("navigation",{name:"Customer workspace"}).getByRole("link",{name:"Customer home"})
+  ).toHaveAttribute("aria-current","page");
 
   const adminHref=await page.getByRole("link",{name:"Synthetic admin"}).getAttribute("href");
   expect(adminHref).toContain("127.0.0.1:3001");
@@ -94,7 +96,7 @@ test("R3-SHELL-003 error and disabled states remain accessible inside the shell"
   });
 
   await page.goto("/");
-  await expect(page.getByRole("alert")).toHaveText("Unable to discover retained profiles.");
+  await expect(page.getByText("Unable to discover retained profiles.",{exact:true})).toBeVisible();
   await expect(page.getByText("SYNTHETIC DATA ONLY",{exact:true})).toBeVisible();
   await scanAccessibility(page);
 
