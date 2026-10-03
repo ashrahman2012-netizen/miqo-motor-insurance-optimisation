@@ -9,8 +9,8 @@
   "brokerUrl": "http://127.0.0.1:4300",
   "progress": {
     "method": "weighted-stage-effort",
-    "currentPercent": 63,
-    "completedWeight": 63,
+    "currentPercent": 69,
+    "completedWeight": 69,
     "totalWeight": 100
   },
   "stages": [
@@ -144,19 +144,19 @@
       "id": "SC1",
       "lane": "Supply-chain",
       "title": "Dependency audit remediation",
-      "status": "NEW",
-      "start": "Parallel / unresolved",
-      "duration": "0.5–1 working day",
-      "gate": "CONTROLLED_DEPENDENCY_CHANGE",
+      "status": "PASS",
+      "start": "Complete",
+      "duration": "Closed",
+      "gate": "CLOSED",
       "actions": [
         {
-          "id": "SC1_AUTHORISE",
-          "verb": "AUTHORISE",
-          "mode": "execute"
+          "id": "VIEW_SC1",
+          "verb": "ACCEPT",
+          "mode": "read_only"
         }
       ],
       "weight": 6,
-      "progress": 0
+      "progress": 100
     },
     {
       "id": "EH2",
