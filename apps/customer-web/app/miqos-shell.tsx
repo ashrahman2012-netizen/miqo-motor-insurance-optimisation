@@ -29,8 +29,11 @@ export default function MiqosShell({children}:{children:React.ReactNode}){
             <small>Motor Insurance Optimisation</small>
           </span>
         </a>
-        <div className="environment-badge" role="status" aria-live="polite">
-          SYNTHETIC DATA ONLY
+        <div className="environment-boundary">
+          <div className="environment-badge" role="status" aria-live="polite">
+            SYNTHETIC DATA ONLY
+          </div>
+          <small className="legacy-boundary-marker">MIQO MVP PROTOTYPE — SYNTHETIC DATA ONLY</small>
         </div>
       </div>
       <nav className="shell-nav" aria-label="Customer workspace">
