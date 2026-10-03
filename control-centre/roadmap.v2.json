@@ -1,16 +1,16 @@
 {
   "schemaVersion": "2.4",
-  "snapshot": "2026-10-03",
+  "snapshot": "2026-10-04",
   "repository": "ashrahman2012-netizen/miqo-motor-insurance-optimisation",
   "activeBranch": "miqo/desktop-uat-remediation",
   "controlBranch": "miqo/control-centre-v1",
-  "activeHead": "e848b7b38fad212a9f1df65953a5ed814221c689",
+  "activeHead": "64e8c53cf323a4c89a5eaff4ba67c92b5e1c387a",
   "boundary": "SYNTHETIC_ONLY",
   "brokerUrl": "http://127.0.0.1:4300",
   "progress": {
     "method": "weighted-stage-effort",
-    "currentPercent": 69,
-    "completedWeight": 69,
+    "currentPercent": 77,
+    "completedWeight": 77,
     "totalWeight": 100
   },
   "stages": [
@@ -198,26 +198,26 @@
       "id": "R3",
       "lane": "Product UX",
       "title": "MIQOS application shell",
-      "status": "NEXT",
-      "start": "Next",
-      "duration": "1–2 working days",
-      "gate": "R2_CLOSED",
+      "status": "PASS",
+      "start": "Complete",
+      "duration": "Closed",
+      "gate": "CLOSED",
       "actions": [
         {
-          "id": "R3_AUTHORISE",
-          "verb": "AUTHORISE",
-          "mode": "execute"
+          "id": "VIEW_R3",
+          "verb": "ACCEPT",
+          "mode": "read_only"
         }
       ],
       "weight": 8,
-      "progress": 0
+      "progress": 100
     },
     {
       "id": "R4",
       "lane": "Product UX",
       "title": "Installer/product presentation",
-      "status": "PLANNED",
-      "start": "T+6",
+      "status": "NEXT",
+      "start": "Next",
       "duration": "0.5–1 working day",
       "gate": "R3_REQUIRED",
       "actions": [
@@ -315,5 +315,5 @@
       "progress": 0
     }
   ],
-  "expectedProductHead": "e848b7b38fad212a9f1df65953a5ed814221c689"
+  "expectedProductHead": "64e8c53cf323a4c89a5eaff4ba67c92b5e1c387a"
 }
