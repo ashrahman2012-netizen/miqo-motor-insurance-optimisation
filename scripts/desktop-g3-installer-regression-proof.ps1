@@ -48,7 +48,7 @@ function Get-MiqoInstallRecord {
                     if(-not $key){continue}
 
                     try{
-                        if([string]$key.GetValue("DisplayName") -eq "MIQO Desktop [SYNTHETIC]"){
+                        if([string]$key.GetValue("DisplayName") -eq "MIQOS Desktop [SYNTHETIC]"){
                             return [pscustomobject]@{
                                 DisplayName=[string]$key.GetValue("DisplayName")
                                 InstallLocation=[string]$key.GetValue("InstallLocation")
@@ -70,7 +70,7 @@ function Get-MiqoInstallRecord {
         }
     }
 
-    throw "MIQO installer record not found"
+    throw "MIQOS installer record not found"
 }
 
 function Resolve-Uninstaller([object]$Record){
@@ -178,7 +178,7 @@ function Install-Miqo {
     })
 
     $exe=$candidates |
-        Where-Object { $_.Name -eq "MIQO Desktop [SYNTHETIC].exe" } |
+        Where-Object { $_.Name -eq "MIQOS Desktop [SYNTHETIC].exe" } |
         Select-Object -First 1
 
     if(-not $exe){
@@ -433,9 +433,26 @@ function Assert-NoLegacyStaticAuthority([string]$InstallDir,[string]$Exe){
 }
 
 try{
+    $baseConfig=Get-Content `
+        (Join-Path $Root "apps\desktop-runtime\src-tauri\tauri.conf.json") `
+        -Raw | ConvertFrom-Json
+
     $config=Get-Content `
         (Join-Path $Root "apps\desktop-runtime\src-tauri\tauri.windows-g2.conf.json") `
         -Raw | ConvertFrom-Json
+
+    Require ($baseConfig.productName -eq "MIQOS Desktop [SYNTHETIC]") "R4 productName mismatch"
+    Require ($baseConfig.identifier -eq "com.miqo.desktop.synthetic") "stable desktop identifier changed"
+    Require ($config.bundle.publisher -eq "MIQOS") "R4 publisher mismatch"
+    Require (@($config.bundle.icon) -contains "icons/icon.ico") "Windows ICO asset missing from bundle contract"
+    Require (@($config.bundle.icon) -contains "icons/icon.png") "PNG icon asset missing from bundle contract"
+
+    $pngIcon=Join-Path $Root "apps\desktop-runtime\src-tauri\icons\icon.png"
+    $icoIcon=Join-Path $Root "apps\desktop-runtime\src-tauri\icons\icon.ico"
+    Require (Test-Path -LiteralPath $pngIcon) "R4 PNG icon asset missing"
+    Require (Test-Path -LiteralPath $icoIcon) "R4 ICO icon asset missing"
+    Require ((Get-Item -LiteralPath $pngIcon).Length -gt 1000) "R4 PNG icon asset remains placeholder-grade"
+    Require ((Get-Item -LiteralPath $icoIcon).Length -gt 4000) "R4 ICO icon asset remains placeholder-grade"
 
     Require ($config.bundle.windows.nsis.installMode -eq "currentUser") "installer mode changed"
     Require ($config.bundle.windows.webviewInstallMode.type -eq "embedBootstrapper") "WebView2 packaging changed"
@@ -519,6 +536,10 @@ try{
         regression="G2_INSTALLER_RUNTIME_OUTCOMES_ON_G3_SECURITY_ARCHITECTURE"
         platform="windows-x64"
         installer="NSIS"
+        productName="MIQOS Desktop [SYNTHETIC]"
+        publisher="MIQOS"
+        identifier="com.miqo.desktop.synthetic"
+        iconContract="PASS"
         installMode="currentUser"
         signing="NOT_AUTHORISED"
         packagedNodeVersion="22.23.3"
