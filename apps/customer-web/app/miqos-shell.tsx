@@ -19,7 +19,7 @@ export default function MiqosShell({children}:{children:React.ReactNode}){
   const progress=journeyLabel(pathname);
 
   return <>
-    <a className="skip-link" href="#main-content">Skip to main content</a>
+    <a className="skip-link" href="#primary-content">Skip to main content</a>
     <header className="app-header">
       <div className="app-header__inner">
         <a className="brand" href="/" aria-label="MIQOS customer home">
@@ -45,7 +45,7 @@ export default function MiqosShell({children}:{children:React.ReactNode}){
       <span className="workspace-strip__divider" aria-hidden="true">•</span>
       <span>Local protected session</span>
     </div>
-    {children}
+    <div id="primary-content">{children}</div>
     <footer className="app-footer">
       <span>MIQOS local desktop workspace</span>
       <span>No live insurer or provider connections</span>
