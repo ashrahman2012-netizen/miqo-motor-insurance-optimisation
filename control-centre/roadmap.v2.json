@@ -9,8 +9,8 @@
   "brokerUrl": "http://127.0.0.1:4300",
   "progress": {
     "method": "weighted-stage-effort",
-    "currentPercent": 90,
-    "completedWeight": 90,
+    "currentPercent": 96,
+    "completedWeight": 96,
     "totalWeight": 100
   },
   "stages": [
@@ -252,10 +252,10 @@
       "id": "EH3",
       "lane": "Future integration",
       "title": "Provider-integration seam hardening",
-      "status": "NEXT",
-      "start": "Next",
-      "duration": "1–2 working days",
-      "gate": "PROVIDER_NEUTRAL_ONLY",
+      "status": "PASS",
+      "start": "Complete",
+      "duration": "Closed",
+      "gate": "CLOSED",
       "actions": [
         {
           "id": "EH3_DESIGN",
@@ -264,7 +264,7 @@
         }
       ],
       "weight": 6,
-      "progress": 0
+      "progress": 100
     },
     {
       "id": "INT1",
@@ -300,8 +300,8 @@
       "id": "CC5",
       "lane": "Control Centre",
       "title": "Control-plane assurance and closure",
-      "status": "PLANNED",
-      "start": "Final",
+      "status": "NEXT",
+      "start": "Next",
       "duration": "1 working day",
       "gate": "CC3_CC4_REQUIRED",
       "actions": [
@@ -316,6 +316,6 @@
     }
   ],
   "expectedProductHead": "25649140972d18ed8cbc8a0e10912697f4c4ab98",
-  "certifiedControlHead": "bae56c79d9dd9e610aae990d28cf32dc292e9baa",
-  "certifiedControlStage": "CC4"
+  "certifiedControlHead": "ed389b0f7a5dfa203f2058ceccf4e48a117dc3c8",
+  "certifiedControlStage": "EH3"
 }

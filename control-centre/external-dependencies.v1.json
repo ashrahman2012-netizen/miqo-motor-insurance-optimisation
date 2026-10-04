@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "programme": "MIQOS Control Plane",
+  "dependencies": [
+    {
+      "dependencyId": "INT1",
+      "title": "SEOPA / Quotezone onboarding",
+      "provider": "SEOPA / Quotezone",
+      "status": "WAITING_EXTERNAL",
+      "gate": "PROVIDER_RESPONSE_REQUIRED",
+      "programmeWeight": 2,
+      "progress": 0,
+      "lastKnownState": "Initial API/certification enquiry and follow-up sent; no confirmed onboarding response.",
+      "completionRule": "May advance only on evidence-backed provider response and onboarding activity."
+    }
+  ]
+}
