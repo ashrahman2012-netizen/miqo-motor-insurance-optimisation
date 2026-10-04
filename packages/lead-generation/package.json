@@ -1,0 +1,10 @@
+{
+  "name": "@miqo/lead-generation",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit --allowImportingTsExtensions --module nodenext --moduleResolution nodenext --target es2022 src/*.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
+  }
+}
