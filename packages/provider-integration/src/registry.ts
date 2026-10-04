@@ -1,16 +1,22 @@
 import type {ProviderAdapter} from "./contracts.ts";
 
 export class ProviderRegistryError extends Error{
-  constructor(public readonly code:string){
+  readonly code:string;
+
+  constructor(code:string){
     super(code);
     this.name="ProviderRegistryError";
+    this.code=code;
   }
 }
 
 export class ProviderRegistry{
   private readonly adapters=new Map<string,ProviderAdapter>();
+  private readonly syntheticOnly:boolean;
 
-  constructor(private readonly syntheticOnly=true){}
+  constructor(syntheticOnly=true){
+    this.syntheticOnly=syntheticOnly;
+  }
 
   register(adapter:ProviderAdapter){
     const descriptor=adapter.descriptor;
