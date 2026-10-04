@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "title": "MIQOS CC4 Normalized Control Centre Event",
+  "required": ["schemaVersion","eventId","dedupeKey","occurredAt","observedAt","source","category","eventType","severity","entity","currentState","message","actionRequired"],
+  "severity": ["info","success","warning","failure","action_required"],
+  "category": ["connectivity","workflow","check","runtime","system","operator"],
+  "sourceTypes": ["github","broker","runtime","control-centre"],
+  "notes": [
+    "Events are observational control-plane records.",
+    "Event receipt never grants GitHub mutation authority.",
+    "Secrets, authorization headers and tokens must never be persisted in event metadata."
+  ]
+}
