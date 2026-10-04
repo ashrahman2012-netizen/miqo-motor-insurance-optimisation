@@ -20,11 +20,15 @@
         "controlCentreRunId": 37211405288,
         "ciRunId": 37211405281
       }
+    },
+    {
+      "stageId": "CC5",
+      "certifiedHead": "d01536e76d3ec891be6078ef07955cd2ab8a219f",
+      "status": "CLOSED",
+      "evidence": {
+        "controlCentreRunId": 37217900907,
+        "ciRunId": 37217900912
+      }
     }
-  ],
-  "pendingStage": {
-    "stageId": "CC5",
-    "status": "NEXT",
-    "certification": "PENDING"
-  }
+  ]
 }

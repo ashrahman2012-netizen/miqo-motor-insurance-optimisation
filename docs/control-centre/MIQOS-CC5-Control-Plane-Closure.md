@@ -2,14 +2,13 @@
 
 ## Status
 
-CC5 closure candidate. Certification remains pending until branch validation, PR validation,
-merge, and post-merge validation complete.
+CC5 is certified CLOSED.
 
-## Certified predecessor
-
-- Stage: EH3 — Provider-Integration Seam Hardening
-- Certified integrated head: `ed389b0f7a5dfa203f2058ceccf4e48a117dc3c8`
-- Programme position entering CC5: 96%
+- Certified CC5 implementation head: `d01536e76d3ec891be6078ef07955cd2ab8a219f`
+- Post-merge Control Centre run: `control-centre #37` — PASS
+- Post-merge repository CI run: `ci #1214` — PASS
+- Programme position after CC5 closure: 98%
+- INT1 remains `WAITING_EXTERNAL`
 
 ## Scope
 
@@ -18,7 +17,7 @@ provider connectivity, deployment authority, or live-data capability.
 
 The control plane remains `SYNTHETIC_ONLY`.
 
-## Assurance conclusions to prove
+## Certified assurance conclusions
 
 1. CC3 remains the exclusive guarded mutation boundary.
 2. CC4 remains observational; events and notification acknowledgement do not authorise writes.
@@ -27,9 +26,9 @@ The control plane remains `SYNTHETIC_ONLY`.
 5. Runtime policy does not self-enable `CC5_AUTHORISE`.
 6. Live providers remain disabled and no provider credential path is introduced by CC5.
 
-## Existing negative evidence reused
+## Negative evidence retained
 
-The broker contract suite already proves:
+The broker contract suite proves:
 
 - explicit human approval is required;
 - stale product HEAD is rejected before mutation;
@@ -42,21 +41,22 @@ The broker contract suite already proves:
 - idempotency-key reuse with a changed packet is rejected;
 - controlled validation PR namespace checks fail closed.
 
-CC5 adds closure-specific evidence rather than duplicating these tests.
+CC5 closure-specific tests additionally preserve the observational CC4 boundary and ensure the
+runtime policy does not self-authorise CC5 mutation.
 
-## Current certification ledger
+## Certification ledger
 
 The machine-readable ledger is:
 
 `control-centre/certification-ledger.v1.json`
 
-It records CC4 and EH3 as closed and CC5 as pending until integration certification succeeds.
+It records CC4, EH3 and CC5 as CLOSED.
 
 ## Regression evidence
 
-The unified regression matrix retains the existing verified schema while refreshing certification
-pointers to current successful evidence, including EH3 post-merge CI/control-centre receipts and
-the successful PR desktop regression receipts.
+The unified regression matrix records the authoritative CC5 post-merge Control Centre and CI
+receipts on `d01536e76d3ec891be6078ef07955cd2ab8a219f`. Desktop regression receipts remain inherited
+from the last applicable certified desktop validation.
 
 ## Residual risks
 
@@ -76,47 +76,21 @@ control-plane defect.
 - progress: 0%
 - programme weight: 2%
 
-CC5 must not change this state without provider evidence.
+CC5 does not alter this state.
 
-## Programme closure rule
+## Final programme state
 
-Before CC5 certification:
+- completed internal programme weight: 98%
+- CC5: CLOSED / PASS / 100%
+- INT1: WAITING_EXTERNAL / 0%
+- overall programme: 98%
 
-- programme = 96%
-- EH3 = CLOSED
-- CC5 = NEXT
-- INT1 = WAITING_EXTERNAL
-
-After successful CC5 integration certification:
-
-- CC5 may be marked CLOSED
-- programme may advance to 98%
-- INT1 remains WAITING_EXTERNAL
-- programme must not become 100%
-
-100% is permitted only after evidence-backed INT1 closure.
+The programme must not become 100% until INT1 closes on evidence-backed provider onboarding.
 
 ## Protected implementation boundary
 
-CC5 does not modify the GitHub writer, mutation policy, runtime action allowlists, event runtime,
+CC5 did not modify the GitHub writer, mutation policy, runtime action allowlists, event runtime,
 product applications, provider-integration runtime, database schema, dependencies, or lockfile.
-
-Any functional defect discovered in those protected components requires a separate correction
-packet and authorisation.
-
-## Closure sequence
-
-```text
-CC5 candidate validation
-→ bounded diff review
-→ integration PR
-→ PR regression GREEN
-→ merge
-→ post-merge control-centre + CI GREEN
-→ final closure metadata update
-→ final validation
-→ CC5 CLOSED / Programme 98%
-```
 
 Control-plane closure does not constitute live insurer/comparison-provider integration or
 commercial-production readiness.

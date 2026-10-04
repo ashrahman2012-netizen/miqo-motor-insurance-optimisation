@@ -29,20 +29,21 @@ test("CC5 closure evidence keeps INT1 unresolved and programme below 100",async(
   const roadmap=await json("control-centre/roadmap.v2.json");
   const int1=roadmap.stages.find(stage=>stage.id==="INT1");
   const cc5=roadmap.stages.find(stage=>stage.id==="CC5");
-  assert.equal(roadmap.progress.currentPercent,96);
+  assert.equal(roadmap.progress.currentPercent,98);
   assert.equal(int1.status,"WAITING_EXTERNAL");
   assert.equal(int1.progress,0);
-  assert.equal(cc5.status,"NEXT");
-  assert.equal(cc5.progress,0);
+  assert.equal(cc5.status,"PASS");
+  assert.equal(cc5.progress,100);
   assert.notEqual(roadmap.progress.currentPercent,100);
 });
 
-test("CC5 evidence ledger separates certified stages from pending CC5",async()=>{
+test("CC5 evidence ledger records CC5 as certified and no longer pending",async()=>{
   const ledger=await json("control-centre/certification-ledger.v1.json");
-  assert.deepEqual(ledger.stages.map(item=>item.stageId),["CC4","EH3"]);
+  assert.deepEqual(ledger.stages.map(item=>item.stageId),["CC4","EH3","CC5"]);
   assert.ok(ledger.stages.every(item=>item.status==="CLOSED"));
-  assert.equal(ledger.pendingStage.stageId,"CC5");
-  assert.equal(ledger.pendingStage.certification,"PENDING");
+  const cc5=ledger.stages.find(item=>item.stageId==="CC5");
+  assert.equal(cc5.certifiedHead,"d01536e76d3ec891be6078ef07955cd2ab8a219f");
+  assert.equal("pendingStage" in ledger,false);
 });
 
 test("CC5 residual-risk and external-dependency registers agree on INT1",async()=>{
