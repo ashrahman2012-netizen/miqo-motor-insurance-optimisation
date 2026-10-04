@@ -2,7 +2,7 @@ name: control-centre
 
 on:
   push:
-    branches: [miqo/control-centre-v1, miqo/control-centre-cc3, miqo/control-centre-cc4]
+    branches: [miqo/control-centre-v1, miqo/control-centre-cc3, miqo/control-centre-cc4, miqo/control-centre-cc5]
     paths:
       - "control-centre/**"
       - "scripts/verify-regression-matrix.mjs"
