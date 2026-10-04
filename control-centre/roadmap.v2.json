@@ -9,8 +9,8 @@
   "brokerUrl": "http://127.0.0.1:4300",
   "progress": {
     "method": "weighted-stage-effort",
-    "currentPercent": 85,
-    "completedWeight": 85,
+    "currentPercent": 90,
+    "completedWeight": 90,
     "totalWeight": 100
   },
   "stages": [
@@ -234,10 +234,10 @@
       "id": "CC4",
       "lane": "Control Centre",
       "title": "Real-time feedback and notifications",
-      "status": "NEXT",
-      "start": "Next",
-      "duration": "1 working day",
-      "gate": "CC3_REQUIRED",
+      "status": "PASS",
+      "start": "Complete",
+      "duration": "Closed",
+      "gate": "CLOSED",
       "actions": [
         {
           "id": "CC4_AUTHORISE",
@@ -246,14 +246,14 @@
         }
       ],
       "weight": 5,
-      "progress": 0
+      "progress": 100
     },
     {
       "id": "EH3",
       "lane": "Future integration",
       "title": "Provider-integration seam hardening",
-      "status": "FUTURE",
-      "start": "T+6",
+      "status": "NEXT",
+      "start": "Next",
       "duration": "1–2 working days",
       "gate": "PROVIDER_NEUTRAL_ONLY",
       "actions": [
@@ -315,5 +315,7 @@
       "progress": 0
     }
   ],
-  "expectedProductHead": "25649140972d18ed8cbc8a0e10912697f4c4ab98"
+  "expectedProductHead": "25649140972d18ed8cbc8a0e10912697f4c4ab98",
+  "certifiedControlHead": "bae56c79d9dd9e610aae990d28cf32dc292e9baa",
+  "certifiedControlStage": "CC4"
 }
