@@ -282,14 +282,14 @@
       "id": "R5",
       "lane": "Closure",
       "title": "Integrated physical UAT and remediation closure",
-      "status": "NEXT",
-      "start": "Next",
+      "status": "EXECUTING",
+      "start": "Now",
       "duration": "1 working day",
-      "gate": "R2_R3_R4_REQUIRED",
+      "gate": "R2_R3_R4_SATISFIED",
       "actions": [
         {
-          "id": "R5_AUTHORISE",
-          "verb": "AUTHORISE",
+          "id": "R5_RECORD_UAT",
+          "verb": "PROCEED",
           "mode": "execute"
         }
       ],
