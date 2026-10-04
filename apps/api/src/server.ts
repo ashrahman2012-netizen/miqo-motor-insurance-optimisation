@@ -19,6 +19,7 @@ import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4Mar
 import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
+import { getLeadJourney, recordInterestResponse, submitQualification } from "./lead-generation-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
