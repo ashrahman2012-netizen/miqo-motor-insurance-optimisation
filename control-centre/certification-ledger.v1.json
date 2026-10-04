@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "programme": "MIQOS Control Plane",
+  "boundary": "SYNTHETIC_ONLY",
+  "stages": [
+    {
+      "stageId": "CC4",
+      "certifiedHead": "bae56c79d9dd9e610aae990d28cf32dc292e9baa",
+      "status": "CLOSED",
+      "evidence": {
+        "controlCentreRunId": 37168975405,
+        "ciRunId": 37168975364
+      }
+    },
+    {
+      "stageId": "EH3",
+      "certifiedHead": "ed389b0f7a5dfa203f2058ceccf4e48a117dc3c8",
+      "status": "CLOSED",
+      "evidence": {
+        "controlCentreRunId": 37211405288,
+        "ciRunId": 37211405281
+      }
+    }
+  ],
+  "pendingStage": {
+    "stageId": "CC5",
+    "status": "NEXT",
+    "certification": "PENDING"
+  }
+}

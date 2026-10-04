@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "programme": "MIQOS Control Plane",
+  "items": [
+    {
+      "id": "RR-01",
+      "title": "SEOPA / Quotezone onboarding unresolved",
+      "class": "EXTERNAL_DEPENDENCY",
+      "status": "OPEN",
+      "blocks": [
+        "PROGRAMME_100_PERCENT"
+      ],
+      "relatedStage": "INT1"
+    },
+    {
+      "id": "RR-02",
+      "title": "Live-provider execution remains disabled",
+      "class": "INTENTIONAL_BOUNDARY",
+      "status": "ACCEPTED",
+      "control": "SYNTHETIC_ONLY"
+    },
+    {
+      "id": "RR-03",
+      "title": "Control Centre broker remains local/trusted rather than production-hosted",
+      "class": "ARCHITECTURAL_LIMITATION",
+      "status": "ACCEPTED_FOR_CURRENT_PROGRAMME"
+    },
+    {
+      "id": "RR-04",
+      "title": "CC5_AUTHORISE remains runtime-blocked",
+      "class": "GOVERNANCE_CONTROL",
+      "status": "INTENTIONAL"
+    }
+  ]
+}

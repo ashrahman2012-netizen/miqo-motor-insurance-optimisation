@@ -2,7 +2,7 @@ name: control-centre
 
 on:
   push:
-    branches: [miqo/control-centre-v1, miqo/control-centre-cc3, miqo/control-centre-cc4]
+    branches: [miqo/control-centre-v1, miqo/control-centre-cc3, miqo/control-centre-cc4, miqo/control-centre-cc5]
     paths:
       - "control-centre/**"
       - "scripts/verify-regression-matrix.mjs"
@@ -51,7 +51,11 @@ jobs:
           node --check control-centre/ui/system-map-state.mjs
       - name: Verify EH-2 regression matrix syntax
         run: node --check scripts/verify-regression-matrix.mjs
+      - name: Verify CC5 closure verifier syntax
+        run: node --check scripts/verify-control-plane-closure.mjs
       - name: Verify EH-2 unified regression matrix
         run: node scripts/verify-regression-matrix.mjs
+      - name: Verify CC5 pre-closure consistency
+        run: node scripts/verify-control-plane-closure.mjs
       - name: Run CC3 + CC4 broker contract tests
         run: npm run test:control-centre:broker

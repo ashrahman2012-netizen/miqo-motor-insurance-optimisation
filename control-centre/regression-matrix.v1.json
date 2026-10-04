@@ -7,8 +7,8 @@
     "liveProvidersEnabled": false
   },
   "authoritativeExecution": {
-    "branch": "miqo/desktop-uat-remediation",
-    "head": "6f99e723fee6845db98640ae69b53875ba14cf11"
+    "branch": "miqo/control-centre-v1",
+    "head": "ed389b0f7a5dfa203f2058ceccf4e48a117dc3c8"
   },
   "failureClassifications": [
     "PRODUCT",
@@ -22,7 +22,9 @@
       "id": "ci",
       "authority": "AUTHORITATIVE",
       "workflow": ".github/workflows/ci.yml",
-      "runner": ["ubuntu-latest"],
+      "runner": [
+        "ubuntu-latest"
+      ],
       "runtimeResources": {
         "contract": "repository source + locked npm dependency graph",
         "databaseBackend": "postgres-contract"
@@ -39,10 +41,14 @@
         "postgres-contract"
       ],
       "boundary": "SYNTHETIC_ONLY",
-      "failureClassifications": ["PRODUCT", "SECURITY", "SUPPLY_CHAIN"],
+      "failureClassifications": [
+        "PRODUCT",
+        "SECURITY",
+        "SUPPLY_CHAIN"
+      ],
       "certification": {
-        "head": "6f99e723fee6845db98640ae69b53875ba14cf11",
-        "runId": 37009810524,
+        "head": "ed389b0f7a5dfa203f2058ceccf4e48a117dc3c8",
+        "runId": 37211405281,
         "conclusion": "PASS"
       }
     },
@@ -50,7 +56,9 @@
       "id": "control-centre",
       "authority": "INHERITED",
       "workflow": ".github/workflows/control-centre.yml",
-      "runner": ["ubuntu-latest"],
+      "runner": [
+        "ubuntu-latest"
+      ],
       "runtimeResources": {
         "contract": "loopback broker contract and static governance assets",
         "databaseBackend": "none"
@@ -62,10 +70,13 @@
         "cc3-broker"
       ],
       "boundary": "SYNTHETIC_ONLY",
-      "failureClassifications": ["HARNESS", "SECURITY"],
+      "failureClassifications": [
+        "HARNESS",
+        "SECURITY"
+      ],
       "certification": {
-        "head": "35882f0fcbad27de29ff8bd5c6ebd8e4b80b370b",
-        "runId": 37026629429,
+        "head": "ed389b0f7a5dfa203f2058ceccf4e48a117dc3c8",
+        "runId": 37211405288,
         "conclusion": "PASS"
       }
     },
@@ -73,7 +84,10 @@
       "id": "desktop-g1",
       "authority": "INHERITED",
       "workflow": ".github/workflows/desktop-g1.yml",
-      "runner": ["ubuntu-latest", "windows-latest"],
+      "runner": [
+        "ubuntu-latest",
+        "windows-latest"
+      ],
       "runtimeResources": {
         "contract": "staged standalone runtime plus repository-root r/ for Tauri resource packaging",
         "databaseBackend": "pglite-protected"
@@ -91,10 +105,15 @@
         "tauri-distributable"
       ],
       "boundary": "SYNTHETIC_ONLY",
-      "failureClassifications": ["PRODUCT", "HARNESS", "HISTORICAL_ONLY", "SECURITY"],
+      "failureClassifications": [
+        "PRODUCT",
+        "HARNESS",
+        "HISTORICAL_ONLY",
+        "SECURITY"
+      ],
       "certification": {
-        "head": "6f99e723fee6845db98640ae69b53875ba14cf11",
-        "runId": 37009810412,
+        "head": "f2aa5880d0778a48f3abce82c6eca47372578bb1",
+        "runId": 37206756044,
         "conclusion": "PASS"
       }
     },
@@ -102,7 +121,9 @@
       "id": "desktop-g2",
       "authority": "INHERITED",
       "workflow": ".github/workflows/desktop-g2.yml",
-      "runner": ["windows-latest"],
+      "runner": [
+        "windows-latest"
+      ],
       "runtimeResources": {
         "contract": "staged standalone runtime, shortened r/ bundle resources, current-architecture installed lifecycle proof",
         "databaseBackend": "pglite-protected"
@@ -118,10 +139,15 @@
         "windows-x64-installer"
       ],
       "boundary": "SYNTHETIC_ONLY",
-      "failureClassifications": ["PRODUCT", "HARNESS", "HISTORICAL_ONLY", "SECURITY"],
+      "failureClassifications": [
+        "PRODUCT",
+        "HARNESS",
+        "HISTORICAL_ONLY",
+        "SECURITY"
+      ],
       "certification": {
-        "head": "6f99e723fee6845db98640ae69b53875ba14cf11",
-        "runId": 37009810295,
+        "head": "f2aa5880d0778a48f3abce82c6eca47372578bb1",
+        "runId": 37206756048,
         "conclusion": "PASS"
       }
     },
@@ -129,7 +155,10 @@
       "id": "desktop-g3",
       "authority": "AUTHORITATIVE",
       "workflow": ".github/workflows/desktop-g3.yml",
-      "runner": ["ubuntu-latest", "windows-latest"],
+      "runner": [
+        "ubuntu-latest",
+        "windows-latest"
+      ],
       "runtimeResources": {
         "contract": "protected PGlite runtime, machine-bound key lifecycle, local-capability and installer security regression",
         "databaseBackend": "pglite-protected"
@@ -153,12 +182,18 @@
         "windows-installer-regression"
       ],
       "boundary": "SYNTHETIC_ONLY",
-      "failureClassifications": ["PRODUCT", "SECURITY", "HARNESS"],
+      "failureClassifications": [
+        "PRODUCT",
+        "SECURITY",
+        "HARNESS"
+      ],
       "certification": {
-        "head": "6f99e723fee6845db98640ae69b53875ba14cf11",
-        "runId": 37009810471,
+        "head": "f2aa5880d0778a48f3abce82c6eca47372578bb1",
+        "runId": 37206756029,
         "conclusion": "PASS"
       }
     }
-  ]
+  ],
+  "snapshot": "2026-10-04",
+  "closureStage": "CC5"
 }
