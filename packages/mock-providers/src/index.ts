@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
+import type {ProviderAdapter,ProviderExecutionRequest} from "../../provider-integration/src/contracts.ts";
 
 export const MOCK_PROVIDER_KEY = "MOCK-PROVIDER-001";
 export const MOCK_PROVIDER_VERSION = "mock-provider-v1";
+export const MOCK_ADAPTER_VERSION = "mock-adapter-v1";
 
 export type MockProviderFixtureKey = "STANDARD" | "INCOMPLETE";
 
@@ -90,3 +92,38 @@ export function executeMockProvider(input:MockProviderInput):MockProviderResult 
     payloadSha256,
   });
 }
+
+export const mockProviderAdapter:ProviderAdapter=Object.freeze({
+  descriptor:Object.freeze({
+    providerKey:MOCK_PROVIDER_KEY,
+    adapterVersion:MOCK_ADAPTER_VERSION,
+    synthetic:true,
+    channels:Object.freeze(["DIRECT_SYNTHETIC","PCW_SYNTHETIC"]),
+    capabilities:Object.freeze({
+      quotation:true,
+      synchronous:true,
+      cancellation:false,
+    }),
+  }),
+  async execute(request:ProviderExecutionRequest){
+    const response=executeMockProvider({
+      requestFingerprint:request.requestFingerprint,
+      scenarioId:request.scenario.scenarioId,
+      deltas:request.scenario.optimisationDeltas,
+      fixtureKey:"STANDARD",
+    });
+    return Object.freeze({
+      kind:"RESPONSE" as const,
+      providerKey:response.providerKey,
+      providerReference:response.providerReference,
+      receivedAt:response.responseTimestamp,
+      rawPayloadText:response.payloadText,
+      rawPayload:response.payload,
+      payloadSha256:response.payloadSha256,
+      metadata:Object.freeze({
+        providerVersion:response.providerVersion,
+        fixtureKey:response.fixtureKey,
+      }),
+    });
+  },
+});
