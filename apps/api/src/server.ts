@@ -211,6 +211,16 @@ export async function buildApp() {
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
 
+  app.get("/lead-generation/interest/:journeyToken",async(req:any)=>getLeadJourney(db,req.params.journeyToken));
+  app.post("/lead-generation/interest/:journeyToken/response",{
+    schema:{body:{type:"object",additionalProperties:false,required:["answer"],properties:{answer:{type:"string",enum:["YES","NO"]}}}},
+  },async(req:any)=>recordInterestResponse(db,req.params.journeyToken,req.body.answer));
+  app.post("/lead-generation/interest/:journeyToken/qualify",{
+    schema:{body:{type:"object",additionalProperties:false,required:["renewalWindow","contactPreference"],properties:{
+      renewalWindow:{type:"string",enum:["WITHIN_30_DAYS","ONE_TO_THREE_MONTHS","THREE_TO_SIX_MONTHS","OVER_SIX_MONTHS","NOT_SURE"]},
+      contactPreference:{type:"string",enum:["EMAIL","PHONE"]},
+    }}},
+  },async(req:any)=>submitQualification(db,req.params.journeyToken,req.body));
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
   app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
@@ -228,6 +238,8 @@ export async function buildApp() {
     }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
     if(String(error?.message??error).includes("LOCKED_PROFILE_IMMUTABLE"))return reply.code(409).send({error:"LOCKED_PROFILE_IMMUTABLE"});
+    if(String(error?.message??error)==="LEAD_NOT_FOUND")return reply.code(404).send({error:"LEAD_NOT_FOUND"});
+    if(String(error?.message??error)==="LEAD_NOT_ELIGIBLE_FOR_QUALIFICATION")return reply.code(409).send({error:"LEAD_NOT_ELIGIBLE_FOR_QUALIFICATION"});
     const protocolStatus=Number(error?.statusCode??0);
     if([400,413,415].includes(protocolStatus)){
       const protocolError=protocolStatus===400?"invalid_request":protocolStatus===413?"payload_too_large":"unsupported_media_type";
