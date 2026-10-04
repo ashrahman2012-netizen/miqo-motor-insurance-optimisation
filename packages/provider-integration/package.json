@@ -1,9 +1,0 @@
-{
-  "name": "@miqo/provider-integration",
-  "private": true,
-  "type": "module",
-  "version": "0.1.0",
-  "scripts": {
-    "test": "node --experimental-strip-types --test test/*.test.ts"
-  }
-}
