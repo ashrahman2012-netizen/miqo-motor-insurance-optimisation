@@ -4,13 +4,13 @@
   "repository": "ashrahman2012-netizen/miqo-motor-insurance-optimisation",
   "activeBranch": "miqo/desktop-uat-remediation",
   "controlBranch": "miqo/control-centre-v1",
-  "activeHead": "64e8c53cf323a4c89a5eaff4ba67c92b5e1c387a",
+  "activeHead": "25649140972d18ed8cbc8a0e10912697f4c4ab98",
   "boundary": "SYNTHETIC_ONLY",
   "brokerUrl": "http://127.0.0.1:4300",
   "progress": {
     "method": "weighted-stage-effort",
-    "currentPercent": 77,
-    "completedWeight": 77,
+    "currentPercent": 82,
+    "completedWeight": 82,
     "totalWeight": 100
   },
   "stages": [
@@ -216,19 +216,19 @@
       "id": "R4",
       "lane": "Product UX",
       "title": "Installer/product presentation",
-      "status": "NEXT",
-      "start": "Next",
-      "duration": "0.5–1 working day",
-      "gate": "R3_REQUIRED",
+      "status": "PASS",
+      "start": "Complete",
+      "duration": "Closed",
+      "gate": "CLOSED",
       "actions": [
         {
-          "id": "R4_EXECUTE",
-          "verb": "PROCEED",
-          "mode": "execute"
+          "id": "VIEW_R4",
+          "verb": "ACCEPT",
+          "mode": "read_only"
         }
       ],
       "weight": 5,
-      "progress": 0
+      "progress": 100
     },
     {
       "id": "CC4",
@@ -282,8 +282,8 @@
       "id": "R5",
       "lane": "Closure",
       "title": "Integrated physical UAT and remediation closure",
-      "status": "PLANNED",
-      "start": "T+8",
+      "status": "NEXT",
+      "start": "Next",
       "duration": "1 working day",
       "gate": "R2_R3_R4_REQUIRED",
       "actions": [
@@ -315,5 +315,5 @@
       "progress": 0
     }
   ],
-  "expectedProductHead": "64e8c53cf323a4c89a5eaff4ba67c92b5e1c387a"
+  "expectedProductHead": "25649140972d18ed8cbc8a0e10912697f4c4ab98"
 }
