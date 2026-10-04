@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { executeMockProvider } from "../src/index.ts";
+import {createProviderRegistry,executeProvider} from "../../provider-integration/src/index.ts";
+import { executeMockProvider, mockProviderAdapter } from "../src/index.ts";
 
 const input={
   requestFingerprint:"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
@@ -32,4 +33,24 @@ test("MOCK-PROVIDER-001 exposes a deterministic materially different incomplete 
   assert.equal((one.payload as any).coverage,null);
   assert.equal((one.payload as any).offer.premium.amountPence,68800);
   assert.equal((one.payload as any).quote,undefined);
+});
+
+test("EH3 mock adapter executes through the provider-neutral registry",async()=>{
+  const registry=createProviderRegistry().register(mockProviderAdapter);
+  const result=await executeProvider(registry,{
+    schemaVersion:"1.0",
+    quoteRequestId:"QREQ-SYN-001",
+    requestFingerprint:input.requestFingerprint,
+    providerKey:"MOCK-PROVIDER-001",
+    channelKey:"DIRECT_SYNTHETIC",
+    adapterVersion:"mock-adapter-v1",
+    mappingVersion:"mock-mapping-v1",
+    scenario:{scenarioId:input.scenarioId,optimisationDeltas:input.deltas},
+    canonicalInput:{annual_mileage:8000,main_driver_id:"DRV-SYN-001"},
+  });
+  assert.equal(result.kind,"RESPONSE");
+  if(result.kind==="RESPONSE"){
+    assert.equal(result.providerReference,"MP001-0123456789ABCDEF");
+    assert.equal((result.rawPayload as any).quote.annualPremiumPence,70140);
+  }
 });

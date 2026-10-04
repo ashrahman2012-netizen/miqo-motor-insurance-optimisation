@@ -22,6 +22,7 @@ jobs:
       - run: npm run test:invariants
       - run: npm run test:sprint1
       - run: npm run test:sprint1:persisted
+      - run: npm run test -w @miqo/provider-integration
       - run: npm run test -w @miqo/mock-providers
       - run: npm run test -w @miqo/normalisation
       - run: npm run test -w @miqo/comparison
