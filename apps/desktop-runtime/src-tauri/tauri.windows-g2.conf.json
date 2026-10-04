@@ -3,8 +3,8 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
-    "publisher": "MIQO Prototype",
-    "icon": ["icons/icon.png"],
+    "publisher": "MIQOS",
+    "icon": ["icons/icon.ico", "icons/icon.png"],
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper",
