@@ -272,3 +272,41 @@ export const customerObjective = pgTable("customer_objective", {
   check("customer_objective_executable_v1", sql`${t.objectiveId} IN ('LOWEST_ANNUAL_PREMIUM','LOWEST_MONTHLY_COMMITMENT','LOWEST_FINANCE_COST','LOWER_EXCESS_EXPOSURE')`),
   check("customer_objective_policy_fingerprint_format", sql`${t.policyFingerprint} ~ '^[0-9a-f]{64}$'`),
 ]);
+
+export const leadCampaign = pgTable("lead_campaign", {
+  campaignId: text("campaign_id").primaryKey(),
+  campaignName: text("campaign_name").notNull(),
+  templateVersion: text("template_version").notNull(),
+  senderDomain: text("sender_domain").notNull(),
+  status: text("status").notNull().default("DRAFT"),
+  synthetic: boolean("synthetic").notNull().default(true),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  check("lead_campaign_status_allowed", sql`${t.status} IN ('DRAFT','READY','PAUSED','CLOSED')`),
+  check("lead_campaign_synthetic_only", sql`${t.synthetic} = true`),
+]);
+
+export const leadRecord = pgTable("lead_record", {
+  leadId: text("lead_id").primaryKey(),
+  campaignId: text("campaign_id").notNull().references(() => leadCampaign.campaignId),
+  journeyToken: text("journey_token").notNull().unique(),
+  permissionBasis: text("permission_basis").notNull().default("TEST_SYNTHETIC"),
+  state: text("state").notNull().default("CREATED"),
+  renewalWindow: text("renewal_window"),
+  contactPreference: text("contact_preference"),
+  synthetic: boolean("synthetic").notNull().default(true),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", {withTimezone:true}).notNull().defaultNow(),
+}, t => [
+  check("lead_record_permission_basis_allowed", sql`${t.permissionBasis} IN ('CONSENT','SOFT_OPT_IN','CORPORATE_B2B','TEST_SYNTHETIC')`),
+  check("lead_record_state_allowed", sql`${t.state} IN ('CREATED','YES','QUALIFIED','SUPPRESSED')`),
+  check("lead_record_synthetic_only", sql`${t.synthetic} = true`),
+]);
+
+export const leadEvent = pgTable("lead_event", {
+  leadEventId: text("lead_event_id").primaryKey(),
+  leadId: text("lead_id").notNull().references(() => leadRecord.leadId, {onDelete:"cascade"}),
+  eventType: text("event_type").notNull(),
+  metadataJson: jsonb("metadata_json").notNull().default({}),
+  occurredAt: timestamp("occurred_at", {withTimezone:true}).notNull().defaultNow(),
+});
