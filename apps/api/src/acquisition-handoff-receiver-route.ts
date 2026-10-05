@@ -45,6 +45,12 @@ export function registerAcquisitionHandoffReceiverRoute(app:FastifyInstance,pool
     if(req.headers["x-miqo-synthetic-handoff"]!==configuredKey)
       return reply.code(401).send({error:"synthetic_handoff_access_required",requestId:req.id});
 
+    const idempotencyKey=req.headers["idempotency-key"];
+    if(typeof idempotencyKey!=="string" || !idempotencyKey.trim())
+      return reply.code(400).send({error:"handoff_idempotency_key_required",requestId:req.id});
+    if(idempotencyKey!==req.body.handoffId)
+      return reply.code(409).send({error:"HANDOFF_IDEMPOTENCY_KEY_MISMATCH",requestId:req.id});
+
     const result=await receiveSyntheticAcquisitionHandoff(pool,req.body);
     return reply.code(result.idempotentReplay?200:201).send(result.response);
   });
