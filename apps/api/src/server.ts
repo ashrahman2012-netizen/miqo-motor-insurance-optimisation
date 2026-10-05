@@ -23,6 +23,7 @@ import { processCustomerIntakeEmail, refreshDueCustomerIntakeLifecycle } from ".
 import { handleGmailIntakeEvent } from "./customer-intake-event-adapter.ts";
 import { registerCustomerFormSubmissionRoute } from "./customer-form-submission-route.ts";
 import type { FormSubmissionDependencies } from "./customer-form-submission-service.ts";
+import { registerAcquisitionHandoffReceiverRoute } from "./acquisition-handoff-receiver-route.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -74,6 +75,7 @@ export async function buildApp(options:BuildAppOptions={}) {
   });
   app.addHook("onClose",async()=>pool.end());
   registerCustomerFormSubmissionRoute(app,pool,options.formSubmissionDependencies??{});
+  registerAcquisitionHandoffReceiverRoute(app,pool);
 
   app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));
   app.post("/profiles",async(_req,reply)=>reply.code(201).send(await createProfile(db)));
@@ -271,7 +273,7 @@ export async function buildApp(options:BuildAppOptions={}) {
     if(error instanceof ValidationError)return reply.code(422).send({error:error.message,issues:error.issues});
     if(error?.validation){
       const url=String(req?.url??"");
-      const code=url.includes("/admin/cxm/intake/")?"INVALID_CUSTOMER_INTAKE_EMAIL":url.includes("/quote-requests")?"INVALID_QUOTE_REQUEST":"INVALID_OPTIMISATION_PREFERENCE";
+      const code=url.includes("/acquisition/handoffs")?"INVALID_LG_G7_HANDOFF":url.includes("/admin/cxm/intake/")?"INVALID_CUSTOMER_INTAKE_EMAIL":url.includes("/quote-requests")?"INVALID_QUOTE_REQUEST":"INVALID_OPTIMISATION_PREFERENCE";
       return reply.code(422).send({error:code,issues:error.validation.map((item:any)=>item.message)});
     }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});
