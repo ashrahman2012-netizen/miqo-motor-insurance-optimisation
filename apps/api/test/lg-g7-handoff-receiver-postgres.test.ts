@@ -130,3 +130,38 @@ test("LG-G7 receiver rejects undeclared fields before persistence",async()=>{
   try{assert.equal((await c.query("SELECT count(*)::int AS n FROM acquisition_handoff_receipt")).rows[0].n,0);}
   finally{await c.end();}
 });
+
+
+test("LG-G7 receiver fails closed when its dedicated handoff key is absent or wrong",async()=>{
+  await reset();
+  const prior=process.env.MIQO_SYNTHETIC_HANDOFF_KEY;
+  delete process.env.MIQO_SYNTHETIC_HANDOFF_KEY;
+  const app=await buildApp();
+  try{
+    const unavailable=await app.inject({method:"POST",url:"/acquisition/handoffs",payload:payload()});
+    assert.equal(unavailable.statusCode,503,unavailable.body);
+    assert.equal(unavailable.json().error,"synthetic_handoff_gate_unconfigured");
+  }finally{
+    await app.close();
+    if(prior===undefined)delete process.env.MIQO_SYNTHETIC_HANDOFF_KEY;
+    else process.env.MIQO_SYNTHETIC_HANDOFF_KEY=prior;
+  }
+
+  await runWithKey(async()=>{
+    const protectedApp=await buildApp();
+    try{
+      const denied=await protectedApp.inject({
+        method:"POST",
+        url:"/acquisition/handoffs",
+        headers:{"x-miqo-synthetic-handoff":"incorrect-test-value"},
+        payload:payload(),
+      });
+      assert.equal(denied.statusCode,401,denied.body);
+      assert.equal(denied.json().error,"synthetic_handoff_access_required");
+    }finally{await protectedApp.close();}
+  });
+
+  const c=await client();
+  try{assert.equal((await c.query("SELECT count(*)::int AS n FROM acquisition_handoff_receipt")).rows[0].n,0);}
+  finally{await c.end();}
+});
