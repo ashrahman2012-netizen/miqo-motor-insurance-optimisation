@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lg-g7-handoff-response.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "handoffId",
+    "outcome",
+    "receivedAt",
+    "auditReference"
+  ],
+  "properties": {
+    "contractVersion": { "const": "lg-g7-handoff-response.v1" },
+    "handoffId": { "type": "string", "minLength": 1 },
+    "outcome": { "enum": ["ACCEPTED", "REJECTED"] },
+    "receivedAt": { "type": "string", "minLength": 1 },
+    "auditReference": { "type": "string", "minLength": 1 },
+    "receiverReference": { "type": "string", "minLength": 1 },
+    "reasonCode": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "ACCEPTED" } } },
+      "then": { "required": ["receiverReference"] }
+    },
+    {
+      "if": { "properties": { "outcome": { "const": "REJECTED" } } },
+      "then": { "required": ["reasonCode"] }
+    }
+  ]
+}
