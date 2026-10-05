@@ -69,6 +69,12 @@ Receiver acceptance therefore means only that MIQOS accepted the acquisition con
 
 ## Idempotency
 
+HTTP requests must send:
+
+`Idempotency-Key: <handoffId>`
+
+The receiver rejects a missing key and rejects a key that does not exactly match the body `handoffId`.
+
 `handoffId` is the idempotency identity.
 
 For an existing `handoffId`:
