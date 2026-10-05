@@ -1,0 +1,40 @@
+name: lg-g7-dependency-audit-refresh
+
+on:
+  push:
+    branches: ["miqos/lg-g7-synthetic-handoff-receiver"]
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lock:
+    if: ${{ !contains(github.event.head_commit.message, 'LG-G7 dependency lock refresh') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Verify pinned npm runtime
+        run: |
+          test "$(node --version)" = "v22.16.0"
+          test "$(npm --version)" = "10.9.2"
+      - name: Refresh lockfile from exact-pinned manifests
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Verify exact dependency pins
+        run: npm run verify:pins
+      - name: Verify high-severity dependency audit
+        run: npm audit --audit-level=high
+      - name: Commit refreshed lockfile
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "LOCKFILE_ALREADY_CURRENT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "LG-G7 dependency lock refresh"
+          git push origin HEAD:miqos/lg-g7-synthetic-handoff-receiver
