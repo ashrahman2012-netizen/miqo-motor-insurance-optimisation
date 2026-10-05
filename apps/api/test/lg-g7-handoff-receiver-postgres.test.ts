@@ -44,7 +44,7 @@ async function runWithKey(fn:()=>Promise<void>){
   }
 }
 
-const headers=()=>({"x-miqo-synthetic-handoff":key});
+const headers=()=>({"x-miqo-synthetic-handoff":key,"idempotency-key":"LGG7-client-accepted-syn-001"});
 
 test("LG-G7 receiver accepts once, replays identically, and creates no quotation profile state",async()=>{
   await reset();
@@ -159,6 +159,37 @@ test("LG-G7 receiver fails closed when its dedicated handoff key is absent or wr
       assert.equal(denied.statusCode,401,denied.body);
       assert.equal(denied.json().error,"synthetic_handoff_access_required");
     }finally{await protectedApp.close();}
+  });
+
+  const c=await client();
+  try{assert.equal((await c.query("SELECT count(*)::int AS n FROM acquisition_handoff_receipt")).rows[0].n,0);}
+  finally{await c.end();}
+});
+
+
+test("LG-G7 receiver requires an HTTP idempotency key matching handoffId",async()=>{
+  await reset();
+  await runWithKey(async()=>{
+    const app=await buildApp();
+    try{
+      const missing=await app.inject({
+        method:"POST",
+        url:"/acquisition/handoffs",
+        headers:{"x-miqo-synthetic-handoff":key},
+        payload:payload(),
+      });
+      assert.equal(missing.statusCode,400,missing.body);
+      assert.equal(missing.json().error,"handoff_idempotency_key_required");
+
+      const mismatch=await app.inject({
+        method:"POST",
+        url:"/acquisition/handoffs",
+        headers:{"x-miqo-synthetic-handoff":key,"idempotency-key":"LGG7-other"},
+        payload:payload(),
+      });
+      assert.equal(mismatch.statusCode,409,mismatch.body);
+      assert.equal(mismatch.json().error,"HANDOFF_IDEMPOTENCY_KEY_MISMATCH");
+    }finally{await app.close();}
   });
 
   const c=await client();
