@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lg-g7-handoff.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "handoffId",
+    "acceptedClientId",
+    "acceptanceEventId",
+    "acceptedAt",
+    "acquisitionLeadId",
+    "campaignId",
+    "source",
+    "permissionBasis",
+    "lifecycleState"
+  ],
+  "properties": {
+    "contractVersion": { "const": "lg-g7-handoff.v1" },
+    "handoffId": { "type": "string", "minLength": 1 },
+    "acceptedClientId": { "type": "string", "minLength": 1 },
+    "acceptanceEventId": { "type": "string", "minLength": 1 },
+    "acceptedAt": { "type": "string", "minLength": 1 },
+    "acquisitionLeadId": { "type": "string", "minLength": 1 },
+    "campaignId": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "permissionBasis": {
+      "enum": [
+        "CONSENT",
+        "SOFT_OPT_IN",
+        "CORPORATE_B2B",
+        "TEST_SYNTHETIC",
+        "UNVERIFIED_DO_NOT_SEND"
+      ]
+    },
+    "lifecycleState": { "const": "ACCEPTED_CLIENT" },
+    "contactPreference": { "type": "string", "minLength": 1 }
+  }
+}
