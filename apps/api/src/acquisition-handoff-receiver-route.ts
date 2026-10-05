@@ -2,6 +2,20 @@ import type { FastifyInstance } from "fastify";
 import type { Pool } from "pg";
 import { receiveSyntheticAcquisitionHandoff } from "./acquisition-handoff-receiver-service.ts";
 
+const allowedRequestKeys=new Set([
+  "contractVersion",
+  "handoffId",
+  "acceptedClientId",
+  "acceptanceEventId",
+  "acceptedAt",
+  "acquisitionLeadId",
+  "campaignId",
+  "source",
+  "permissionBasis",
+  "lifecycleState",
+  "contactPreference",
+]);
+
 const requestSchema={
   type:"object",
   additionalProperties:false,
@@ -38,6 +52,17 @@ const requestSchema={
 export function registerAcquisitionHandoffReceiverRoute(app:FastifyInstance,pool:Pool){
   app.post("/acquisition/handoffs",{
     schema:{body:requestSchema},
+    preValidation:async(req:any,reply)=>{
+      const body=req.body;
+      if(!body || typeof body!=="object" || Array.isArray(body))return;
+      const undeclared=Object.keys(body).filter((key)=>!allowedRequestKeys.has(key));
+      if(undeclared.length){
+        return reply.code(422).send({
+          error:"INVALID_LG_G7_HANDOFF",
+          issues:undeclared.map((key)=>`Undeclared field: ${key}`),
+        });
+      }
+    },
   },async(req:any,reply)=>{
     const configuredKey=process.env.MIQO_SYNTHETIC_HANDOFF_KEY??"";
     if(!configuredKey)
