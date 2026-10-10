@@ -1,0 +1,46 @@
+name: bv-gate-003-synthetic-contract-uat
+
+on:
+  push:
+    branches:
+      - miqo/bv-gate-003-spec-uat
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bv-synthetic-uat:
+    if: github.ref == 'refs/heads/miqo/bv-gate-003-spec-uat'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Exact Node/npm runtime and isolated branch guard
+        run: |
+          test "$(node --version)" = "v22.16.0"
+          test "$(npm --version)" = "10.9.2"
+          test "$GITHUB_REF" = "refs/heads/miqo/bv-gate-003-spec-uat"
+      - name: Install exact locked dependencies
+        run: npm ci
+      - name: Enforce synthetic and original repo safety boundaries
+        run: |
+          npm run verify:pins
+          npm run verify:boundary
+      - name: Execute synthetic positive, negative, anti-fraud and dormant-objective tests
+        run: node --experimental-strip-types --test scripts/bv-gate-003/test.mjs
+      - name: Generate deterministic selection and audit receipts
+        run: node --experimental-strip-types scripts/bv-gate-003/run.mjs
+      - name: Upload synthetic evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: bv-gate-003-synthetic-contract-receipts
+          path: scripts/bv-gate-003/artifacts/*.json
+          if-no-files-found: error
