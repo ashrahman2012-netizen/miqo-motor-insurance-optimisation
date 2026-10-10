@@ -1,0 +1,36 @@
+name: seopa-interface-freeze-001
+
+on:
+  push:
+    branches:
+      - miqo/seopa-interface-freeze-001
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-contract-certification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      MIQO_SEOPA_LIVE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - run: |
+          test "$(node -v)" = "v22.16.0"
+          test "$(npm -v)" = "10.9.2"
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run verify:boundary
+      - run: node --experimental-strip-types --test scripts/bv-gate-003/test.mjs
+      - run: npm test -w @miqo/balanced-value
+      - run: node --experimental-strip-types --test scripts/bv-gate-005/readiness.test.mjs
+      - run: node --experimental-strip-types --test scripts/bv-gate-005/evidence-adapter.test.mjs
+      - run: node --experimental-strip-types --test contracts/seopa-connector/miqos-interface.test.mjs
