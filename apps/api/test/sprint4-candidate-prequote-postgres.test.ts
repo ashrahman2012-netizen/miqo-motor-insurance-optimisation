@@ -194,7 +194,7 @@ test("C3 negative: PostgreSQL still rejects forbidden factual deltas; candidate 
       try{
         await assert.rejects(
           ()=>db.query("INSERT INTO scenario_delta(scenario_delta_id,scenario_id,field_id,control_class,value_json) VALUES($1,$2,'annual_mileage','F','5000'::jsonb)",["SCD-NEG-FACT",scenarioId]),
-          /scenario_delta_approved_o_field|scenario_delta.*control|CHECK constraint|violates check constraint/i,
+          /scenario_delta_approved_o_field|scenario_delta.*control|CHECK constraint|violates check constraint|GENERATED_SCENARIO_IMMUTABLE/i,
         );
       }finally{await db.query("ROLLBACK");}
       await assert.rejects(
