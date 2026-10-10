@@ -17,7 +17,7 @@ From the repository root:
     MIQO_DATA_CLASSIFICATION=SYNTHETIC MIQO_LIVE_PROVIDERS_ENABLED=false node --experimental-strip-types --test scripts/bv-gate-003/test.mjs
     MIQO_DATA_CLASSIFICATION=SYNTHETIC MIQO_LIVE_PROVIDERS_ENABLED=false node --experimental-strip-types scripts/bv-gate-003/run.mjs
 
-The dedicated GitHub workflow executes the test + export and uploads three JSON evidence receipts. Running \`ci\` on the same HEAD is independent and mandatory for gate closure.
+The dedicated GitHub workflow executes the test + export and uploads three JSON evidence receipts. Running `ci` on the same HEAD is independent and mandatory for gate closure.
 
 Unlike the earlier TXN-001 partner **adapter** fixture (which correctly represented coverage as incomplete), these fixtures deliberately construct **complete *synthetic* coverage parity markers**. They prove eligibility logic under assumed synthetic terms but **do not validate real provider benefit completeness or partner permission**.
 
