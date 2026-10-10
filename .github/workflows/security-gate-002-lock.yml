@@ -39,6 +39,8 @@ jobs:
           node -e "const fs=require('fs');let r=JSON.parse(fs.readFileSync('package.json'));let a=JSON.parse(fs.readFileSync('apps/admin-web/package.json'));let c=JSON.parse(fs.readFileSync('apps/customer-web/package.json'));if(r.overrides?.sharp!=='0.35.5'||r.overrides?.['source-map-js']!=='1.2.2'||a.dependencies.next!=='16.3.8'||c.dependencies.next!=='16.3.8')process.exit(1)"
       - name: Recompute package-lock using npm registry integrity metadata
         run: npm install --package-lock-only --ignore-scripts --no-audit
+      - name: Refresh transitive patched dependencies
+        run: npm update sharp source-map-js --package-lock-only --ignore-scripts --no-audit
       - name: Validate updated dependency graph
         run: |
           node - <<'NODE'
