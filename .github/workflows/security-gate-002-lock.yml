@@ -46,16 +46,18 @@ jobs:
           const lock = JSON.parse(fs.readFileSync('package-lock.json'));
           const pkg = lock.packages;
           for(const [name,version] of [
-            ['node_modules/next','16.3.8'],
-            ['node_modules/sharp','0.35.5'],
-            ['node_modules/source-map-js','1.2.2']
+            ['next','16.3.8'],
+            ['sharp','0.35.5'],
+            ['source-map-js','1.2.2']
           ]){
-            if(pkg[name]?.version!==version)throw new Error('SECURITY_PIN_MISMATCH:'+name+':'+pkg[name]?.version);
-            if(!pkg[name].integrity?.startsWith('sha512-'))throw new Error('MISSING_PACKAGE_INTEGRITY:'+name);
+            const matches=Object.entries(pkg).filter(([path])=>path==='node_modules/'+name || path.endsWith('/node_modules/'+name));
+            console.log('DEPENDENCY_LAYOUT',name,JSON.stringify(matches.map(([path,p])=>({path,version:p.version}))));
+            if(!matches.length)throw new Error('PACKAGE_NOT_INSTALLED:'+name);
+            if(matches.some(([path,p])=>p.version!==version || !p.integrity?.startsWith('sha512-'))){
+              throw new Error('SECURITY_PIN_OR_INTEGRITY_MISMATCH:'+name);
+            }
           }
-          const d = Object.entries(pkg).filter(([name])=>/node_modules\/next$/.test(name));
-          if(d.length!==1)throw new Error('DUPLICATE_NEXT_VERSIONS');
-          console.log(JSON.stringify(Object.fromEntries([['next',pkg['node_modules/next'].version],['sharp',pkg['node_modules/sharp'].version],['source-map-js',pkg['node_modules/source-map-js'].version]])));
+          console.log('Target versions verified at all resolved workspace paths');
           NODE
       - name: Clean install with updated lockfile
         run: npm ci
