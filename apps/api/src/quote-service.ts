@@ -12,7 +12,8 @@ import {
   scenario,
   scenarioDelta,
 } from "../../../packages/db/src/schema.ts";
-import { OPTIMISATION_PREFERENCE_KEYS } from "../../../packages/scenarios/src/model.ts";
+import {optimisationCatalogue} from "../../../packages/optimisation/src/index.ts";
+import {candidateVehicle,sp4ScenarioLineage} from "../../../packages/db/src/sp4-schema.ts";
 import { PreQuoteIntegrityError, ValidationError } from "./errors.ts";
 
 export const SYNTHETIC_PROVIDER_KEY = "MOCK-PROVIDER-001";
@@ -21,13 +22,14 @@ export const QUOTE_ADAPTER_VERSION = "mock-adapter-v1";
 export const QUOTE_MAPPING_VERSION = "mock-mapping-v1";
 
 const REQUIRED_QUOTE_FACTS = ["main_driver_id","annual_mileage","licence_held_since"] as const;
-const approvedOptimisationFields=new Set<string>(OPTIMISATION_PREFERENCE_KEYS);
+const approvedOptimisationFields=new Set<string>(optimisationCatalogue().controls.map(control=>control.controlId));
 const uuid=(prefix:string)=>`${prefix}-${randomUUID()}`;
 
 export type PreQuoteRuleId =
   | "PROFILE_NOT_LOCKED"
   | "UNRESOLVED_DISCREPANCY"
   | "SCENARIO_CONTAINS_NON_O_DELTA"
+  | "CANDIDATE_VEHICLE_NOT_ELIGIBLE"
   | "PROFILE_VERSION_SUPERSEDED"
   | "MISSING_REQUIRED_QUOTE_INPUT";
 
@@ -88,6 +90,49 @@ async function evaluatePreQuoteIntegrity(tx:any,scenarioId:string) {
 
   const facts=await tx.select().from(canonicalFieldValue)
     .where(eq(canonicalFieldValue.riskProfileVersionId,profileRow.riskProfileVersionId));
+
+  // Sprint 4 candidate selection must satisfy the precise locked pre-purchase context
+  // at quote-time, regardless of its earlier scenario generation acceptance.
+  const candidateDeltas=deltas.filter((delta:any)=>delta.fieldId==="candidate_vehicle");
+  if(candidateDeltas.length){
+    const factualMode=facts.find((fact:any)=>fact.fieldId==="vehicle_mode");
+    const factualVehicle=facts.find((fact:any)=>fact.fieldId==="vehicle_id");
+    const lineage=(await tx.select().from(sp4ScenarioLineage).where(and(
+      eq(sp4ScenarioLineage.scenarioId,scenarioId),
+      eq(sp4ScenarioLineage.riskProfileVersionId,profileRow.riskProfileVersionId),
+      eq(sp4ScenarioLineage.generationVersion,"sp4-gen-v1"),
+    )).limit(1))[0];
+    for(const delta of candidateDeltas){
+      const candidateId=delta.valueJson;
+      const reasons:string[]=[];
+      if(delta.controlClass!=="O")reasons.push("CANDIDATE_NOT_O_CLASS");
+      if(scenarioRow.generationVersion!=="sp4-gen-v1" || !lineage){
+        reasons.push("SPRINT4_LINEAGE_REQUIRED");
+      }
+      if(profileRow.status!=="LOCKED")reasons.push("LOCKED_PROFILE_REQUIRED");
+      if(factualMode?.controlClass!=="F" || factualMode.valueJson!=="PRE_PURCHASE"){
+        reasons.push("PRE_PURCHASE_REQUIRED");
+      }
+      if(typeof candidateId!=="string" || !candidateId.trim()){
+        reasons.push("INVALID_CANDIDATE_ID");
+      }else{
+        if(factualVehicle?.controlClass==="F" && factualVehicle.valueJson===candidateId){
+          reasons.push("CURRENT_FACTUAL_VEHICLE_PROHIBITED");
+        }
+        const registered=(await tx.select().from(candidateVehicle).where(and(
+          eq(candidateVehicle.riskProfileVersionId,profileRow.riskProfileVersionId),
+          eq(candidateVehicle.candidateVehicleId,candidateId),
+        )).limit(1))[0];
+        if(!registered)reasons.push("CANDIDATE_NOT_REGISTERED_ON_EXACT_VERSION");
+      }
+      if(reasons.length){
+        signals.push({
+          ruleId:"CANDIDATE_VEHICLE_NOT_ELIGIBLE",
+          evidence:{fieldId:"candidate_vehicle",candidateVehicleId:candidateId,reasons},
+        });
+      }
+    }
+  }
   const present=new Set(facts.filter((fact:any)=>fact.valueJson!==null).map((fact:any)=>fact.fieldId));
   const missingFacts=REQUIRED_QUOTE_FACTS.filter(fieldId=>!present.has(fieldId));
   if(scenarioRow.status!=="GENERATED" || missingFacts.length) {
