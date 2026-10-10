@@ -1,0 +1,51 @@
+name: bv-gate-004-product-candidate-uat
+
+on:
+  push:
+    branches:
+      - miqo/bv-gate-004-product-candidate
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bv4-candidate-contract-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      MIQO_SEOPA_LIVE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Enforce pinned runtime and isolated product branch
+        run: |
+          test "$(node --version)" = "v22.16.0"
+          test "$(npm --version)" = "10.9.2"
+          test "$GITHUB_REF" = "refs/heads/miqo/bv-gate-004-product-candidate"
+      - name: Verify lock-based installation and security audit
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npm run verify:pins
+          npm run verify:boundary
+      - name: Verify direct exact product dependencies
+        run: |
+          node -e "const p=require('./packages/balanced-value/package.json');const ds=p.dependencies;for(const [n,v] of [['ajv','8.20.0'],['ajv-formats','3.0.1'],['@miqo/comparison','0.1.0']]){if(ds[n]!==v)throw Error('BAD_DIRECT_PIN:'+n)}"
+      - name: Execute original BV3 UAT
+        run: node --experimental-strip-types --test scripts/bv-gate-003/test.mjs
+      - name: Execute new BV4 product candidate UAT
+        run: npm test -w @miqo/balanced-value
+      - name: Generate consumer explanation and evidence receipts
+        run: node --experimental-strip-types scripts/bv-gate-004/run.mjs
+      - name: Upload synthetic-only candidate receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bv-gate-004-product-candidate-receipts
+          path: scripts/bv-gate-004/artifacts/*.json
+          if-no-files-found: error
