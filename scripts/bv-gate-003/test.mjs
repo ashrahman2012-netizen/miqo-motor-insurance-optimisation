@@ -121,10 +121,16 @@ test("BV-A05 mismatched finance / total payable is excluded",()=>{
  const r=sample();quote(r,"MOCK-S7-ALPHA").price.total_payable_pence=61100;
  expectExcluded(r,"MOCK-S7-ALPHA","E-04");
 });
-test("BV-A05 monthly quote with complete disclosed cash, finance, APR & repayments is eligible when permitted",()=>{
+test("BV-A05 monthly quote with complete disclosed cash, finance, APR & repayments is eligible when permitted and within customer excess limits",()=>{
  const r=sample();r.preferences.allowed_payment_modes=["ANNUAL","MONTHLY"];
+ delete r.preferences.max_total_excess_pence;
  const d=run(r);
  assert.ok(d.eligible_quote_ids.includes("MOCK-S3-ALPHA"));
+});
+test("BV-A05 complete monthly offer still cannot override explicit £600 customer excess limit",()=>{
+ const r=sample();r.preferences.allowed_payment_modes=["ANNUAL","MONTHLY"];
+ const d=run(r);
+ assert.ok(codes(d,"MOCK-S3-ALPHA").includes("E-10_EXCESS_OVER_CUSTOMER_LIMIT"));
 });
 test("BV-A05 monthly quote missing finance APR is invalid, not guessed",()=>{
  const r=sample();r.preferences.allowed_payment_modes=["ANNUAL","MONTHLY"];
