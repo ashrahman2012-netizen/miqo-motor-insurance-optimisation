@@ -1,0 +1,25 @@
+name: sp4-balanced-value-assessment
+
+on:
+  push:
+    branches:
+      - miqo/sp4-balanced-value-assessment
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dormant-objective-invariant:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - run: test "$(node --version)" = "v22.16.0"
+      - run: node --experimental-strip-types --test scripts/balanced-value-assessment/guard.test.mjs
