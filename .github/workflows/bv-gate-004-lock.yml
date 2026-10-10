@@ -1,0 +1,75 @@
+name: bv-gate-004-lockfile-certification
+
+on:
+  push:
+    branches:
+      - miqo/bv-gate-004-product-candidate
+    paths:
+      - .github/workflows/bv-gate-004-lock.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bv-gate-004-exact-lock-certification
+  cancel-in-progress: false
+
+jobs:
+  lock-candidate-dependencies:
+    if: github.ref == 'refs/heads/miqo/bv-gate-004-product-candidate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      MIQO_SEOPA_LIVE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Validate runtime, branch and manifest safety
+        run: |
+          test "$(node -v)" = "v22.16.0"
+          test "$(npm -v)" = "10.9.2"
+          test "$GITHUB_REF" = "refs/heads/miqo/bv-gate-004-product-candidate"
+          node -e "const p=require('./packages/balanced-value/package.json');for(const [k,v] of [['ajv','8.20.0'],['ajv-formats','3.0.1'],['@miqo/comparison','0.1.0']])if(p.dependencies?.[k]!==v)process.exit(1)"
+      - name: Refresh exact npm workspace lock with registry metadata
+        run: npm install --package-lock-only --ignore-scripts --no-audit
+      - name: Verify lock entry and resolved integrity
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const obj=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          const p=obj.packages;
+          if(!p['packages/balanced-value'])throw Error('WORKSPACE_ENTRY_NOT_LOCKED');
+          if(!p['node_modules/@miqo/balanced-value'])throw Error('CANDIDATE_PACKAGE_NOT_LOCKED');
+          for(const [name,version] of [['ajv','8.20.0'],['ajv-formats','3.0.1']]){
+            const entries=Object.entries(p).filter(([k])=>k==='node_modules/'+name || k.endsWith('/node_modules/'+name));
+            if(!entries.length||entries.some(([k,v])=>v.version!==version||!v.integrity?.startsWith('sha512-')))throw Error('INVALID_LOCK:'+name);
+          }
+          console.log('Exact synthetic product dependencies verified');
+          NODE
+      - name: Prove clean pinned installation, audit and tests
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npm run verify:pins
+          npm run verify:boundary
+          npm test -w @miqo/balanced-value
+      - name: Commit only generated package-lock on bounded isolated branch
+        run: |
+          test "$(git branch --show-current)" = "miqo/bv-gate-004-product-candidate"
+          git diff --name-only | grep -v '^package-lock.json$' > /tmp/bv4-extra || true
+          test ! -s /tmp/bv4-extra
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Lockfile already current"
+          else
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "BV-GATE-004: certify locked direct Ajv candidate dependencies"
+            git push origin HEAD:refs/heads/miqo/bv-gate-004-product-candidate
+          fi
