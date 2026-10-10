@@ -113,7 +113,7 @@ test("BV4-A15 original four executable objectives remain unchanged",()=>{
  }),/DORMANT/);
 });
 test("BV4-A16 existing DB constraint still forbids balanced objective",()=>{
- const migration=readFileSync("packages/db/migrations/0008_optimisation_policy_persistence.sql","utf8");
+ const migration=readFileSync(new URL("../../db/migrations/0008_optimisation_policy_persistence.sql",import.meta.url),"utf8");
  const start=migration.indexOf("CONSTRAINT customer_objective_executable_v1");
  assert.ok(start>=0);
  assert.doesNotMatch(migration.slice(start,migration.indexOf("),",start)),/BALANCED_COST_AND_EXPOSURE/);
