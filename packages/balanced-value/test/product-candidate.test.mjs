@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {runCandidateEvaluation,BV4_PRODUCT_STATE,assertSyntheticAuthority} from "../src/gate.mjs";
 import {evaluate as bv3} from "../../../scripts/bv-gate-003/reference.mjs";
 import {syntheticRequest} from "../../../scripts/bv-gate-003/fixtures.mjs";
+import {fingerprint} from "../src/engine.mjs";
 import {assertExecutableCustomerObjective,customerObjectiveModel} from "../../optimisation/src/index.ts";
 import {analyseSprint4Recommendations} from "../../comparison/src/index.ts";
 const ctx={boundedUatAuthority:"BV4_INTERNAL_SYNTHETIC_UAT"};
@@ -66,7 +67,6 @@ test("BV4-A08 extension doesn't assume provider authorization",()=>{
 });
 test("BV4-A09 claimant data not leaked in explanation",()=>{
  const r=syntheticRequest();r.locked_profile.facts.occupation="UNIQUE_SYNTHETIC_PRIVATE_LABEL";
- const {fingerprint}=await import("../src/engine.mjs");
  r.locked_profile.facts_sha256=fingerprint(r.locked_profile.facts);
  r.quotes.forEach(q=>{q.facts_sha256=r.locked_profile.facts_sha256});
  const e=run(r).explanation;
