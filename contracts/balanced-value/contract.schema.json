@@ -95,7 +95,8 @@
         "required_cover",
         "allowed_payment_modes",
         "telematics_accepted",
-        "required_benefits"
+        "required_benefits",
+        "coverage_baseline"
       ],
       "properties": {
         "customer_confirmed": {
@@ -134,6 +135,9 @@
           "items": {
             "$ref": "#/$defs/benefitKey"
           }
+        },
+        "coverage_baseline": {
+          "$ref": "#/$defs/benefits"
         }
       }
     },
