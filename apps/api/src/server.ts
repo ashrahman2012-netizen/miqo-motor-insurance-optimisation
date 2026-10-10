@@ -19,6 +19,10 @@ import { ensureSyntheticMarketRoutes, executeSprint4MarketRoutes, listSprint4Mar
 import { listCandidateVehicles, listOccupationTaxonomyMappings, persistOccupationTaxonomyMappings, registerCandidateVehicle } from "./sprint4-profile-integrity-service.ts";
 import { createSprint4RecommendationSet, getSprint4RecommendationSet } from "./sprint4-recommendation-service.ts";
 import { getSprint4RecommendationExplanation } from "./sprint4-explanation-service.ts";
+import { processCustomerIntakeEmail, refreshDueCustomerIntakeLifecycle } from "./customer-intake-service.ts";
+import { handleGmailIntakeEvent } from "./customer-intake-event-adapter.ts";
+import { registerCustomerFormSubmissionRoute } from "./customer-form-submission-route.ts";
+import type { FormSubmissionDependencies } from "./customer-form-submission-service.ts";
 
 const classification=process.env.MIQO_DATA_CLASSIFICATION??"SYNTHETIC";
 const live=(process.env.MIQO_LIVE_PROVIDERS_ENABLED??"false").toLowerCase();
@@ -26,15 +30,18 @@ if(classification!=="SYNTHETIC" || ["1","true","yes","on"].includes(live)) throw
 
 export function internalErrorPayload(requestId:string){return {error:"internal_error",requestId};}
 
-export async function buildApp() {
+export type BuildAppOptions=Readonly<{formSubmissionDependencies?:FormSubmissionDependencies}>;
+
+export async function buildApp(options:BuildAppOptions={}) {
   const pool=createPool(); const db=createDatabase(pool); const app=Fastify({logger:true,bodyLimit:131_072});
   const customerOrigin=process.env.CUSTOMER_WEB_URL??"http://127.0.0.1:3000";
   const adminOrigin=process.env.ADMIN_WEB_URL??"http://127.0.0.1:3001";
-  const allowedOrigins=new Set([customerOrigin,adminOrigin]);
+  const allowFileOrigin=classification==="SYNTHETIC" && (process.env.MIQO_ALLOW_FILE_ORIGIN??"false").toLowerCase()==="true";
+  const allowedOrigins=new Set([customerOrigin,adminOrigin,...(allowFileOrigin?["null"]:[])]);
   const rateWindowMs=Number(process.env.MIQO_RATE_LIMIT_WINDOW_MS??"60000");
   const rateMax=Number(process.env.MIQO_RATE_LIMIT_MAX??"300");
   const rateBuckets=new Map<string,{started:number,count:number}>();
-  await app.register(cors,{origin:[customerOrigin,adminOrigin],methods:["GET","HEAD","POST","PUT","OPTIONS"]});
+  await app.register(cors,{origin:Array.from(allowedOrigins),methods:["GET","HEAD","POST","PUT","OPTIONS"]});
   app.addHook("onRequest",async(req,reply)=>{
     const origin=typeof req.headers.origin==="string"?req.headers.origin:"";
     if(origin&&!allowedOrigins.has(origin))return reply.code(403).send({error:"origin_not_allowed",requestId:req.id});
@@ -66,6 +73,7 @@ export async function buildApp() {
     return payload;
   });
   app.addHook("onClose",async()=>pool.end());
+  registerCustomerFormSubmissionRoute(app,pool,options.formSubmissionDependencies??{});
 
   app.get("/health",async()=>({status:"ok",dataClassification:classification,liveProvidersEnabled:false}));
   app.post("/profiles",async(_req,reply)=>reply.code(201).send(await createProfile(db)));
@@ -210,6 +218,46 @@ export async function buildApp() {
   app.get("/selections/:selectionId",async(req:any)=>getSelection(db,req.params.selectionId));
   app.get("/scenarios/:scenarioId/integrity-signals",async(req:any)=>({items:await listPreQuoteIntegritySignals(db,req.params.scenarioId)}));
 
+  app.post("/admin/cxm/intake/refresh-lifecycle",{
+    schema:{body:{type:"object",additionalProperties:false,properties:{
+      now:{type:"string",format:"date-time"},
+    }}},
+  },async(req:any)=>refreshDueCustomerIntakeLifecycle(pool,req.body?.now?new Date(req.body.now):new Date()));
+
+  app.post("/admin/cxm/intake/gmail-event",{
+    schema:{body:{type:"object",additionalProperties:false,required:["provider","eventId","mailbox","message","synthetic"],properties:{
+      provider:{type:"string",enum:["gmail"]},
+      eventId:{type:"string",minLength:1,maxLength:512},
+      mailbox:{type:"string",format:"email"},
+      synthetic:{type:"boolean"},
+      message:{type:"object",additionalProperties:false,required:["id","subject","body"],properties:{
+        id:{type:"string",minLength:1,maxLength:512},
+        threadId:{type:["string","null"],maxLength:512},
+        receivedAt:{type:["string","null"],format:"date-time"},
+        subject:{type:"string",minLength:1,maxLength:998},
+        body:{type:"string",minLength:1,maxLength:120000},
+      }},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await handleGmailIntakeEvent(pool,req.body);
+    return reply.code(result.disposition==="PROCESSED"?201:200).send(result);
+  });
+
+  app.post("/admin/cxm/intake/email",{
+    schema:{body:{type:"object",additionalProperties:false,required:["sourceMailbox","sourceMessageId","subject","body","synthetic"],properties:{
+      sourceMailbox:{type:"string",format:"email"},
+      sourceMessageId:{type:"string",minLength:1,maxLength:512},
+      sourceThreadId:{type:["string","null"],maxLength:512},
+      receivedAt:{type:["string","null"],format:"date-time"},
+      subject:{type:"string",minLength:1,maxLength:998},
+      body:{type:"string",minLength:1,maxLength:120000},
+      synthetic:{type:"boolean"},
+    }}},
+  },async(req:any,reply)=>{
+    const result=await processCustomerIntakeEmail(pool,req.body);
+    return reply.code(result.deduplicated?200:201).send(result);
+  });
+
   app.get("/admin/profiles/:profileId",async(req:any)=>({versions:await profileSnapshot(db,req.params.profileId),audit:await auditEvents(db,req.params.profileId),discrepancies:await listDiscrepancies(db,req.params.profileId)}));
   app.get("/admin/profile-versions/:versionId",async(req:any)=>profileSnapshotByVersion(db,req.params.versionId));
   app.get("/admin/audit",async(req:any)=>({items:await auditEvents(db,String(req.query.profileId??""))}));
@@ -222,7 +270,8 @@ export async function buildApp() {
     if(error instanceof ConflictError)return reply.code(409).send({error:error.message});
     if(error instanceof ValidationError)return reply.code(422).send({error:error.message,issues:error.issues});
     if(error?.validation){
-      const code=String(req?.url??"").includes("/quote-requests")?"INVALID_QUOTE_REQUEST":"INVALID_OPTIMISATION_PREFERENCE";
+      const url=String(req?.url??"");
+      const code=url.includes("/admin/cxm/intake/")?"INVALID_CUSTOMER_INTAKE_EMAIL":url.includes("/quote-requests")?"INVALID_QUOTE_REQUEST":"INVALID_OPTIMISATION_PREFERENCE";
       return reply.code(422).send({error:code,issues:error.validation.map((item:any)=>item.message)});
     }
     if(String(error?.message??error).includes("only O is permitted"))return reply.code(422).send({error:String(error.message)});

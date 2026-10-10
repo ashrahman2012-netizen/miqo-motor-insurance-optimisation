@@ -37,7 +37,8 @@
     "test:a11y": "playwright test -c playwright.target.config.ts db-g10-accessibility.spec.ts",
     "test:security:api": "node --experimental-strip-types --test --test-concurrency=1 apps/api/test/db-g10-security-postgres.test.ts",
     "test:security:browser": "playwright test -c playwright.target.config.ts db-g10-browser-security.spec.ts db-g10-synthetic-admin.spec.ts db-g10-abuse-regression.spec.ts",
-    "test:security": "npm run test:security:api && npm run test:security:browser"
+    "test:security": "npm run test:security:api && npm run test:security:browser",
+    "gmail:oauth:authorize": "node scripts/gmail-oauth-authorize.mjs"
   },
   "type": "module",
   "packageManager": "npm@10.9.2",

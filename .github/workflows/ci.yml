@@ -59,6 +59,8 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0011_sp4_occupation_vehicle_integrity.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0012_sp4_recommendation.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0013_sp4_explainability_commercial_independence.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0014_cxm_customer_intake.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f packages/db/migrations/0015_cxm_direct_form_submission.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint1-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-foundation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint2-scenario-contract.sql
@@ -72,6 +74,8 @@ jobs:
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-occupation-vehicle-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-recommendation-contract.sql
       - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-sprint4-explainability-commercial-independence-contract.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-cxm-intake-contract.sql
+      - run: psql -h 127.0.0.1 -U miqo -d miqo -f scripts/postgres-cxm-form-submit-contract.sql
 
 
   db-g10-hardening:
