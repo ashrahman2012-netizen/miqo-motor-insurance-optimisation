@@ -61,6 +61,7 @@ jobs:
           npm run verify:pins
           npm run verify:boundary
           npm test -w @miqo/balanced-value
+          node --experimental-strip-types --test scripts/bv-gate-003/test.mjs
       - name: Commit only generated package-lock on bounded isolated branch
         run: |
           test "$(git branch --show-current)" = "miqo/bv-gate-004-product-candidate"
