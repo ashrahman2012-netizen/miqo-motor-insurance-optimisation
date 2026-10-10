@@ -1,0 +1,38 @@
+name: bv-gate-005-staging-design-uat
+
+on:
+  push:
+    branches:
+      - miqo/bv-gate-005-integration-design
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bv5-synthetic-readiness:
+    if: github.ref == 'refs/heads/miqo/bv-gate-005-integration-design'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+      MIQO_SEOPA_LIVE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - run: |
+          test "$(node --version)" = "v22.16.0"
+          test "$(npm --version)" = "10.9.2"
+          test "$GITHUB_REF" = "refs/heads/miqo/bv-gate-005-integration-design"
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run verify:boundary
+      - name: Run BV3 + BV4 + BV5 synthetic staging tests
+        run: |
+          node --experimental-strip-types --test scripts/bv-gate-003/test.mjs
+          npm test -w @miqo/balanced-value
+          node --experimental-strip-types --test scripts/bv-gate-005/readiness.test.mjs
