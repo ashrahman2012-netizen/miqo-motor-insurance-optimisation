@@ -1,0 +1,83 @@
+name: security-gate-002-lock-refresh
+
+on:
+  push:
+    branches:
+      - miqo/security-gate-002
+    paths:
+      - .github/workflows/security-gate-002-lock.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: security-gate-002-lock-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-audit:
+    if: github.ref == 'refs/heads/miqo/security-gate-002'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+      - name: Guard exact toolchain and branch
+        run: |
+          test "$(node --version)" = "v22.16.0"
+          test "$(npm --version)" = "10.9.2"
+          test "$GITHUB_REF" = "refs/heads/miqo/security-gate-002"
+          node -e "const fs=require('fs');let r=JSON.parse(fs.readFileSync('package.json'));let a=JSON.parse(fs.readFileSync('apps/admin-web/package.json'));let c=JSON.parse(fs.readFileSync('apps/customer-web/package.json'));if(r.overrides?.sharp!=='0.35.5'||r.overrides?.['source-map-js']!=='1.2.2'||r.devDependencies?.['source-map-js']!=='1.2.2'||a.dependencies.next!=='16.3.8'||c.dependencies.next!=='16.3.8'||a.dependencies.sharp!=='0.35.5'||c.dependencies.sharp!=='0.35.5')process.exit(1)"
+      - name: Recompute package-lock using npm registry integrity metadata
+        run: npm install --package-lock-only --ignore-scripts --no-audit
+      - name: Refresh transitive patched dependencies
+        run: npm update sharp source-map-js --package-lock-only --ignore-scripts --no-audit
+      - name: Validate updated dependency graph
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const lock = JSON.parse(fs.readFileSync('package-lock.json'));
+          const pkg = lock.packages;
+          for(const [name,version] of [
+            ['next','16.3.8'],
+            ['sharp','0.35.5'],
+            ['source-map-js','1.2.2']
+          ]){
+            const matches=Object.entries(pkg).filter(([path])=>path==='node_modules/'+name || path.endsWith('/node_modules/'+name));
+            console.log('DEPENDENCY_LAYOUT',name,JSON.stringify(matches.map(([path,p])=>({path,version:p.version}))));
+            if(!matches.length)throw new Error('PACKAGE_NOT_INSTALLED:'+name);
+            if(matches.some(([path,p])=>p.version!==version || !p.integrity?.startsWith('sha512-'))){
+              throw new Error('SECURITY_PIN_OR_INTEGRITY_MISMATCH:'+name);
+            }
+          }
+          console.log('Target versions verified at all resolved workspace paths');
+          NODE
+      - name: Clean install with updated lockfile
+        run: npm ci
+      - name: Critical/high audit gate
+        run: npm audit --audit-level=high
+      - name: Exact manifest pins and synthetic boundary
+        run: |
+          npm run verify:pins
+          npm run verify:boundary
+      - name: Push generated lockfile only to isolated branch
+        run: |
+          test "$(git branch --show-current)" = "miqo/security-gate-002"
+          git diff --name-only | grep -v '^package-lock.json$' > /tmp/unexpected-files || true
+          test ! -s /tmp/unexpected-files
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Lockfile already up to date"
+          else
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "SEC-GATE-002: regenerate audited npm lockfile for exact security pins"
+            git push origin HEAD:refs/heads/miqo/security-gate-002
+          fi
