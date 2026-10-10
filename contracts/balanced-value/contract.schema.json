@@ -1,0 +1,563 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://miqos.invalid/contracts/balanced-value/MIQO-BV-001-v1.0",
+  "title": "MIQOS BV-GATE-003 proposed synthetic-only selection contract",
+  "description": "Proposal, not a SEOPA schema, insurer schema, live MIQOS API nor activated Sprint 4 objective.",
+  "$ref": "#/$defs/selectionRequest",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "money": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000000000
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "benefitKey": {
+      "enum": [
+        "courtesy_car",
+        "windscreen",
+        "legal_expenses",
+        "breakdown",
+        "personal_accident"
+      ]
+    },
+    "lockedProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "version",
+        "status",
+        "facts_sha256",
+        "facts"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "const": "LOCKED_SYNTHETIC"
+        },
+        "facts_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "main_driver_id",
+            "genuine_named_driver_ids",
+            "annual_mileage",
+            "occupation"
+          ],
+          "properties": {
+            "main_driver_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "genuine_named_driver_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "annual_mileage": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "occupation": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "customer_confirmed",
+        "intent_revision",
+        "required_cover",
+        "allowed_payment_modes",
+        "telematics_accepted",
+        "required_benefits"
+      ],
+      "properties": {
+        "customer_confirmed": {
+          "const": true
+        },
+        "intent_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_cover": {
+          "const": "COMPREHENSIVE"
+        },
+        "max_total_excess_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "max_total_payable_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "allowed_payment_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "ANNUAL",
+              "MONTHLY"
+            ]
+          }
+        },
+        "telematics_accepted": {
+          "type": "boolean"
+        },
+        "required_benefits": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/benefitKey"
+          }
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_start_date",
+        "voluntary_excess_pence",
+        "payment_structure",
+        "telematics_preference",
+        "genuine_named_driver_inclusion"
+      ],
+      "properties": {
+        "policy_start_date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "voluntary_excess_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "payment_structure": {
+          "enum": [
+            "ANNUAL",
+            "MONTHLY"
+          ]
+        },
+        "telematics_preference": {
+          "type": "boolean"
+        },
+        "genuine_named_driver_inclusion": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "price": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "payment_mode",
+        "annual_cash_premium_pence",
+        "total_payable_pence",
+        "finance_cost_pence",
+        "mandatory_fees_ipt_included",
+        "finance_terms_complete",
+        "deposit_pence",
+        "instalment_count",
+        "instalment_amount_pence",
+        "finance_apr_bps"
+      ],
+      "properties": {
+        "payment_mode": {
+          "enum": [
+            "ANNUAL",
+            "MONTHLY"
+          ]
+        },
+        "annual_cash_premium_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "total_payable_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "finance_cost_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "mandatory_fees_ipt_included": {
+          "type": "boolean"
+        },
+        "finance_terms_complete": {
+          "type": "boolean"
+        },
+        "deposit_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "instalment_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12
+        },
+        "instalment_amount_pence": {
+          "$ref": "#/$defs/money"
+        },
+        "finance_apr_bps": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "benefits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "courtesy_car",
+        "windscreen",
+        "legal_expenses",
+        "breakdown",
+        "personal_accident"
+      ],
+      "properties": {
+        "courtesy_car": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "windscreen": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "legal_expenses": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "breakdown": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "personal_accident": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quote_id",
+        "provider_alias",
+        "route_key",
+        "scenario_id",
+        "profile_id",
+        "profile_version",
+        "facts_sha256",
+        "provenance_verified",
+        "quotation_permission",
+        "issued_at",
+        "valid_until",
+        "policy_type",
+        "cover_features_verified",
+        "restrictions_verified",
+        "benefits",
+        "price",
+        "excess",
+        "telematics_required",
+        "named_driver_ids",
+        "scenario"
+      ],
+      "properties": {
+        "quote_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_alias": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "facts_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "provenance_verified": {
+          "type": "boolean"
+        },
+        "quotation_permission": {
+          "type": "boolean"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/time"
+        },
+        "valid_until": {
+          "$ref": "#/$defs/time"
+        },
+        "policy_type": {
+          "enum": [
+            "COMPREHENSIVE",
+            "THIRD_PARTY_FIRE_THEFT",
+            "THIRD_PARTY"
+          ]
+        },
+        "cover_features_verified": {
+          "type": "boolean"
+        },
+        "restrictions_verified": {
+          "type": "boolean"
+        },
+        "benefits": {
+          "$ref": "#/$defs/benefits"
+        },
+        "price": {
+          "$ref": "#/$defs/price"
+        },
+        "excess": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "compulsory_pence",
+            "voluntary_pence"
+          ],
+          "properties": {
+            "compulsory_pence": {
+              "$ref": "#/$defs/money"
+            },
+            "voluntary_pence": {
+              "$ref": "#/$defs/money"
+            }
+          }
+        },
+        "telematics_required": {
+          "type": "boolean"
+        },
+        "named_driver_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "scenario": {
+          "$ref": "#/$defs/scenario"
+        }
+      }
+    },
+    "selectionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "environment",
+        "test_clock",
+        "locked_profile",
+        "preferences",
+        "quotes"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "MIQO-BV-001-v1.0"
+        },
+        "environment": {
+          "const": "SYNTHETIC_ONLY"
+        },
+        "test_clock": {
+          "$ref": "#/$defs/time"
+        },
+        "locked_profile": {
+          "$ref": "#/$defs/lockedProfile"
+        },
+        "preferences": {
+          "$ref": "#/$defs/preferences"
+        },
+        "quotes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/quote"
+          },
+          "maxItems": 64
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_version",
+        "classification",
+        "status",
+        "input_fingerprint",
+        "result_fingerprint",
+        "selected_quote_id",
+        "absolute_cheapest_eligible_quote_id",
+        "pareto_frontier_quote_ids",
+        "eligible_quote_ids",
+        "excluded",
+        "explanations",
+        "selected_total_payable_pence",
+        "selected_total_excess_pence",
+        "cheapest_total_payable_pence",
+        "cheapest_total_excess_pence",
+        "customer_constraints"
+      ],
+      "properties": {
+        "rule_version": {
+          "const": "BV-RULE-001-v1.0"
+        },
+        "classification": {
+          "const": "SYNTHETIC_DEMO_ONLY"
+        },
+        "status": {
+          "enum": [
+            "PROVISIONAL_SYNTHETIC_SELECTION",
+            "NO_QUOTES_MEET_PREFERENCES",
+            "NO_ELIGIBLE_QUOTES"
+          ]
+        },
+        "input_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "result_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "selected_quote_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "absolute_cheapest_eligible_quote_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pareto_frontier_quote_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "eligible_quote_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "quote_id",
+              "codes",
+              "classification"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "quote_id": {
+                "type": "string"
+              },
+              "codes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "classification": {
+                "enum": [
+                  "INVALID_QUOTE",
+                  "OUTSIDE_PREFERENCES"
+                ]
+              }
+            }
+          }
+        },
+        "explanations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "selected_total_payable_pence": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "selected_total_excess_pence": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cheapest_total_payable_pence": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cheapest_total_excess_pence": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "customer_constraints": {
+          "$ref": "#/$defs/preferences"
+        }
+      }
+    }
+  }
+}
