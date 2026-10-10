@@ -1,0 +1,19 @@
+{
+  "name": "@miqo/balanced-value",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Dormant, synthetic-only Balanced Value product candidate (BV-GATE-004)",
+  "exports": {
+    "./candidate": "./src/gate.mjs",
+    "./explanations": "./src/explanation.mjs"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "@miqo/comparison": "0.1.0"
+  }
+}
