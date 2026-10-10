@@ -36,3 +36,4 @@ jobs:
           node --experimental-strip-types --test scripts/bv-gate-003/test.mjs
           npm test -w @miqo/balanced-value
           node --experimental-strip-types --test scripts/bv-gate-005/readiness.test.mjs
+          node --experimental-strip-types --test scripts/bv-gate-005/evidence-adapter.test.mjs
