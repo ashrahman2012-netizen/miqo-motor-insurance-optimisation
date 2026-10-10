@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {createHash} from "node:crypto";
 import pg from "pg";
 import {buildApp} from "../src/server.ts";
 
@@ -85,12 +86,13 @@ test("C3 positive: two registered candidates x 3 excess x 2 payment x 2 telemati
     const petrol=await registerCandidate(app,profile.versionId,"VEH-SYN-005-PETROL","Petrol");
     assert.notEqual(ev.evidenceFingerprint,petrol.evidenceFingerprint);
     const obj=await objective(app,profile.versionId);
-    const exploration=await explore(app,obj.customerObjectiveId,{
+    const choices={
       candidate_vehicle:["VEH-SYN-005-EV","VEH-SYN-005-PETROL"],
       voluntary_excess:[250,500,750],
       payment_structure:["ANNUAL","MONTHLY"],
       telematics_preference:[true,false],
-    });
+    };
+    const exploration=await explore(app,obj.customerObjectiveId,choices);
     assert.equal(exploration.items.length,24);
     assert.equal(exploration.rejections.length,0);
     assert.ok(exploration.items.every((item:any)=>
@@ -143,6 +145,22 @@ test("C3 positive: two registered candidates x 3 excess x 2 payment x 2 telemati
       for(const fragment of ["candidate_vehicle","CANDIDATE_VEHICLE_NOT_ELIGIBLE","PRE_PURCHASE","sp4_scenario_lineage"]){
         assert.ok(functionDef.includes(fragment),`missing SQL predicate: ${fragment}`);
       }
+      // Immutable CI log receipt: both hashes derive from the fixture used and
+      // the *applied* PostgreSQL function, not merely the checked-in SQL file.
+      console.log("SIM_G3_R1_SYN005_C4_RECEIPT "+JSON.stringify({
+        classification:"SYNTHETIC_ISOLATED_POSTGRES",
+        node:process.version,
+        correctionHead:process.env.GITHUB_SHA??"LOCAL_UNPINNED",
+        migration:"0014_sp4_prequote_candidate_alignment.sql",
+        fixtureSha256:createHash("sha256").update(JSON.stringify(choices)).digest("hex"),
+        appliedSqlFunctionSha256:createHash("sha256").update(functionDef).digest("hex"),
+        generatedScenarios:exploration.items.length,
+        quoteRequests:rows[0].n,
+        rawResponses:48,
+        normalisedQuotes:48,
+        auditLinks:audits,
+        inheritedBlockingSignals:0,
+      }));
     }finally{await db.end();}
   }finally{await app.close();}
 });
