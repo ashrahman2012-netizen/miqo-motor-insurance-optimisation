@@ -124,9 +124,11 @@ test("C3 positive: two registered candidates x 3 excess x 2 payment x 2 telemati
     try{
       const rows=(await db.query("SELECT count(*)::int AS n FROM quote_request")).rows;
       assert.equal(rows[0].n,48);
+      const tableCounts:Record<string,number>={};
       for(const table of ["sp4_quote_request_lineage","raw_provider_response","normalised_quote"]){
         const n=(await db.query(`SELECT count(*)::int AS n FROM ${table}`)).rows[0].n;
         assert.equal(n,48,`unexpected ${table} count`);
+        tableCounts[table]=n;
       }
       const facts=(await db.query(
         "SELECT field_id,value_json,control_class FROM canonical_field_value WHERE risk_profile_version_id=$1 AND field_id IN ('vehicle_id','vehicle_mode','annual_mileage')",
@@ -138,7 +140,8 @@ test("C3 positive: two registered candidates x 3 excess x 2 payment x 2 telemati
       assert.ok(facts.every((x:any)=>x.control_class==="F"));
       const audits=(await db.query("SELECT count(*)::int AS n FROM audit_event WHERE event_type='sp4_market_route_quote_linked'")).rows[0].n;
       assert.equal(audits,48);
-      assert.equal((await db.query("SELECT count(*)::int AS n FROM integrity_signal")).rows[0].n,0);
+      const blockingSignals=(await db.query("SELECT count(*)::int AS n FROM integrity_signal")).rows[0].n;
+      assert.equal(blockingSignals,0);
       const functionDef=(await db.query(
         "SELECT pg_get_functiondef('miqo_guard_quote_request_lineage()'::regprocedure) AS definition",
       )).rows[0].definition;
@@ -150,16 +153,16 @@ test("C3 positive: two registered candidates x 3 excess x 2 payment x 2 telemati
       console.log("SIM_G3_R1_SYN005_C4_RECEIPT "+JSON.stringify({
         classification:"SYNTHETIC_ISOLATED_POSTGRES",
         node:process.version,
-        correctionHead:process.env.GITHUB_SHA??"LOCAL_UNPINNED",
+        ciEventCommit:process.env.GITHUB_SHA??"LOCAL_UNPINNED",
         migration:"0014_sp4_prequote_candidate_alignment.sql",
         fixtureSha256:createHash("sha256").update(JSON.stringify(choices)).digest("hex"),
         appliedSqlFunctionSha256:createHash("sha256").update(functionDef).digest("hex"),
         generatedScenarios:exploration.items.length,
         quoteRequests:rows[0].n,
-        rawResponses:48,
-        normalisedQuotes:48,
+        rawResponses:tableCounts.raw_provider_response,
+        normalisedQuotes:tableCounts.normalised_quote,
         auditLinks:audits,
-        inheritedBlockingSignals:0,
+        inheritedBlockingSignals:blockingSignals,
       }));
     }finally{await db.end();}
   }finally{await app.close();}
