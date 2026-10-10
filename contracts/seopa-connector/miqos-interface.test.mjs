@@ -32,7 +32,7 @@ test("SIF-03 stable no-go certification receipt",()=>{
  assert.deepEqual(r,makeCertificationReceipt(request(),response(),context));
 });
 const invalid=[
- ["no context",x=>x,null,"IF_LIVE_MODE_BLOCKED"],
+ ["no context",x=>x,{},"IF_LIVE_MODE_BLOCKED"],
  ["live request",x=>{x.environment="LIVE";},context,"IF_LIVE_MODE_BLOCKED"],
  ["wrong version",x=>{x.interfaceVersion="v2";},context,"IF_CONTRACT_INVALID"],
  ["extra request field",x=>{x.customerName="PERSON";},context,"IF_CONTRACT_INVALID"],
