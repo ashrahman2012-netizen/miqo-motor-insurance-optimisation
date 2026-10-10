@@ -1,0 +1,37 @@
+name: seopa-txn-001-synthetic-uat
+
+on:
+  push:
+    branches:
+      - miqo/seopa-txn-001-synthetic-uat
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-contract-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      MIQO_DATA_CLASSIFICATION: SYNTHETIC
+      MIQO_LIVE_PROVIDERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Exact runtime guard
+        run: |
+          test "$(node --version)" = "v22.16.0"
+          test "$(npm --version)" = "10.9.2"
+      - name: Execute synthetic contract and negative test suite
+        run: node --experimental-strip-types --test scripts/seopa-txn-001/test.mjs
+      - name: Generate audited T01–T08 mock receipts
+        run: node --experimental-strip-types scripts/seopa-txn-001/run.mjs
+      - name: Upload synthetic JSON evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: miqos-seopa-txn-001-synthetic-receipts
+          path: scripts/seopa-txn-001/artifacts/*.json
+          if-no-files-found: error
