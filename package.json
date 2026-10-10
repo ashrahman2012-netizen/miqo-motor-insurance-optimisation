@@ -48,5 +48,9 @@
     "@types/pg": "8.15.6",
     "esbuild": "0.28.2",
     "pg": "8.23.0"
+  },
+  "overrides": {
+    "sharp": "0.35.5",
+    "source-map-js": "1.2.2"
   }
 }
